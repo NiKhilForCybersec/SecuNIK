@@ -1,0 +1,44 @@
+{
+  "dotnet.defaultSolution": "src/SecuNik.sln",
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/.vs": true,
+    "**/node_modules": true,
+    "**/.git": false
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/node_modules": true
+  },
+  "files.watcherExclude": {
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/node_modules/**": true
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit"
+  },
+  "csharp.semanticHighlighting.enabled": true,
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.csproj": "$(capture).csproj.user",
+    "appsettings.json": "appsettings.*.json"
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "appsettings*.json"
+      ],
+      "url": "https://json.schemastore.org/appsettings.json"
+    }
+  ],
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true
+}

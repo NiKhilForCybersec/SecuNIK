@@ -1,0 +1,12 @@
+N:\Project\SecuNIK\src\SecuNik.Core\bin\Debug\net8.0\SecuNik.Core.deps.json
+N:\Project\SecuNIK\src\SecuNik.Core\bin\Debug\net8.0\SecuNik.Core.dll
+N:\Project\SecuNIK\src\SecuNik.Core\bin\Debug\net8.0\SecuNik.Core.pdb
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\SecuNik.Core.csproj.AssemblyReference.cache
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\SecuNik.Core.GeneratedMSBuildEditorConfig.editorconfig
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\SecuNik.Core.AssemblyInfoInputs.cache
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\SecuNik.Core.AssemblyInfo.cs
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\SecuNik.Core.csproj.CoreCompileInputs.cache
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\SecuNik.Core.dll
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\refint\SecuNik.Core.dll
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\SecuNik.Core.pdb
+N:\Project\SecuNIK\src\SecuNik.Core\obj\Debug\net8.0\ref\SecuNik.Core.dll
