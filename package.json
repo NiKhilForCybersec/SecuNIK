@@ -1,0 +1,14 @@
+{
+  "name": "secunik",
+  "version": "1.0.0",
+  "description": "SecuNik - Security Log Analysis Platform",
+  "scripts": {
+    "build": "dotnet build src/SecuNik.sln",
+    "dev": "dotnet run --project src/SecuNik.API",
+    "test": "dotnet test",
+    "clean": "dotnet clean src/SecuNik.sln"
+  },
+  "keywords": ["security", "log-analysis", "dotnet"],
+  "author": "",
+  "license": "ISC"
+}
