@@ -47,7 +47,7 @@ namespace SecuNik.API
             // Configure file upload
             builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
             {
-                options.MultipartBodyLengthLimit = 50 * 1024 * 1024; // 50MB
+                options.MultipartBodyLengthLimit = 200 * 1024 * 1024; // 200MB
             });
 
             var app = builder.Build();
