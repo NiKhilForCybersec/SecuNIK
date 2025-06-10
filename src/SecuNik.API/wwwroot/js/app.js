@@ -278,9 +278,9 @@ class SecuNikApp {
     }
 
     validateFile(file) {
-        const maxSize = 50 * 1024 * 1024;
+        const maxSize = 200 * 1024 * 1024;
         if (file.size > maxSize) {
-            this.showNotification('File too large. Maximum size is 50MB.', 'error');
+            this.showNotification('File too large. Maximum size is 200MB.', 'error');
             return false;
         }
 

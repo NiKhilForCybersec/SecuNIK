@@ -45,8 +45,8 @@ namespace SecuNik.API.Controllers
                 return BadRequest(new ErrorResponse("No file uploaded or file is empty"));
             }
 
-            // Validate file size (50MB limit for Phase 1)
-            const long maxFileSize = 50 * 1024 * 1024; // 50MB
+            // Validate file size (200MB limit)
+            const long maxFileSize = 200 * 1024 * 1024; // 200MB
             if (file.Length > maxFileSize)
             {
                 return BadRequest(new ErrorResponse($"File size exceeds maximum limit of {maxFileSize / (1024 * 1024)}MB"));
@@ -310,7 +310,7 @@ namespace SecuNik.API.Controllers
                 {
                     supportedTypes = supportedTypes,
                     description = "File extensions supported by SecuNik analysis engine",
-                    maxFileSize = "50MB"
+                    maxFileSize = "200MB"
                 });
             }
             catch (Exception ex)
