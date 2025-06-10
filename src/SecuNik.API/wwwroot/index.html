@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecuNik - Advanced Cybersecurity Forensics Platform</title>
+    <title>SecuNik - Advanced Cybersecurity Operations Center</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <meta name="description" content="AI-powered cybersecurity forensics platform with real-time threat analysis">
-    <meta name="keywords" content="cybersecurity, forensics, AI analysis, threat detection, EVTX, IOC">
+    <meta name="description" content="Advanced AI-powered cybersecurity operations center with real-time threat analysis">
+    <meta name="keywords" content="cybersecurity, SOC, threat detection, AI analysis, EVTX, IOC, SIEM">
 </head>
 
 <body>
@@ -120,29 +120,239 @@
                             <button class="upload-btn" id="chooseFilesBtn">Choose Files</button>
                             <div class="supported-formats">
                                 <div class="format-text">Supported formats</div>
-                                <div class="format-list">EVT, CSV, WEMP™, P2PCIP</div>
+                                <div class="format-list">EVT, CSV, WEMP™, P2PCIP, SYSLOG, PCAP</div>
                             </div>
                             <input type="file" id="fileInput" multiple
                                 accept=".csv,.json,.log,.txt,.evtx,.evt,.wtmp,.utmp,.btmp,.lastlog,.pcap,.pcapng,.syslog,.fwlog,.dblog,.maillog,.dnslog"
                                 style="display: none;">
                         </div>
 
-                        <!-- AI Insights -->
-                        <div class="ai-insights" id="aiInsights" style="display: none;">
-                            <div class="insight-card">
-                                <div class="insight-icon">📊</div>
-                                <div class="insight-title">Bulk Log Correlation</div>
-                                <div class="insight-description">Analyzed multiples log files to correlate breach intelligence and patterns</div>
+                        <!-- Real-time Monitoring Grid -->
+                        <div class="realtime-grid" id="realtimeGrid" style="display: none;">
+                            <div class="realtime-card">
+                                <div class="realtime-value" id="activeThreats">0</div>
+                                <div class="realtime-label">Active Threats</div>
+                                <div class="realtime-status">MONITORING</div>
                             </div>
-                            <div class="insight-card warning">
-                                <div class="insight-icon">⚠️</div>
-                                <div class="insight-title">Evolving Brute Force Pattern</div>
-                                <div class="insight-description">AI detected a coordinated login force attack pattern in multiple hosts</div>
+                            <div class="realtime-card">
+                                <div class="realtime-value" id="eventsProcessed">0</div>
+                                <div class="realtime-label">Events Processed</div>
+                                <div class="realtime-status">LIVE</div>
                             </div>
-                            <div class="insight-card success">
-                                <div class="insight-icon">📋</div>
-                                <div class="insight-title">Executive Summary Available</div>
-                                <div class="insight-description">An AI-generated organizational impact summary is ready for review</div>
+                            <div class="realtime-card">
+                                <div class="realtime-value" id="iocsDetected">0</div>
+                                <div class="realtime-label">IOCs Detected</div>
+                                <div class="realtime-status">SCANNING</div>
+                            </div>
+                            <div class="realtime-card">
+                                <div class="realtime-value" id="riskScore">0</div>
+                                <div class="realtime-label">Risk Score</div>
+                                <div class="realtime-status">CALCULATED</div>
+                            </div>
+                            <div class="realtime-card">
+                                <div class="realtime-value" id="filesAnalyzed">0</div>
+                                <div class="realtime-label">Files Analyzed</div>
+                                <div class="realtime-status">COMPLETE</div>
+                            </div>
+                            <div class="realtime-card">
+                                <div class="realtime-value" id="aiConfidence">0%</div>
+                                <div class="realtime-label">AI Confidence</div>
+                                <div class="realtime-status">READY</div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Feature Grid -->
+                        <div class="feature-grid" id="featureGrid" style="display: none;">
+                            <!-- Threat Intelligence -->
+                            <div class="feature-card">
+                                <div class="feature-header">
+                                    <div class="feature-icon danger">🚨</div>
+                                    <div>
+                                        <div class="feature-title">Threat Intelligence</div>
+                                        <div class="feature-subtitle">REAL-TIME ANALYSIS</div>
+                                    </div>
+                                </div>
+                                <div class="feature-content">
+                                    <div class="feature-description">Advanced AI-powered threat detection with real-time correlation against global threat intelligence feeds</div>
+                                    <div class="feature-stats">
+                                        <div>
+                                            <div class="feature-value" id="threatIntelCount">0</div>
+                                            <div class="feature-label">Threats Identified</div>
+                                        </div>
+                                        <div class="feature-badge badge-danger" id="threatIntelBadge">SCANNING</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Behavioral Analysis -->
+                            <div class="feature-card">
+                                <div class="feature-header">
+                                    <div class="feature-icon purple">🧠</div>
+                                    <div>
+                                        <div class="feature-title">Behavioral Analysis</div>
+                                        <div class="feature-subtitle">ML ANOMALY DETECTION</div>
+                                    </div>
+                                </div>
+                                <div class="feature-content">
+                                    <div class="feature-description">Machine learning algorithms detect unusual patterns and anomalous behavior in system activities</div>
+                                    <div class="feature-stats">
+                                        <div>
+                                            <div class="feature-value" id="behaviorAnomalies">0</div>
+                                            <div class="feature-label">Anomalies Found</div>
+                                        </div>
+                                        <div class="feature-badge badge-info" id="behaviorBadge">LEARNING</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Network Forensics -->
+                            <div class="feature-card">
+                                <div class="feature-header">
+                                    <div class="feature-icon info">🌐</div>
+                                    <div>
+                                        <div class="feature-title">Network Forensics</div>
+                                        <div class="feature-subtitle">PACKET ANALYSIS</div>
+                                    </div>
+                                </div>
+                                <div class="feature-content">
+                                    <div class="feature-description">Deep packet inspection and network traffic analysis for comprehensive forensic investigation</div>
+                                    <div class="feature-stats">
+                                        <div>
+                                            <div class="feature-value" id="networkConnections">0</div>
+                                            <div class="feature-label">Connections Analyzed</div>
+                                        </div>
+                                        <div class="feature-badge badge-info" id="networkBadge">MONITORING</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Malware Detection -->
+                            <div class="feature-card">
+                                <div class="feature-header">
+                                    <div class="feature-icon warning">🦠</div>
+                                    <div>
+                                        <div class="feature-title">Malware Detection</div>
+                                        <div class="feature-subtitle">SIGNATURE & HEURISTIC</div>
+                                    </div>
+                                </div>
+                                <div class="feature-content">
+                                    <div class="feature-description">Multi-layered malware detection using signature-based and heuristic analysis techniques</div>
+                                    <div class="feature-stats">
+                                        <div>
+                                            <div class="feature-value" id="malwareDetected">0</div>
+                                            <div class="feature-label">Malware Samples</div>
+                                        </div>
+                                        <div class="feature-badge badge-warning" id="malwareBadge">SCANNING</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Data Exfiltration -->
+                            <div class="feature-card">
+                                <div class="feature-header">
+                                    <div class="feature-icon pink">📤</div>
+                                    <div>
+                                        <div class="feature-title">Data Exfiltration</div>
+                                        <div class="feature-subtitle">DLP MONITORING</div>
+                                    </div>
+                                </div>
+                                <div class="feature-content">
+                                    <div class="feature-description">Advanced data loss prevention monitoring for unauthorized data transfers and exfiltration attempts</div>
+                                    <div class="feature-stats">
+                                        <div>
+                                            <div class="feature-value" id="dataTransfers">0</div>
+                                            <div class="feature-label">Suspicious Transfers</div>
+                                        </div>
+                                        <div class="feature-badge badge-success" id="dlpBadge">PROTECTED</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Compliance Monitoring -->
+                            <div class="feature-card">
+                                <div class="feature-header">
+                                    <div class="feature-icon success">✅</div>
+                                    <div>
+                                        <div class="feature-title">Compliance Monitoring</div>
+                                        <div class="feature-subtitle">REGULATORY COMPLIANCE</div>
+                                    </div>
+                                </div>
+                                <div class="feature-content">
+                                    <div class="feature-description">Automated compliance monitoring for GDPR, HIPAA, SOX, and other regulatory frameworks</div>
+                                    <div class="feature-stats">
+                                        <div>
+                                            <div class="feature-value" id="complianceScore">0%</div>
+                                            <div class="feature-label">Compliance Score</div>
+                                        </div>
+                                        <div class="feature-badge badge-success" id="complianceBadge">COMPLIANT</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics Grid -->
+                        <div class="metrics-grid" id="metricsGrid" style="display: none;">
+                            <div class="metric-card">
+                                <div class="metric-icon">🔍</div>
+                                <div class="metric-value" id="totalEvents">0</div>
+                                <div class="metric-label">Total Events</div>
+                                <div class="metric-change change-positive" id="eventsChange">+0%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-icon">⚡</div>
+                                <div class="metric-value" id="processingSpeed">0</div>
+                                <div class="metric-label">Events/Sec</div>
+                                <div class="metric-change change-positive" id="speedChange">+0%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-icon">🎯</div>
+                                <div class="metric-value" id="accuracy">0%</div>
+                                <div class="metric-label">Detection Accuracy</div>
+                                <div class="metric-change change-positive" id="accuracyChange">+0%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-icon">⏱️</div>
+                                <div class="metric-value" id="responseTime">0ms</div>
+                                <div class="metric-label">Avg Response Time</div>
+                                <div class="metric-change change-negative" id="responseChange">-0%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-icon">🛡️</div>
+                                <div class="metric-value" id="blockedThreats">0</div>
+                                <div class="metric-label">Threats Blocked</div>
+                                <div class="metric-change change-positive" id="blockedChange">+0%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-icon">📊</div>
+                                <div class="metric-value" id="uptime">99.9%</div>
+                                <div class="metric-label">System Uptime</div>
+                                <div class="metric-change change-positive" id="uptimeChange">+0.1%</div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Container -->
+                        <div class="charts-container" id="chartsContainer" style="display: none;">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div class="chart-title">Threat Trends</div>
+                                    <div class="chart-period">Last 24 Hours</div>
+                                </div>
+                                <div class="chart-content">
+                                    <div style="height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                                        📈 Threat activity visualization
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div class="chart-title">Event Distribution</div>
+                                    <div class="chart-period">Current Session</div>
+                                </div>
+                                <div class="chart-content">
+                                    <div style="height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                                        🥧 Event type breakdown
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -208,6 +418,58 @@
                                         <div class="queue-filename">syslog-2024.csv</div>
                                         <div class="queue-meta">Apr 21, 2024 • 2.03 MB</div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Engine Status -->
+                        <div class="sidebar-panel">
+                            <h3>AI ENGINE STATUS</h3>
+                            <div class="feature-stats">
+                                <div>
+                                    <div class="feature-value" id="aiStatus">READY</div>
+                                    <div class="feature-label">Engine Status</div>
+                                </div>
+                                <div class="feature-badge badge-success">ONLINE</div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 95%"></div>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                                Model: GPT-4o-mini • Confidence: 95%
+                            </div>
+                        </div>
+
+                        <!-- Threat Intelligence Feed -->
+                        <div class="sidebar-panel">
+                            <h3>THREAT INTEL FEED</h3>
+                            <div class="queue-item">
+                                <div class="queue-icon">🚨</div>
+                                <div class="queue-content">
+                                    <div class="queue-filename">New APT Campaign</div>
+                                    <div class="queue-meta">2 min ago • HIGH</div>
+                                </div>
+                            </div>
+                            <div class="queue-item">
+                                <div class="queue-icon">⚠️</div>
+                                <div class="queue-content">
+                                    <div class="queue-filename">Malware Signature Update</div>
+                                    <div class="queue-meta">15 min ago • MEDIUM</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Performance -->
+                        <div class="sidebar-panel">
+                            <h3>SYSTEM PERFORMANCE</h3>
+                            <div class="metrics-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 18px; font-weight: 600; color: var(--accent-success);">2.1GB</div>
+                                    <div style="font-size: 10px; color: var(--text-muted);">MEMORY USED</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 18px; font-weight: 600; color: var(--accent-info);">15%</div>
+                                    <div style="font-size: 10px; color: var(--text-muted);">CPU USAGE</div>
                                 </div>
                             </div>
                         </div>
