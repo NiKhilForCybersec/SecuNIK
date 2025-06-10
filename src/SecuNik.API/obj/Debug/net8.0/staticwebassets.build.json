@@ -1,0 +1,331 @@
+{
+  "Version": 1,
+  "Hash": "9iLwnvtMdbYC5D0nYsilthkMtNgbjC6mNoU7FInAqh8=",
+  "Source": "SecuNik.API",
+  "BasePath": "_content/SecuNik.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "SecuNik.API\\wwwroot",
+      "Source": "SecuNik.API",
+      "ContentRoot": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\",
+      "BasePath": "_content/SecuNik.API",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\css\\styles.css",
+      "SourceId": "SecuNik.API",
+      "SourceType": "Discovered",
+      "ContentRoot": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\",
+      "BasePath": "_content/SecuNik.API",
+      "RelativePath": "css/styles#[.{fingerprint}]?.css",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "8b5ulads94",
+      "Integrity": "nByKPOvQtymEio2YICYPS9CDev4LQFzHepXeArFopUA=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\css\\styles.css"
+    },
+    {
+      "Identity": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\index.html",
+      "SourceId": "SecuNik.API",
+      "SourceType": "Discovered",
+      "ContentRoot": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\",
+      "BasePath": "_content/SecuNik.API",
+      "RelativePath": "index#[.{fingerprint}]?.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "ourv6xpbwe",
+      "Integrity": "wNicep6UEHACArVvKeQA+S4Xeb/+AHycoCYlPY1nUVI=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\index.html"
+    },
+    {
+      "Identity": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\js\\app.js",
+      "SourceId": "SecuNik.API",
+      "SourceType": "Discovered",
+      "ContentRoot": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\",
+      "BasePath": "_content/SecuNik.API",
+      "RelativePath": "js/app#[.{fingerprint}]?.js",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "r9fqlaj07i",
+      "Integrity": "z5wE2iKF5fQFlilkMNOYgkdzeng2Gz7uHh4r2m3v8lQ=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\js\\app.js"
+    }
+  ],
+  "Endpoints": [
+    {
+      "Route": "css/styles.8b5ulads94.css",
+      "AssetFile": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\css\\styles.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "32019"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"nByKPOvQtymEio2YICYPS9CDev4LQFzHepXeArFopUA=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 06:39:31 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "8b5ulads94"
+        },
+        {
+          "Name": "label",
+          "Value": "css/styles.css"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-nByKPOvQtymEio2YICYPS9CDev4LQFzHepXeArFopUA="
+        }
+      ]
+    },
+    {
+      "Route": "css/styles.css",
+      "AssetFile": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\css\\styles.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "32019"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"nByKPOvQtymEio2YICYPS9CDev4LQFzHepXeArFopUA=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 06:39:31 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-nByKPOvQtymEio2YICYPS9CDev4LQFzHepXeArFopUA="
+        }
+      ]
+    },
+    {
+      "Route": "index.html",
+      "AssetFile": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\index.html",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "7391"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/html"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"wNicep6UEHACArVvKeQA+S4Xeb/+AHycoCYlPY1nUVI=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 05:48:02 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-wNicep6UEHACArVvKeQA+S4Xeb/+AHycoCYlPY1nUVI="
+        }
+      ]
+    },
+    {
+      "Route": "index.ourv6xpbwe.html",
+      "AssetFile": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\index.html",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "7391"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/html"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"wNicep6UEHACArVvKeQA+S4Xeb/+AHycoCYlPY1nUVI=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 05:48:02 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "ourv6xpbwe"
+        },
+        {
+          "Name": "label",
+          "Value": "index.html"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-wNicep6UEHACArVvKeQA+S4Xeb/+AHycoCYlPY1nUVI="
+        }
+      ]
+    },
+    {
+      "Route": "js/app.js",
+      "AssetFile": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\js\\app.js",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "44776"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/javascript"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"z5wE2iKF5fQFlilkMNOYgkdzeng2Gz7uHh4r2m3v8lQ=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 06:34:57 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-z5wE2iKF5fQFlilkMNOYgkdzeng2Gz7uHh4r2m3v8lQ="
+        }
+      ]
+    },
+    {
+      "Route": "js/app.r9fqlaj07i.js",
+      "AssetFile": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\wwwroot\\js\\app.js",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "44776"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/javascript"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"z5wE2iKF5fQFlilkMNOYgkdzeng2Gz7uHh4r2m3v8lQ=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 06:34:57 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "r9fqlaj07i"
+        },
+        {
+          "Name": "label",
+          "Value": "js/app.js"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-z5wE2iKF5fQFlilkMNOYgkdzeng2Gz7uHh4r2m3v8lQ="
+        }
+      ]
+    }
+  ]
+}
