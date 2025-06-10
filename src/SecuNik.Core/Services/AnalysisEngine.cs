@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SecuNik.Core.Interfaces;
 using SecuNik.Core.Models;
+using System.Linq;
 
 namespace SecuNik.Core.Services
 {
@@ -17,16 +17,22 @@ namespace SecuNik.Core.Services
         private readonly UniversalParserService _parserService;
         private readonly IAIAnalysisService _aiService;
         private readonly ILogger<AnalysisEngine> _logger;
+        private readonly ILogNormalizer _normalizer;
+        private readonly CorrelationEngine _correlationEngine;
 
 
         // Now properly inject the AI service
         public AnalysisEngine(
             UniversalParserService parserService,
             IAIAnalysisService aiService,
+            ILogNormalizer normalizer,
+            CorrelationEngine correlationEngine,
             ILogger<AnalysisEngine> logger)
         {
             _parserService = parserService;
             _aiService = aiService;
+            _normalizer = normalizer;
+            _correlationEngine = correlationEngine;
             _logger = logger;
         }
 
@@ -92,15 +98,48 @@ namespace SecuNik.Core.Services
 
         public async Task<AnalysisResult> AnalyzeFilesAsync(IEnumerable<AnalysisRequest> files)
         {
-            var results = new List<AnalysisResult>();
+            var technicalResults = new List<TechnicalFindings>();
+            var names = new List<string>();
 
             foreach (var req in files)
             {
-                var res = await AnalyzeFileAsync(req);
-                results.Add(res);
+                names.Add(req.OriginalFileName ?? Path.GetFileName(req.FilePath));
+                var findings = await _parserService.ParseFileAsync(req.FilePath);
+                technicalResults.Add(findings);
             }
 
-            return MergeResults(results);
+            var merged = MergeTechnicalFindings(technicalResults);
+            merged.SecurityEvents = _normalizer.Normalize(merged.SecurityEvents).ToList();
+
+            var result = new AnalysisResult
+            {
+                FileName = string.Join(", ", names),
+                FileType = string.Join(", ", technicalResults.Select(t => t.FileFormat).Distinct()),
+                AnalysisTimestamp = DateTime.UtcNow,
+                Technical = merged,
+                Timeline = BuildTimelineStatic(merged)
+            };
+
+            result.Correlation = _correlationEngine.Correlate(result.Technical.SecurityEvents);
+
+            var firstOptions = files.First().Options;
+            if (firstOptions.EnableAIAnalysis)
+            {
+                if (await _aiService.IsAvailableAsync())
+                    result.AI = await _aiService.GenerateInsightsAsync(result.Technical);
+                else
+                    result.AI = CreateBasicInsights(result.Technical);
+            }
+
+            if (firstOptions.GenerateExecutiveReport)
+            {
+                if (await _aiService.IsAvailableAsync())
+                    result.Executive = await _aiService.GenerateExecutiveReportAsync(result.Technical, result.AI);
+                else
+                    result.Executive = CreateBasicExecutiveReport(result.AI);
+            }
+
+            return result;
         }
 
 
@@ -305,6 +344,28 @@ namespace SecuNik.Core.Services
                 FirstActivity = events.Any() ? events.Min(e => e.Timestamp) : DateTime.MinValue,
                 LastActivity = events.Any() ? events.Max(e => e.Timestamp) : DateTime.MinValue
             };
+        }
+
+        private static TechnicalFindings MergeTechnicalFindings(IEnumerable<TechnicalFindings> findings)
+        {
+            var list = findings.ToList();
+            var merged = new TechnicalFindings();
+
+            foreach (var f in list)
+            {
+                foreach (var kvp in f.RawData)
+                    merged.RawData[kvp.Key] = kvp.Value;
+                merged.DetectedIOCs.AddRange(f.DetectedIOCs);
+                merged.SecurityEvents.AddRange(f.SecurityEvents);
+                merged.TotalLines += f.TotalLines;
+
+                foreach (var kvp in f.IOCsByCategory)
+                    merged.IOCsByCategory[kvp.Key] = merged.IOCsByCategory.GetValueOrDefault(kvp.Key) + kvp.Value;
+                foreach (var kvp in f.EventsByType)
+                    merged.EventsByType[kvp.Key] = merged.EventsByType.GetValueOrDefault(kvp.Key) + kvp.Value;
+            }
+
+            return merged;
         }
     }
 }

@@ -35,3 +35,9 @@ export OpenAI__ApiKey=your-openai-api-key
 
 Other options such as model, token limits and temperature can also be configured in `appsettings.json`.
 
+## Log Normalization and Correlation
+
+When analyzing multiple files, raw events from different parsers are first normalized using the `ILogNormalizer` service. The bundled `SimpleLogNormalizer` standardizes timestamps, source labels and common field names.
+
+Normalized events are then passed to the `CorrelationEngine` which groups activities by attributes such as IP address and minute-level time buckets. These correlation insights are included in the analysis result and used for AI reporting.
+

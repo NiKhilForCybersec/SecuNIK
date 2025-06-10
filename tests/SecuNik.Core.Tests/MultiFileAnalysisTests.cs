@@ -59,7 +59,7 @@ public class MultiFileAnalysisTests
             new SyslogParser(new NullLogger<SyslogParser>())
         };
         var parserService = new UniversalParserService(parsers, new NullLogger<UniversalParserService>());
-        var engine = new AnalysisEngine(parserService, new FakeAI(), new NullLogger<AnalysisEngine>());
+        var engine = new AnalysisEngine(parserService, new FakeAI(), new SimpleLogNormalizer(), new CorrelationEngine(), new NullLogger<AnalysisEngine>());
 
         var requests = new[]
         {
