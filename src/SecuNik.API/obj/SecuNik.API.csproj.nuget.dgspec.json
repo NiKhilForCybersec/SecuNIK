@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "N:\\Project\\SecuNIK\\src\\SecuNik.API\\SecuNik.API.csproj": {}
+    "N:\\Project\\SecuNIK\\src\\SecuNIK.API\\SecuNik.API.csproj": {}
   },
   "projects": {
     "N:\\Project\\SecuNIK\\src\\SecuNik.AI\\SecuNik.AI.csproj": {
@@ -88,14 +88,14 @@
         }
       }
     },
-    "N:\\Project\\SecuNIK\\src\\SecuNik.API\\SecuNik.API.csproj": {
+    "N:\\Project\\SecuNIK\\src\\SecuNIK.API\\SecuNik.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\SecuNik.API.csproj",
+        "projectUniqueName": "N:\\Project\\SecuNIK\\src\\SecuNIK.API\\SecuNik.API.csproj",
         "projectName": "SecuNik.API",
-        "projectPath": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\SecuNik.API.csproj",
+        "projectPath": "N:\\Project\\SecuNIK\\src\\SecuNIK.API\\SecuNik.API.csproj",
         "packagesPath": "C:\\Users\\nikhi\\.nuget\\packages\\",
-        "outputPath": "N:\\Project\\SecuNIK\\src\\SecuNik.API\\obj\\",
+        "outputPath": "N:\\Project\\SecuNIK\\src\\SecuNIK.API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
