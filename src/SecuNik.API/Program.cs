@@ -39,6 +39,8 @@ namespace SecuNik.API
             builder.Services.AddScoped<IUniversalParser, MailServerLogParser>();
             builder.Services.AddScoped<IUniversalParser, DnsLogParser>();
             builder.Services.AddScoped<UniversalParserService>();
+            builder.Services.AddScoped<ILogNormalizer, SimpleLogNormalizer>();
+            builder.Services.AddScoped<CorrelationEngine>();
             builder.Services.AddScoped<IAnalysisEngine, AnalysisEngine>();
 
             // Add AI services
