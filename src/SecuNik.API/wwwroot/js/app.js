@@ -1,4 +1,4 @@
-// SecuNik - Advanced Cybersecurity Analytics Dashboard
+// SecuNik - Functional Cybersecurity Dashboard
 class SecuNikDashboard {
     constructor() {
         this.currentAnalysis = null;
@@ -13,7 +13,7 @@ class SecuNikDashboard {
     initializeEventListeners() {
         // File upload handlers
         const fileInput = document.getElementById('fileInput');
-        const uploadZone = document.getElementById('initialUploadZone');
+        const uploadZone = document.getElementById('uploadZone');
         const chooseFilesBtn = document.getElementById('chooseFilesBtn');
 
         if (chooseFilesBtn) {
@@ -69,67 +69,62 @@ class SecuNikDashboard {
     }
 
     loadInitialState() {
-        this.updateStatusCards({
-            filesAnalyzed: 0,
-            threatsDetected: 0,
-            iocsFound: 0,
-            riskScore: 0
-        });
-
         this.showInitialUploadState();
     }
 
     showInitialUploadState() {
-        const initialUpload = document.getElementById('initialUploadZone');
-        const analyticsGrid = document.getElementById('analyticsGrid');
-        const resultsGrid = document.getElementById('resultsGrid');
-        const timelinePanel = document.getElementById('timelinePanel');
-        const executivePanel = document.getElementById('executivePanel');
+        const analysisStatus = document.getElementById('analysisStatus');
+        const aiInsights = document.getElementById('aiInsights');
+        const analysisResults = document.getElementById('analysisResults');
+        const uploadAnotherBtn = document.getElementById('uploadAnotherBtn');
 
-        if (initialUpload) initialUpload.style.display = 'block';
-        if (analyticsGrid) analyticsGrid.style.display = 'none';
-        if (resultsGrid) resultsGrid.style.display = 'none';
-        if (timelinePanel) timelinePanel.style.display = 'none';
-        if (executivePanel) executivePanel.style.display = 'none';
+        if (analysisStatus) analysisStatus.style.display = 'none';
+        if (aiInsights) aiInsights.style.display = 'none';
+        if (analysisResults) analysisResults.style.display = 'none';
+        if (uploadAnotherBtn) uploadAnotherBtn.style.display = 'none';
     }
 
     showAnalysisResults() {
-        const initialUpload = document.getElementById('initialUploadZone');
-        const analyticsGrid = document.getElementById('analyticsGrid');
-        const resultsGrid = document.getElementById('resultsGrid');
-        const timelinePanel = document.getElementById('timelinePanel');
-        const executivePanel = document.getElementById('executivePanel');
+        const analysisStatus = document.getElementById('analysisStatus');
+        const aiInsights = document.getElementById('aiInsights');
+        const analysisResults = document.getElementById('analysisResults');
         const uploadAnotherBtn = document.getElementById('uploadAnotherBtn');
+        const queueItems = document.querySelectorAll('.queue-item');
 
-        if (initialUpload) initialUpload.style.display = 'none';
-        if (analyticsGrid) analyticsGrid.style.display = 'grid';
-        if (resultsGrid) resultsGrid.style.display = 'grid';
-        if (timelinePanel) timelinePanel.style.display = 'block';
-        if (executivePanel) executivePanel.style.display = 'block';
+        if (analysisStatus) analysisStatus.style.display = 'flex';
+        if (aiInsights) aiInsights.style.display = 'grid';
+        if (analysisResults) analysisResults.style.display = 'grid';
         if (uploadAnotherBtn) uploadAnotherBtn.style.display = 'flex';
+        
+        // Show queue items
+        queueItems.forEach(item => {
+            item.style.display = 'flex';
+        });
     }
 
     showUploadZone() {
-        const compactUpload = document.getElementById('uploadZone');
-        if (compactUpload) {
-            compactUpload.style.display = 'block';
-            compactUpload.scrollIntoView({ behavior: 'smooth' });
+        const uploadZone = document.getElementById('uploadZone');
+        if (uploadZone) {
+            uploadZone.scrollIntoView({ behavior: 'smooth' });
         }
     }
 
     handleDragOver(e) {
         e.preventDefault();
-        e.currentTarget.classList.add('dragover');
+        e.currentTarget.style.borderColor = 'var(--accent-primary)';
+        e.currentTarget.style.background = 'rgba(0, 212, 170, 0.05)';
     }
 
     handleDragLeave(e) {
         e.preventDefault();
-        e.currentTarget.classList.remove('dragover');
+        e.currentTarget.style.borderColor = 'var(--border-accent)';
+        e.currentTarget.style.background = 'var(--bg-card)';
     }
 
     handleDrop(e) {
         e.preventDefault();
-        e.currentTarget.classList.remove('dragover');
+        e.currentTarget.style.borderColor = 'var(--border-accent)';
+        e.currentTarget.style.background = 'var(--bg-card)';
         
         const files = Array.from(e.dataTransfer.files);
         this.processFiles(files);
@@ -153,6 +148,7 @@ class SecuNikDashboard {
             
             this.hideProgressModal();
             this.showAnalysisResults();
+            this.updateDashboardWithResults();
             this.showNotification('Analysis completed successfully!', 'success');
         } catch (error) {
             this.hideProgressModal();
@@ -179,144 +175,47 @@ class SecuNikDashboard {
         this.currentAnalysis = result.result;
         this.analysisHistory.push(result.result);
         
-        this.updateDashboard(result.result);
         return result;
     }
 
-    updateDashboard(analysisResult) {
-        // Update status cards
-        const statusData = {
-            filesAnalyzed: this.analysisHistory.length,
-            threatsDetected: analysisResult.Technical?.SecurityEvents?.length || 0,
-            iocsFound: analysisResult.Technical?.DetectedIOCs?.length || 0,
-            riskScore: analysisResult.AI?.SeverityScore || 0
-        };
-        
-        this.updateStatusCards(statusData);
-        this.updateAnalyticsGrid(analysisResult);
-        this.updateThreatsPanel(analysisResult);
-        this.updateIOCsPanel(analysisResult);
-        this.updateTimelinePanel(analysisResult);
-        this.updateExecutivePanel(analysisResult);
-        this.updateOverviewTab(analysisResult);
+    updateDashboardWithResults() {
+        if (!this.currentAnalysis) return;
+
+        // Update file ID
+        const fileId = document.getElementById('fileId');
+        if (fileId) {
+            fileId.textContent = this.generateFileId();
+        }
+
+        // Update threats
+        this.updateThreatsPanel();
+
+        // Update executive summary
+        this.updateExecutiveSummary();
+
+        // Update AI insights with real data
+        this.updateAIInsights();
     }
 
-    updateStatusCards(data) {
-        const elements = {
-            filesAnalyzed: document.getElementById('filesAnalyzed'),
-            threatsDetected: document.getElementById('threatsDetected'),
-            iocsFound: document.getElementById('iocsFound'),
-            riskScore: document.getElementById('riskScore')
-        };
-
-        Object.entries(data).forEach(([key, value]) => {
-            if (elements[key]) {
-                this.animateValue(elements[key], parseInt(elements[key].textContent) || 0, value);
-            }
-        });
-    }
-
-    updateAnalyticsGrid(analysisResult) {
-        const grid = document.getElementById('analyticsGrid');
-        if (!grid) return;
-
-        const metrics = this.generateMetrics(analysisResult);
-        grid.innerHTML = metrics.map(metric => this.createMetricCard(metric)).join('');
-    }
-
-    generateMetrics(analysisResult) {
-        const technical = analysisResult.Technical || {};
-        const ai = analysisResult.AI || {};
-        
-        return [
-            {
-                icon: '🔍',
-                title: 'Security Events',
-                value: technical.SecurityEvents?.length || 0,
-                description: 'Total security events detected in log analysis',
-                type: technical.SecurityEvents?.length > 10 ? 'warning' : 'info',
-                trend: { direction: 'up', value: '12%' }
-            },
-            {
-                icon: '🎯',
-                title: 'IOCs Detected',
-                value: technical.DetectedIOCs?.length || 0,
-                description: 'Indicators of compromise found across all sources',
-                type: technical.DetectedIOCs?.length > 5 ? 'critical' : 'success',
-                trend: { direction: 'up', value: '8%' }
-            },
-            {
-                icon: '⚡',
-                title: 'Threat Severity',
-                value: ai.SeverityScore || 0,
-                description: 'AI-calculated threat severity score (0-10)',
-                type: ai.SeverityScore > 7 ? 'critical' : ai.SeverityScore > 4 ? 'warning' : 'success',
-                trend: { direction: ai.SeverityScore > 5 ? 'up' : 'down', value: '5%' }
-            },
-            {
-                icon: '📊',
-                title: 'File Size',
-                value: this.formatFileSize(technical.Metadata?.Size || 0),
-                description: 'Total size of analyzed log files',
-                type: 'info',
-                trend: { direction: 'neutral', value: '0%' }
-            },
-            {
-                icon: '🕒',
-                title: 'Processing Time',
-                value: technical.RawData?.ProcessingTimeMs ? `${Math.round(technical.RawData.ProcessingTimeMs)}ms` : 'N/A',
-                description: 'Time taken to complete the analysis',
-                type: 'info',
-                trend: { direction: 'down', value: '15%' }
-            },
-            {
-                icon: '🤖',
-                title: 'AI Confidence',
-                value: ai.SeverityScore ? `${Math.round((ai.SeverityScore / 10) * 100)}%` : '0%',
-                description: 'AI analysis confidence level',
-                type: ai.SeverityScore > 7 ? 'success' : 'warning',
-                trend: { direction: 'up', value: '3%' }
-            }
-        ];
-    }
-
-    createMetricCard(metric) {
-        const trendClass = metric.trend.direction === 'up' ? 'trend-up' : 
-                          metric.trend.direction === 'down' ? 'trend-down' : 'trend-neutral';
-        const trendIcon = metric.trend.direction === 'up' ? '↗' : 
-                         metric.trend.direction === 'down' ? '↘' : '→';
-
-        return `
-            <div class="metric-card ${metric.type}">
-                <div class="metric-header">
-                    <span class="metric-icon">${metric.icon}</span>
-                    <span class="metric-title">${metric.title}</span>
-                </div>
-                <div class="metric-value">${metric.value}</div>
-                <div class="metric-description">${metric.description}</div>
-                <div class="metric-trend ${trendClass}">
-                    <span>${trendIcon}</span>
-                    <span>${metric.trend.value}</span>
-                </div>
-            </div>
-        `;
-    }
-
-    updateThreatsPanel(analysisResult) {
-        const threatsList = document.getElementById('threatsList');
+    updateThreatsPanel() {
+        const threatsContent = document.getElementById('threatsContent');
         const threatsBadge = document.getElementById('threatsBadge');
         
-        if (!threatsList || !threatsBadge) return;
+        if (!threatsContent || !this.currentAnalysis) return;
 
-        const threats = this.extractThreats(analysisResult);
-        threatsBadge.textContent = `${threats.length} DETECTED`;
+        const threats = this.extractThreats();
         
+        if (threatsBadge) {
+            threatsBadge.textContent = threats.length > 0 ? 'DETECTED' : 'NONE';
+            threatsBadge.className = threats.length > 0 ? 'panel-badge' : 'panel-badge specified';
+        }
+
         if (threats.length === 0) {
-            threatsList.innerHTML = '<div class="no-data">No threats detected in current analysis</div>';
+            threatsContent.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No threats detected in current analysis</div>';
             return;
         }
 
-        threatsList.innerHTML = threats.slice(0, 5).map(threat => `
+        threatsContent.innerHTML = threats.slice(0, 5).map(threat => `
             <div class="threat-item">
                 <div class="threat-icon">⚠️</div>
                 <div class="threat-content">
@@ -324,125 +223,81 @@ class SecuNikDashboard {
                     <div class="threat-description">${threat.description}</div>
                     <div class="threat-meta">
                         <span class="threat-timestamp">${threat.timestamp}</span>
-                        <span class="threat-severity severity-${threat.severity.toLowerCase()}">${threat.severity}</span>
+                        <span class="threat-status status-suggested">DETECTED</span>
                     </div>
                 </div>
             </div>
         `).join('');
     }
 
-    updateIOCsPanel(analysisResult) {
-        const iocsList = document.getElementById('iocsList');
-        const iocsBadge = document.getElementById('iocsBadge');
-        
-        if (!iocsList || !iocsBadge) return;
+    updateExecutiveSummary() {
+        const summaryText = document.getElementById('executiveSummaryText');
+        if (!summaryText || !this.currentAnalysis) return;
 
-        const iocs = analysisResult.Technical?.DetectedIOCs || [];
-        iocsBadge.textContent = `${iocs.length} FOUND`;
+        const ai = this.currentAnalysis.AI || {};
+        const executive = this.currentAnalysis.Executive || {};
         
-        if (iocs.length === 0) {
-            iocsList.innerHTML = '<div class="no-data">No IOCs detected in current analysis</div>';
-            return;
-        }
-
-        iocsList.innerHTML = iocs.slice(0, 10).map(ioc => {
-            const [type, value] = ioc.includes(':') ? ioc.split(':', 2) : ['Unknown', ioc];
-            return `
-                <div class="ioc-item">
-                    <span class="ioc-value">${value}</span>
-                    <span class="ioc-type">${type}</span>
-                </div>
-            `;
-        }).join('');
+        summaryText.textContent = executive.Summary || ai.ThreatAssessment || 
+            'Analysis completed. Security assessment shows normal activity patterns with no immediate threats detected.';
     }
 
-    updateTimelinePanel(analysisResult) {
-        const timelineEvents = document.getElementById('timelineEvents');
-        const timelineBadge = document.getElementById('timelineBadge');
-        
-        if (!timelineEvents || !timelineBadge) return;
+    updateAIInsights() {
+        const aiInsights = document.getElementById('aiInsights');
+        if (!aiInsights || !this.currentAnalysis) return;
 
-        const events = analysisResult.Timeline?.Events || [];
-        timelineBadge.textContent = `${events.length} EVENTS`;
+        const technical = this.currentAnalysis.Technical || {};
+        const ai = this.currentAnalysis.AI || {};
         
-        if (events.length === 0) {
-            timelineEvents.innerHTML = '<div class="no-data">No timeline events available</div>';
-            return;
-        }
-
-        timelineEvents.innerHTML = events.slice(0, 10).map(event => `
-            <div class="timeline-item">
-                <div class="timeline-time">${this.formatTimestamp(event.Timestamp)}</div>
-                <div class="timeline-event">${event.Event}</div>
-            </div>
-        `).join('');
-    }
-
-    updateExecutivePanel(analysisResult) {
-        const riskLevel = document.getElementById('riskLevel');
-        const executiveSummary = document.getElementById('executiveSummary');
-        
-        if (!riskLevel || !executiveSummary) return;
-
-        const ai = analysisResult.AI || {};
-        const executive = analysisResult.Executive || {};
-        
-        // Update risk level
-        const severity = ai.SeverityScore || 0;
-        const riskText = severity > 7 ? 'HIGH' : severity > 4 ? 'ELEVATED' : 'LOW';
-        const riskClass = severity > 7 ? 'risk-high' : severity > 4 ? 'risk-elevated' : 'risk-low';
-        
-        riskLevel.textContent = riskText;
-        riskLevel.className = `risk-value ${riskClass}`;
-        
-        // Update summary
-        executiveSummary.textContent = executive.Summary || ai.ThreatAssessment || 
-            'Analysis completed. Review detailed findings in the threats and IOCs sections.';
-    }
-
-    updateOverviewTab(analysisResult) {
-        const overviewInsights = document.getElementById('overviewInsights');
-        if (!overviewInsights) return;
-
         const insights = [
             {
                 icon: '📊',
-                title: 'Analysis Complete',
-                description: `Processed ${analysisResult.FileName} successfully with comprehensive threat detection`
+                title: 'Bulk Log Correlation',
+                description: `Analyzed ${technical.SecurityEvents?.length || 0} security events to correlate breach intelligence and patterns`,
+                type: 'info'
             },
             {
-                icon: '🤖',
-                title: 'AI-Enhanced Analysis',
-                description: analysisResult.AI?.ThreatAssessment || 'AI analysis completed with threat assessment'
+                icon: ai.SeverityScore > 7 ? '🚨' : ai.SeverityScore > 4 ? '⚠️' : '✅',
+                title: ai.SeverityScore > 7 ? 'Critical Threats Detected' : ai.SeverityScore > 4 ? 'Moderate Risk Pattern' : 'Security Status Normal',
+                description: ai.ThreatAssessment || 'AI analysis completed with threat assessment',
+                type: ai.SeverityScore > 7 ? 'danger' : ai.SeverityScore > 4 ? 'warning' : 'success'
             },
             {
                 icon: '📋',
-                title: 'Executive Report Ready',
-                description: 'Comprehensive executive summary generated for stakeholder review'
+                title: 'Executive Summary Available',
+                description: 'An AI-generated organizational impact summary is ready for stakeholder review',
+                type: 'success'
             }
         ];
 
-        overviewInsights.innerHTML = insights.map(insight => `
-            <div class="insight-card">
+        aiInsights.innerHTML = insights.map(insight => `
+            <div class="insight-card ${insight.type}">
                 <div class="insight-icon">${insight.icon}</div>
-                <div class="insight-content">
-                    <h3>${insight.title}</h3>
-                    <p>${insight.description}</p>
-                </div>
+                <div class="insight-title">${insight.title}</div>
+                <div class="insight-description">${insight.description}</div>
             </div>
         `).join('');
     }
 
-    extractThreats(analysisResult) {
-        const securityEvents = analysisResult.Technical?.SecurityEvents || [];
-        return securityEvents
+    extractThreats() {
+        if (!this.currentAnalysis?.Technical?.SecurityEvents) return [];
+
+        return this.currentAnalysis.Technical.SecurityEvents
             .filter(event => event.Severity && ['High', 'Critical', 'Medium'].includes(event.Severity))
             .map(event => ({
                 title: event.EventType || 'Security Event',
-                description: event.Description || 'Security event detected',
+                description: this.truncateText(event.Description || 'Security event detected', 80),
                 timestamp: this.formatTimestamp(event.Timestamp),
                 severity: event.Severity || 'Medium'
             }));
+    }
+
+    generateFileId() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 10; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
     }
 
     showProgressModal() {
@@ -555,34 +410,15 @@ class SecuNikDashboard {
         return icons[type] || icons.info;
     }
 
-    animateValue(element, start, end, duration = 1000) {
-        const startTime = Date.now();
-        const animate = () => {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const current = Math.round(start + (end - start) * progress);
-            
-            element.textContent = current;
-            
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            }
-        };
-        animate();
-    }
-
     formatTimestamp(timestamp) {
         if (!timestamp) return 'Unknown';
         const date = new Date(timestamp);
-        return date.toLocaleString();
+        return date.toLocaleDateString() + ' | ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
 
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    truncateText(text, maxLength) {
+        if (!text) return 'No description available';
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
 
     toggleExportMenu() {
