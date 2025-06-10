@@ -25,11 +25,12 @@
         <div class="nav-right">
             <button class="nav-btn" id="uploadAnotherBtn" style="display: none;">
                 <span class="btn-icon">+</span>
-                Upload Another
+                <span class="btn-text">Upload Another</span>
             </button>
             <div class="dropdown">
                 <button class="nav-btn dropdown-toggle" id="exportBtn">
-                    Export
+                    <span class="btn-icon">📤</span>
+                    <span class="btn-text">Export</span>
                     <span class="dropdown-arrow">▼</span>
                 </button>
                 <div class="dropdown-menu" id="exportMenu">
@@ -38,7 +39,10 @@
                     <a href="#" onclick="exportResults('pdf')">Export as PDF</a>
                 </div>
             </div>
-            <button class="nav-btn" id="shareBtn">Share</button>
+            <button class="nav-btn" id="shareBtn">
+                <span class="btn-icon">🔗</span>
+                <span class="btn-text">Share</span>
+            </button>
         </div>
     </header>
 
@@ -64,10 +68,6 @@
                         <span class="nav-icon">🎯</span>
                         <span class="nav-text">IOCs</span>
                     </div>
-                    <div class="nav-item" data-tab="iqcs">
-                        <span class="nav-icon">🔍</span>
-                        <span class="nav-text">IQCs</span>
-                    </div>
                     <div class="nav-item" data-tab="timeline">
                         <span class="nav-icon">⏰</span>
                         <span class="nav-text">Timeline</span>
@@ -75,10 +75,6 @@
                     <div class="nav-item" data-tab="executive">
                         <span class="nav-icon">👔</span>
                         <span class="nav-text">Executive</span>
-                    </div>
-                    <div class="nav-item" data-tab="cases">
-                        <span class="nav-icon">📁</span>
-                        <span class="nav-text">Cases</span>
                     </div>
                 </div>
             </div>
@@ -97,47 +93,115 @@
 
         <!-- Main Content Area -->
         <main class="content-area">
-            <!-- Tab Navigation -->
-            <div class="tab-navigation" id="tabNavigation" style="display: none;">
-                <div class="tab active" data-tab="overview">Overview</div>
-                <div class="tab" data-tab="threats">Threats</div>
-                <div class="tab" data-tab="iocs">IOCs</div>
-                <div class="tab" data-tab="iqcs">IQCs</div>
-                <div class="tab" data-tab="timeline">Timeline</div>
-                <div class="tab" data-tab="cases">Cases</div>
-            </div>
-
             <!-- Dashboard Content -->
             <div class="tab-content active" id="dashboard">
-                <!-- Upload Zone -->
-                <div class="upload-container">
-                    <div class="upload-zone" id="uploadZone">
-                        <div class="upload-icon">📤</div>
-                        <div class="upload-text">Drag and drop files</div>
-                        <div class="upload-subtext">OR</div>
-                        <button class="upload-btn" id="chooseFilesBtn">Choose Files</button>
-                        <input type="file" id="fileInput" multiple
-                            accept=".csv,.json,.log,.txt,.evtx,.evt,.wtmp,.utmp,.btmp,.lastlog,.pcap,.pcapng,.syslog,.fwlog,.dblog,.maillog,.dnslog"
-                            style="display: none;">
-                        <div class="supported-formats">
-                            <div class="format-text">Supported formats</div>
-                            <div class="format-list">EVT-CCY, WEMP™, P2RCIP</div>
+                <div class="dashboard-container">
+                    <!-- Dashboard Header -->
+                    <div class="dashboard-header">
+                        <div>
+                            <h1 class="dashboard-title">Cybersecurity Analytics Dashboard</h1>
+                            <p class="dashboard-subtitle">Real-time threat analysis and forensic insights</p>
                         </div>
                     </div>
 
-                    <!-- Analysis Queue -->
-                    <div class="analysis-queue" id="analysisQueue" style="display: none;">
-                        <div class="queue-header">
-                            <h3>ANALYSIS QUEUE</h3>
+                    <!-- Upload Zone - Compact -->
+                    <div class="upload-zone-compact" id="uploadZone" style="display: none;">
+                        <div class="upload-icon">📤</div>
+                        <div class="upload-text">Drop files to analyze</div>
+                        <div class="upload-subtext">or click to browse</div>
+                        <input type="file" id="fileInput" multiple
+                            accept=".csv,.json,.log,.txt,.evtx,.evt,.wtmp,.utmp,.btmp,.lastlog,.pcap,.pcapng,.syslog,.fwlog,.dblog,.maillog,.dnslog"
+                            style="display: none;">
+                    </div>
+
+                    <!-- Status Cards -->
+                    <div class="status-cards" id="statusCards">
+                        <div class="status-card">
+                            <div class="status-card-icon">🔍</div>
+                            <div class="status-card-value" id="filesAnalyzed">0</div>
+                            <div class="status-card-label">Files Analyzed</div>
                         </div>
-                        <div class="queue-items" id="queueItems">
-                            <!-- Queue items will be populated here -->
+                        <div class="status-card">
+                            <div class="status-card-icon">🚨</div>
+                            <div class="status-card-value" id="threatsDetected">0</div>
+                            <div class="status-card-label">Threats Detected</div>
                         </div>
-                        <div class="queue-footer">
-                            <div class="system-status-inline">
-                                <div class="status-indicator online"></div>
-                                <span>Online</span>
+                        <div class="status-card">
+                            <div class="status-card-icon">🎯</div>
+                            <div class="status-card-value" id="iocsFound">0</div>
+                            <div class="status-card-label">IOCs Found</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-icon">⚡</div>
+                            <div class="status-card-value" id="riskScore">0</div>
+                            <div class="status-card-label">Risk Score</div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Grid -->
+                    <div class="analytics-grid" id="analyticsGrid">
+                        <!-- Metric cards will be populated here -->
+                    </div>
+
+                    <!-- Results Grid -->
+                    <div class="results-grid" id="resultsGrid" style="display: none;">
+                        <!-- Threats Panel -->
+                        <div class="threats-panel">
+                            <div class="panel-header">
+                                <h3 class="panel-title">Active Threats</h3>
+                                <span class="panel-badge" id="threatsBadge">0 DETECTED</span>
                             </div>
+                            <div id="threatsList">
+                                <!-- Threat items will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- IOCs Panel -->
+                        <div class="iocs-panel">
+                            <div class="panel-header">
+                                <h3 class="panel-title">Indicators of Compromise</h3>
+                                <span class="panel-badge" id="iocsBadge">0 FOUND</span>
+                            </div>
+                            <div id="iocsList">
+                                <!-- IOC items will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Panel -->
+                    <div class="timeline-panel" id="timelinePanel" style="display: none;">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Security Timeline</h3>
+                            <span class="panel-badge" id="timelineBadge">0 EVENTS</span>
+                        </div>
+                        <div id="timelineEvents">
+                            <!-- Timeline items will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Executive Summary Panel -->
+                    <div class="executive-panel" id="executivePanel" style="display: none;">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Executive Summary</h3>
+                        </div>
+                        <div class="risk-indicator">
+                            <span class="risk-label">Overall Risk Level:</span>
+                            <span class="risk-value risk-low" id="riskLevel">LOW</span>
+                        </div>
+                        <div class="executive-summary-text" id="executiveSummary">
+                            No analysis data available. Upload log files to generate executive insights.
+                        </div>
+                    </div>
+
+                    <!-- Initial Upload Zone -->
+                    <div class="upload-zone-compact" id="initialUploadZone">
+                        <div class="upload-icon">📤</div>
+                        <div class="upload-text">Upload Log Files to Begin Analysis</div>
+                        <div class="upload-subtext">Drag and drop files here or click to browse</div>
+                        <button class="upload-btn" id="chooseFilesBtn">Choose Files</button>
+                        <div class="supported-formats">
+                            <div class="format-text">Supported formats</div>
+                            <div class="format-list">EVTX, CSV, LOG, PCAP, SYSLOG, JSON</div>
                         </div>
                     </div>
                 </div>
@@ -151,281 +215,56 @@
                         <span class="status-text">Analysis complete</span>
                     </div>
                     <div class="file-info">
-                        <span class="file-id" id="fileId">AFD10000DR</span>
+                        <span class="file-id" id="fileId">Ready for Analysis</span>
                     </div>
                 </div>
 
                 <div class="insights-section">
-                    <h2 class="insights-title">AI-enhanced insights are ready.</h2>
-                    <div class="insights-subtitle">AI-powered insights</div>
+                    <h2 class="insights-title">Analysis Results</h2>
+                    <div class="insights-subtitle">Detailed forensic findings</div>
 
-                    <div class="insights-grid">
-                        <div class="insight-card">
-                            <div class="insight-icon">📊</div>
-                            <div class="insight-content">
-                                <h3>Bulk Log Correlation</h3>
-                                <p>Analyzed multiple log files to consolidate intermittent attack patterns
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="insight-card warning">
-                            <div class="insight-icon">⚠️</div>
-                            <div class="insight-content">
-                                <h3>Evolving Brute Force Pattern</h3>
-                                <p>AI detected a consistent brute force attack pattern in multiple tests</p>
-                            </div>
-                        </div>
-
-                        <div class="insight-card">
-                            <div class="insight-icon">📄</div>
-                            <div class="insight-content">
-                                <h3>Executive Summary Available</h3>
-                                <p>An AI-generated organizational impact commentary is ready for review</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="threats-summary">
-                    <div class="threats-header">
-                        <h3>Threats</h3>
-                        <span class="threat-badge">△ SPECIFIED</span>
-                    </div>
-
-                    <div class="threat-item">
-                        <div class="threat-icon">⚠️</div>
-                        <div class="threat-content">
-                            <h4>Suspicious Login Activity</h4>
-                            <p>Repeated failed login attempt from IP 97 tos 1.32</p>
-                            <div class="threat-meta">
-                                <span class="threat-date">Apr 28, 2024 | 05:32</span>
-                                <div class="threat-actions">
-                                    <span class="action-suggested">SUGGESTED</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="executive-summary">
-                    <h3>Executive Summary</h3>
-                    <div class="summary-content">
-                        <div class="risk-indicator">
-                            <span class="risk-label">Risk level</span>
-                            <span class="risk-value elevated">ELEVATED</span>
-                        </div>
-                        <p class="summary-text">
-                            Deflected attacks with unique organizational impact recommendations prepared for emerging
-                            threat actors.
-                        </p>
+                    <div class="insights-grid" id="overviewInsights">
+                        <!-- Insights will be populated here -->
                     </div>
                 </div>
             </div>
 
-            <!-- Other Tab Contents -->
+            <!-- Threats Tab Content -->
             <div class="tab-content" id="threats">
                 <div class="threats-container">
                     <h2>Threat Analysis</h2>
-                    <div id="threatsList">
-                        <!-- Threats will be populated here -->
+                    <div id="detailedThreatsList">
+                        <!-- Detailed threats will be populated here -->
                     </div>
                 </div>
             </div>
 
+            <!-- IOCs Tab Content -->
             <div class="tab-content" id="iocs">
                 <div class="iocs-container">
                     <h2>Indicators of Compromise</h2>
-                    <div id="iocsList">
-                        <!-- IOCs will be populated here -->
+                    <div id="detailedIocsList">
+                        <!-- Detailed IOCs will be populated here -->
                     </div>
                 </div>
             </div>
 
-            <div class="tab-content" id="iqcs">
-                <div class="iqcs-container">
-                    <h2>Intelligence Quality Criteria</h2>
-                    <div id="iqcsList">
-                        <!-- IQCs will be populated here -->
-                    </div>
-                </div>
-            </div>
-
+            <!-- Timeline Tab Content -->
             <div class="tab-content" id="timeline">
                 <div class="timeline-container">
                     <h2>Forensic Timeline</h2>
-                    <div id="timelineData">
-                        <!-- Timeline will be populated here -->
+                    <div id="detailedTimeline">
+                        <!-- Detailed timeline will be populated here -->
                     </div>
                 </div>
             </div>
 
+            <!-- Executive Tab Content -->
             <div class="tab-content" id="executive">
                 <div class="executive-container">
                     <h2>Executive Summary</h2>
-                    <div id="executiveReport">
-                        <!-- Executive report will be populated here -->
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-content" id="cases">
-                <div class="cases-container">
-                    <h2>Case Management</h2>
-                    <div id="casesList">
-                        <!-- Cases will be populated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Application Features Section -->
-            <div class="features-section" id="featuresSection">
-                <div class="features-container">
-                    <h2>Advanced Cybersecurity Features</h2>
-                    <div class="features-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon">🛡️</div>
-                            <h3>AI Threat Detection</h3>
-                            <p>Advanced OpenAI-powered algorithms analyze uploaded files to detect security threats,
-                                malware indicators, and suspicious activities with executive-level insights.</p>
-                            <ul class="feature-list">
-                                <li>Real EVTX Analysis</li>
-                                <li>PowerShell Integration</li>
-                                <li>IOC Auto-Extraction</li>
-                                <li>Multi-file Correlation</li>
-                            </ul>
-                        </div>
-
-                        <div class="feature-card">
-                            <div class="feature-icon">📊</div>
-                            <h3>Executive Reports</h3>
-                            <p>Generate professional executive summaries with business impact assessments, risk levels,
-                                and actionable recommendations powered by OpenAI.</p>
-                            <ul class="feature-list">
-                                <li>Business Impact Analysis</li>
-                                <li>Risk Scoring</li>
-                                <li>Action Items</li>
-                                <li>Organizational Impact</li>
-                            </ul>
-                        </div>
-
-                        <div class="feature-card">
-                            <div class="feature-icon">🔍</div>
-                            <h3>Advanced IOC Detection</h3>
-                            <p>Automatically extract and categorize Indicators of Compromise including IP addresses,
-                                domains, file hashes, emails, and URLs.</p>
-                            <ul class="feature-list">
-                                <li>6+ IOC Categories</li>
-                                <li>Threat Intel Lookup</li>
-                                <li>Export Functions</li>
-                                <li>Correlation Analysis</li>
-                            </ul>
-                        </div>
-
-                        <div class="feature-card">
-                            <div class="feature-icon">⏱️</div>
-                            <h3>Timeline Reconstruction</h3>
-                            <p>Reconstruct chronological timelines of security events to understand attack progression
-                                and identify critical incident timeframes.</p>
-                            <ul class="feature-list">
-                                <li>Event Correlation</li>
-                                <li>Attack Progression</li>
-                                <li>Critical Moments</li>
-                                <li>AI-Enhanced Analysis</li>
-                            </ul>
-                        </div>
-
-                        <div class="feature-card">
-                            <div class="feature-icon">🌐</div>
-                            <h3>Multi-Format Support</h3>
-                            <p>Support for 15+ file formats including Windows Event Logs (EVTX), network captures
-                                (PCAP), system logs, and structured data.</p>
-                            <ul class="feature-list">
-                                <li>Windows Event Logs (EVTX, EVT)</li>
-                                <li>Network Captures (PCAP, PCAPNG)</li>
-                                <li>System Logs (LOG, SYSLOG)</li>
-                                <li>Unix/Linux Logs (WTMP, UTMP, BTMP)</li>
-                                <li>Security Logs (FWLOG, MAILLOG)</li>
-                                <li>Structured Data (CSV, JSON)</li>
-                            </ul>
-                        </div>
-
-                        <div class="feature-card">
-                            <div class="feature-icon">🤖</div>
-                            <h3>AI-Powered Correlation</h3>
-                            <p>Advanced log normalization and correlation engine that groups events by IP, time buckets,
-                                and behavioral patterns across multiple files.</p>
-                            <ul class="feature-list">
-                                <li>Log Normalization</li>
-                                <li>Multi-file Analysis</li>
-                                <li>Behavioral Patterns</li>
-                                <li>Incremental Analysis</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="supported-formats-detailed">
-                        <h3>Comprehensive File Format Support</h3>
-                        <div class="format-categories">
-                            <div class="format-category">
-                                <h4>🪟 Windows Event Logs</h4>
-                                <div class="format-items">
-                                    <span class="format-item">EVTX</span>
-                                    <span class="format-item">EVT</span>
-                                </div>
-                                <p>Real PowerShell analysis with advanced threat detection</p>
-                            </div>
-
-                            <div class="format-category">
-                                <h4>🌐 Network Analysis</h4>
-                                <div class="format-items">
-                                    <span class="format-item">PCAP</span>
-                                    <span class="format-item">PCAPNG</span>
-                                </div>
-                                <p>Network traffic analysis and protocol inspection</p>
-                            </div>
-
-                            <div class="format-category">
-                                <h4>📝 System Logs</h4>
-                                <div class="format-items">
-                                    <span class="format-item">LOG</span>
-                                    <span class="format-item">SYSLOG</span>
-                                    <span class="format-item">TXT</span>
-                                </div>
-                                <p>Pattern detection and anomaly identification</p>
-                            </div>
-
-                            <div class="format-category">
-                                <h4>📊 Structured Data</h4>
-                                <div class="format-items">
-                                    <span class="format-item">CSV</span>
-                                    <span class="format-item">JSON</span>
-                                </div>
-                                <p>AI correlation and advanced analytics</p>
-                            </div>
-
-                            <div class="format-category">
-                                <h4>🐧 Unix/Linux Logs</h4>
-                                <div class="format-items">
-                                    <span class="format-item">WTMP</span>
-                                    <span class="format-item">UTMP</span>
-                                    <span class="format-item">BTMP</span>
-                                    <span class="format-item">LASTLOG</span>
-                                </div>
-                                <p>User activity tracking and session analysis</p>
-                            </div>
-
-                            <div class="format-category">
-                                <h4>🔒 Security Logs</h4>
-                                <div class="format-items">
-                                    <span class="format-item">FWLOG</span>
-                                    <span class="format-item">MAILLOG</span>
-                                    <span class="format-item">DNSLOG</span>
-                                    <span class="format-item">DBLOG</span>
-                                </div>
-                                <p>Threat correlation and security event analysis</p>
-                            </div>
-                        </div>
+                    <div id="detailedExecutiveReport">
+                        <!-- Detailed executive report will be populated here -->
                     </div>
                 </div>
             </div>
