@@ -163,11 +163,16 @@ class SecuNikApp {
         }
 
         const fileName = file.name.toLowerCase();
-        const allowedExtensions = ['.csv', '.json', '.log', '.txt'];
+        const allowedExtensions = [
+            '.csv', '.json', '.log', '.txt', '.evtx', '.evt',
+            '.wtmp', '.utmp', '.btmp', '.lastlog', '.pcap',
+            '.pcapng', '.syslog', '.fwlog', '.dblog',
+            '.maillog', '.dnslog'
+        ];
         const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
 
         if (!hasValidExtension) {
-            this.showNotification(`Unsupported file type. Please upload CSV, JSON, LOG, or TXT files.`, 'error');
+            this.showNotification(`Unsupported file type.`, 'error');
             return false;
         }
 

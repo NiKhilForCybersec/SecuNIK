@@ -29,6 +29,15 @@ namespace SecuNik.API
 
             // Register SecuNik services
             builder.Services.AddScoped<IUniversalParser, CsvLogParser>();
+            builder.Services.AddScoped<IUniversalParser, WindowsEventLogParser>();
+            builder.Services.AddScoped<IUniversalParser, LinuxSessionLogParser>();
+            builder.Services.AddScoped<IUniversalParser, WebServerLogParser>();
+            builder.Services.AddScoped<IUniversalParser, NetworkCaptureParser>();
+            builder.Services.AddScoped<IUniversalParser, SyslogParser>();
+            builder.Services.AddScoped<IUniversalParser, FirewallLogParser>();
+            builder.Services.AddScoped<IUniversalParser, DatabaseLogParser>();
+            builder.Services.AddScoped<IUniversalParser, MailServerLogParser>();
+            builder.Services.AddScoped<IUniversalParser, DnsLogParser>();
             builder.Services.AddScoped<UniversalParserService>();
             builder.Services.AddScoped<IAnalysisEngine, AnalysisEngine>();
 
