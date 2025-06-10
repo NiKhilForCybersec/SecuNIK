@@ -4,13 +4,48 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>SecuNik Ultimate Cybersecurity Analysis Engine</Description>
+    <Company>SecuNik</Company>
+    <Product>SecuNik Professional</Product>
+    <Version>2.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Core Data Processing -->
     <PackageReference Include="CsvHelper" Version="33.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+    
+    <!-- Microsoft Extensions (Essential) -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    
+    <!-- ULTIMATE FEATURE: PowerShell Integration for Real EVTX Analysis -->
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.0" />
+    <PackageReference Include="System.Management.Automation" Version="7.4.0" />
+    
+    <!-- ULTIMATE FEATURE: Advanced Security Analysis -->
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+    
+    <!-- ULTIMATE FEATURE: Compression for Large Log Files -->
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+    <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
+    
+    <!-- ULTIMATE FEATURE: Memory Management for Large Files -->
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+    
+    <!-- ULTIMATE FEATURE: XML Processing for Event Logs -->
+    <PackageReference Include="System.Xml.XDocument" Version="4.3.0" />
+  </ItemGroup>
+
+  <!-- ULTIMATE FEATURE: Platform-Specific Dependencies -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <!-- Windows-specific features for ultimate event log analysis -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

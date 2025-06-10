@@ -27,6 +27,11 @@ namespace SecuNik.Core.Models
         public List<string> DetectedIOCs { get; set; } = new();
         public List<SecurityEvent> SecurityEvents { get; set; } = new();
         public FileMetadata Metadata { get; set; } = new();
+        public string FileFormat { get; set; } = string.Empty;
+        public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
+        public int TotalLines { get; set; }
+        public Dictionary<string, int> IOCsByCategory { get; set; } = new();
+        public Dictionary<string, int> EventsByType { get; set; } = new();
     }
 
     /// <summary>
@@ -72,6 +77,7 @@ namespace SecuNik.Core.Models
         public string EventType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Severity { get; set; } = string.Empty;
+        public string Source { get; set; } = string.Empty; // Add this line
         public Dictionary<string, string> Attributes { get; set; } = new();
     }
 
