@@ -18,6 +18,7 @@ namespace SecuNik.Core.Services
         private readonly IAIAnalysisService _aiService;
         private readonly ILogger<AnalysisEngine> _logger;
 
+
         // Now properly inject the AI service
         public AnalysisEngine(
             UniversalParserService parserService,
@@ -88,6 +89,20 @@ namespace SecuNik.Core.Services
                 throw;
             }
         }
+
+        public async Task<AnalysisResult> AnalyzeFilesAsync(IEnumerable<AnalysisRequest> files)
+        {
+            var results = new List<AnalysisResult>();
+
+            foreach (var req in files)
+            {
+                var res = await AnalyzeFileAsync(req);
+                results.Add(res);
+            }
+
+            return MergeResults(results);
+        }
+
 
         public async Task<List<string>> GetSupportedFileTypesAsync()
         {
@@ -173,6 +188,94 @@ namespace SecuNik.Core.Services
         }
 
         private Timeline BuildTimeline(TechnicalFindings findings)
+        {
+            var events = findings.SecurityEvents
+                .Select(se => new TimelineEvent
+                {
+                    Timestamp = se.Timestamp,
+                    Event = se.Description,
+                    Source = se.EventType,
+                    Confidence = "High"
+                })
+                .OrderBy(e => e.Timestamp)
+                .ToList();
+
+            if (!events.Any())
+            {
+                events.Add(new TimelineEvent
+                {
+                    Timestamp = findings.Metadata.Created,
+                    Event = "Evidence file created",
+                    Source = "File System",
+                    Confidence = "High"
+                });
+            }
+
+            return new Timeline
+            {
+                Events = events,
+                FirstActivity = events.Any() ? events.Min(e => e.Timestamp) : DateTime.MinValue,
+                LastActivity = events.Any() ? events.Max(e => e.Timestamp) : DateTime.MinValue
+            };
+        }
+
+        public static AnalysisResult MergeResults(IEnumerable<AnalysisResult> results)
+        {
+            var list = results.ToList();
+            if (!list.Any()) return new AnalysisResult();
+
+            var merged = new AnalysisResult
+            {
+                FileName = string.Join(", ", list.Select(r => r.FileName)),
+                FileType = string.Join(", ", list.Select(r => r.FileType).Distinct()),
+                AnalysisTimestamp = DateTime.UtcNow
+            };
+
+            foreach (var result in list)
+            {
+                foreach (var kvp in result.Technical.RawData)
+                    merged.Technical.RawData[kvp.Key] = kvp.Value;
+
+                merged.Technical.DetectedIOCs.AddRange(result.Technical.DetectedIOCs);
+                merged.Technical.SecurityEvents.AddRange(result.Technical.SecurityEvents);
+                merged.Technical.TotalLines += result.Technical.TotalLines;
+
+                foreach (var kvp in result.Technical.IOCsByCategory)
+                    merged.Technical.IOCsByCategory[kvp.Key] = merged.Technical.IOCsByCategory.GetValueOrDefault(kvp.Key) + kvp.Value;
+
+                foreach (var kvp in result.Technical.EventsByType)
+                    merged.Technical.EventsByType[kvp.Key] = merged.Technical.EventsByType.GetValueOrDefault(kvp.Key) + kvp.Value;
+
+                if (result.AI != null)
+                {
+                    if (result.AI.SeverityScore > merged.AI.SeverityScore)
+                    {
+                        merged.AI.AttackVector = result.AI.AttackVector;
+                        merged.AI.ThreatAssessment = result.AI.ThreatAssessment;
+                        merged.AI.SeverityScore = result.AI.SeverityScore;
+                        merged.AI.BusinessImpact = result.AI.BusinessImpact;
+                    }
+                    merged.AI.RecommendedActions.AddRange(result.AI.RecommendedActions);
+                }
+
+                if (!string.IsNullOrWhiteSpace(result.Executive.Summary))
+                {
+                    if (!string.IsNullOrEmpty(merged.Executive.Summary))
+                        merged.Executive.Summary += "\n";
+                    merged.Executive.Summary += result.Executive.Summary;
+                }
+
+                merged.Executive.KeyFindings += string.IsNullOrEmpty(merged.Executive.KeyFindings)
+                    ? result.Executive.KeyFindings
+                    : "\n" + result.Executive.KeyFindings;
+            }
+
+            merged.Timeline = BuildTimelineStatic(merged.Technical);
+
+            return merged;
+        }
+
+        private static Timeline BuildTimelineStatic(TechnicalFindings findings)
         {
             var events = findings.SecurityEvents
                 .Select(se => new TimelineEvent
