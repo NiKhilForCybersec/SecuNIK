@@ -5,6 +5,7 @@
   "scripts": {
     "build": "dotnet build src/SecuNik.sln",
     "dev": "dotnet run --project src/SecuNik.API",
+    "pretest": "node scripts/check-dotnet.js",
     "test": "dotnet test",
     "clean": "dotnet clean src/SecuNik.sln"
   },
