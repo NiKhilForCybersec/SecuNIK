@@ -1,6 +1,14 @@
 @SecuNik.API_HostAddress = http://localhost:5043
 
-GET {{SecuNik.API_HostAddress}}/weatherforecast/
+### Analysis service health
+GET {{SecuNik.API_HostAddress}}/api/analysis/health
 Accept: application/json
 
-###
+### API health
+GET {{SecuNik.API_HostAddress}}/api/health
+Accept: application/json
+
+### Supported file types
+GET {{SecuNik.API_HostAddress}}/api/analysis/supported-types
+Accept: application/json
+
