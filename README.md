@@ -15,13 +15,13 @@ This builds the solution defined in `src/SecuNik.sln`.
 ## Running Tests
 
 The tests require the [.NET SDK 8](https://dotnet.microsoft.com/download).
-After installing the SDK, execute:
+Once the SDK is installed, run:
 
 ```bash
 dotnet test
 ```
 
-You can also run `npm test` which calls the same command and checks that the SDK is available.
+This is the only command necessary to execute the tests. The `npm test` script merely invokes `dotnet test` and is optional.
 
 ## Running the API
 
