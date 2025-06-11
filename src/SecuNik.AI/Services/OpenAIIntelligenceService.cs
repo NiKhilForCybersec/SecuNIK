@@ -22,17 +22,18 @@ namespace SecuNik.AI.Services
         private readonly string _apiKey;
 
         public OpenAIIntelligenceService(
+            HttpClient httpClient,
             string apiKey,
             string model = "gpt-4o-mini",
             int maxTokens = 2000,
             float temperature = 0.3f)
         {
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
             _model = model;
             _maxTokens = maxTokens;
             _temperature = temperature;
 
-            _httpClient = new HttpClient();
             _httpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "SecuNIK-CyberSecurity-Platform/1.0");
@@ -368,9 +369,5 @@ Requirements:
             return null;
         }
 
-        public void Dispose()
-        {
-            _httpClient?.Dispose();
-        }
     }
 }
