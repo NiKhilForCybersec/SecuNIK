@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace SecuNik.API.Controllers
 {
     /// <summary>
-    /// Enhanced controller for advanced cybersecurity analysis operations with professional SOC capabilities
+    /// Main controller for file analysis operations - Fixed for UI integration
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
@@ -32,21 +32,21 @@ namespace SecuNik.API.Controllers
         }
 
         /// <summary>
-        /// Upload and analyze a file with advanced professional SOC capabilities
+        /// Upload and analyze a file - Fixed to match frontend expectations
         /// </summary>
         [HttpPost("upload")]
-        [ProducesResponseType(typeof(AdvancedAnalysisResponse), 200)]
+        [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
         [ProducesResponseType(typeof(ErrorResponse), 500)]
-        public async Task<ActionResult<AdvancedAnalysisResponse>> UploadAndAnalyze(IFormFile file, [FromForm] AnalysisOptionsDto? options = null)
+        public async Task<ActionResult> UploadAndAnalyze(IFormFile file, [FromForm] AnalysisOptionsDto? options = null)
         {
             if (file == null || file.Length == 0)
             {
                 return BadRequest(new ErrorResponse("No file uploaded or file is empty"));
             }
 
-            // Validate file size (200MB limit)
-            const long maxFileSize = 200 * 1024 * 1024; // 200MB
+            // Validate file size (50MB limit for compatibility)
+            const long maxFileSize = 50 * 1024 * 1024; // 50MB
             if (file.Length > maxFileSize)
             {
                 return BadRequest(new ErrorResponse($"File size exceeds maximum limit of {maxFileSize / (1024 * 1024)}MB"));
@@ -57,7 +57,7 @@ namespace SecuNik.API.Controllers
 
             try
             {
-                _logger.LogInformation("🚀 Starting ADVANCED PROFESSIONAL analysis {AnalysisId} for file: {FileName} ({FileSize} bytes)",
+                _logger.LogInformation("🚀 Starting analysis {AnalysisId} for file: {FileName} ({FileSize} bytes)",
                     analysisId, file.FileName, file.Length);
 
                 // Create a proper temp file with the original extension
@@ -80,7 +80,7 @@ namespace SecuNik.API.Controllers
                     return BadRequest(new ErrorResponse($"Unsupported file type '{originalExtension}'. Supported types: {string.Join(", ", supportedTypes)}"));
                 }
 
-                // Create enhanced analysis request
+                // Create analysis request
                 var request = new AnalysisRequest
                 {
                     FilePath = tempFilePath,
@@ -95,75 +95,54 @@ namespace SecuNik.API.Controllers
                     }
                 };
 
-                // Perform advanced analysis
+                // Perform analysis
                 var result = await _analysisEngine.AnalyzeFileAsync(request);
 
-                _logger.LogInformation("✅ PROFESSIONAL ANALYSIS {AnalysisId} completed successfully. Found {SecurityEventCount} security events, {IOCCount} IOCs, Risk Score: {RiskScore}/10",
-                    analysisId, result.Technical.SecurityEvents.Count, result.Technical.DetectedIOCs.Count, result.AI.SeverityScore);
+                _logger.LogInformation("✅ Analysis {AnalysisId} completed successfully. Found {SecurityEventCount} security events",
+                    analysisId, result.Technical.SecurityEvents.Count);
 
-                // Create enhanced response with professional metrics
-                var response = new AdvancedAnalysisResponse
+                // Return response in format expected by frontend
+                return Ok(new
                 {
-                    Success = true,
-                    AnalysisId = analysisId,
-                    FileName = file.FileName,
-                    Timestamp = DateTime.UtcNow,
-                    Result = result,
-                    
-                    // Professional SOC metrics
-                    ProcessingMetrics = new ProcessingMetrics
-                    {
-                        ProcessingTimeMs = result.Performance?.ProcessingTimeMs ?? 0,
-                        MemoryUsageGB = result.Performance?.MemoryUsageGB ?? 0,
-                        CPUUsagePercent = result.Performance?.CPUUsagePercent ?? 0,
-                        AnalysisEngine = "SecuNik-Professional-v2.0",
-                        AIModelUsed = result.AI?.ModelUsed ?? "SecurityAnalysisService",
-                        ConfidenceScore = result.AI?.ConfidenceScore ?? 0
-                    },
-                    
-                    // Dashboard integration data
-                    DashboardData = new DashboardIntegrationData
-                    {
-                        RealtimeMetrics = result.Dashboard,
-                        ThreatIntelligence = result.ThreatIntel,
-                        ComplianceStatus = result.Compliance,
-                        SystemPerformance = result.Performance
-                    },
-                    
-                    // Professional summary
-                    ExecutiveSummary = new ExecutiveSummaryData
-                    {
-                        RiskLevel = result.Executive?.RiskLevel ?? "UNKNOWN",
-                        BusinessImpact = result.AI?.BusinessImpact ?? "Assessment pending",
-                        ImmediateActions = result.Executive?.ImmediateActions ?? "Review analysis results",
-                        ComplianceScore = result.Dashboard?.ComplianceScore ?? 100.0,
-                        ThreatCount = result.Dashboard?.ActiveThreats ?? 0
-                    }
-                };
+                    success = true,
+                    analysisId = analysisId,
+                    fileName = file.FileName,
+                    timestamp = DateTime.UtcNow,
+                    result = result,
 
-                return Ok(response);
+                    // Additional metrics for advanced dashboard
+                    fileSize = file.Length,
+                    processingTime = result.Performance?.ProcessingTimeMs ?? 0,
+                    fileInfo = new
+                    {
+                        name = file.FileName,
+                        size = file.Length,
+                        type = file.ContentType,
+                        lastModified = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+                    }
+                });
             }
             catch (UnsupportedFileTypeException ex)
             {
-                _logger.LogWarning("❌ Unsupported file type for analysis {AnalysisId}: {FileName} - {Error}", 
+                _logger.LogWarning("❌ Unsupported file type for analysis {AnalysisId}: {FileName} - {Error}",
                     analysisId, file.FileName, ex.Message);
                 return BadRequest(new ErrorResponse($"Unsupported file type: {ex.FileType}"));
             }
             catch (FileParsingException ex)
             {
-                _logger.LogError(ex, "❌ File parsing failed for analysis {AnalysisId}: {FileName}", 
+                _logger.LogError(ex, "❌ File parsing failed for analysis {AnalysisId}: {FileName}",
                     analysisId, file.FileName);
                 return BadRequest(new ErrorResponse($"Failed to parse file: {ex.Message}"));
             }
             catch (AIAnalysisException ex)
             {
-                _logger.LogError(ex, "❌ AI analysis failed for analysis {AnalysisId}: {FileName}", 
+                _logger.LogError(ex, "❌ AI analysis failed for analysis {AnalysisId}: {FileName}",
                     analysisId, file.FileName);
                 return StatusCode(500, new ErrorResponse("AI analysis failed - technical findings are available"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Unexpected error during analysis {AnalysisId}: {FileName}", 
+                _logger.LogError(ex, "❌ Unexpected error during analysis {AnalysisId}: {FileName}",
                     analysisId, file.FileName);
                 return StatusCode(500, new ErrorResponse($"An unexpected error occurred during analysis: {ex.Message}"));
             }
@@ -186,13 +165,13 @@ namespace SecuNik.API.Controllers
         }
 
         /// <summary>
-        /// Upload multiple files and analyze them together with advanced correlation
+        /// Upload multiple files and analyze them together
         /// </summary>
         [HttpPost("upload-multiple")]
-        [ProducesResponseType(typeof(AdvancedAnalysisResponse), 200)]
+        [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
         [ProducesResponseType(typeof(ErrorResponse), 500)]
-        public async Task<ActionResult<AdvancedAnalysisResponse>> UploadMultiple([FromForm] IFormFileCollection files, [FromForm] string? sessionId = null, [FromForm] AnalysisOptionsDto? options = null)
+        public async Task<ActionResult> UploadMultiple([FromForm] IFormFileCollection files, [FromForm] string? sessionId = null, [FromForm] AnalysisOptionsDto? options = null)
         {
             if (files == null || files.Count == 0)
                 return BadRequest(new ErrorResponse("No files uploaded"));
@@ -203,8 +182,6 @@ namespace SecuNik.API.Controllers
 
             try
             {
-                _logger.LogInformation("🚀 Starting MULTI-FILE PROFESSIONAL analysis for {FileCount} files", files.Count);
-
                 foreach (var file in files)
                 {
                     if (file.Length == 0) continue;
@@ -253,39 +230,18 @@ namespace SecuNik.API.Controllers
                     result = _sessions[sessionId];
                 }
 
-                _logger.LogInformation("✅ MULTI-FILE ANALYSIS completed: {EventCount} events, {IOCCount} IOCs across {FileCount} files",
-                    result.Technical.SecurityEvents.Count, result.Technical.DetectedIOCs.Count, files.Count);
-
-                var response = new AdvancedAnalysisResponse
+                return Ok(new
                 {
-                    Success = true,
-                    AnalysisId = analysisId,
-                    FileName = string.Join(", ", files.Select(f => f.FileName)),
-                    Timestamp = DateTime.UtcNow,
-                    Result = result,
-                    ProcessingMetrics = new ProcessingMetrics
-                    {
-                        ProcessingTimeMs = result.Performance?.ProcessingTimeMs ?? 0,
-                        MemoryUsageGB = result.Performance?.MemoryUsageGB ?? 0,
-                        CPUUsagePercent = result.Performance?.CPUUsagePercent ?? 0,
-                        AnalysisEngine = "SecuNik-Professional-MultiFile-v2.0",
-                        AIModelUsed = result.AI?.ModelUsed ?? "SecurityAnalysisService",
-                        ConfidenceScore = result.AI?.ConfidenceScore ?? 0
-                    },
-                    DashboardData = new DashboardIntegrationData
-                    {
-                        RealtimeMetrics = result.Dashboard,
-                        ThreatIntelligence = result.ThreatIntel,
-                        ComplianceStatus = result.Compliance,
-                        SystemPerformance = result.Performance
-                    }
-                };
-
-                return Ok(response);
+                    success = true,
+                    analysisId = analysisId,
+                    fileName = string.Join(", ", files.Select(f => f.FileName)),
+                    timestamp = DateTime.UtcNow,
+                    result = result
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error during multi-file professional analysis");
+                _logger.LogError(ex, "❌ Error during multi-file upload");
                 return StatusCode(500, new ErrorResponse($"Failed to analyze files: {ex.Message}"));
             }
             finally
@@ -295,48 +251,44 @@ namespace SecuNik.API.Controllers
         }
 
         /// <summary>
-        /// Get real-time dashboard metrics for active analysis sessions
+        /// Get real-time dashboard metrics
         /// </summary>
         [HttpGet("dashboard-metrics")]
-        [ProducesResponseType(typeof(DashboardMetricsResponse), 200)]
-        public async Task<ActionResult<DashboardMetricsResponse>> GetDashboardMetrics()
+        [ProducesResponseType(typeof(object), 200)]
+        public async Task<ActionResult> GetDashboardMetrics()
         {
             try
             {
-                // Simulate real-time metrics for demonstration
-                var metrics = new DashboardMetricsResponse
+                var metrics = new
                 {
-                    Timestamp = DateTime.UtcNow,
-                    SystemStatus = "Online",
-                    ActiveSessions = _sessions.Count,
-                    
-                    RealtimeMetrics = new DashboardMetrics
+                    timestamp = DateTime.UtcNow,
+                    systemStatus = "Online",
+                    activeSessions = _sessions.Count,
+                    realtimeMetrics = new
                     {
-                        ActiveThreats = _sessions.Values.Sum(s => s.Dashboard?.ActiveThreats ?? 0),
-                        EventsProcessed = _sessions.Values.Sum(s => s.Dashboard?.EventsProcessed ?? 0),
-                        IOCsDetected = _sessions.Values.Sum(s => s.Dashboard?.IOCsDetected ?? 0),
-                        FilesAnalyzed = _sessions.Count,
-                        AIConfidence = _sessions.Values.Any() ? _sessions.Values.Average(s => s.Dashboard?.AIConfidence ?? 0) : 95.0,
-                        LastUpdated = DateTime.UtcNow
+                        activeThreats = _sessions.Values.Sum(s => s.Dashboard?.ActiveThreats ?? 0),
+                        eventsProcessed = _sessions.Values.Sum(s => s.Dashboard?.EventsProcessed ?? 0),
+                        iocsDetected = _sessions.Values.Sum(s => s.Dashboard?.IOCsDetected ?? 0),
+                        filesAnalyzed = _sessions.Count,
+                        aiConfidence = _sessions.Values.Any() ? _sessions.Values.Average(s => s.Dashboard?.AIConfidence ?? 0) : 95.0,
+                        lastUpdated = DateTime.UtcNow
                     },
-                    
-                    ThreatIntelligence = new ThreatIntelligence
+                    threatIntelligence = new
                     {
-                        ActiveFeeds = new List<ThreatFeed>
+                        activeFeeds = new[]
                         {
-                            new ThreatFeed { Name = "MITRE ATT&CK", Source = "MITRE", LastUpdate = DateTime.UtcNow.AddMinutes(-15), Status = "Active", IndicatorCount = 1247 },
-                            new ThreatFeed { Name = "Emerging Threats", Source = "Proofpoint", LastUpdate = DateTime.UtcNow.AddMinutes(-8), Status = "Active", IndicatorCount = 892 }
+                            new { name = "MITRE ATT&CK", source = "MITRE", lastUpdate = DateTime.UtcNow.AddMinutes(-15), status = "Active", indicatorCount = 1247 },
+                            new { name = "Emerging Threats", source = "Proofpoint", lastUpdate = DateTime.UtcNow.AddMinutes(-8), status = "Active", indicatorCount = 892 }
                         },
-                        LastUpdate = DateTime.UtcNow,
-                        TotalIndicators = 2139
+                        lastUpdate = DateTime.UtcNow,
+                        totalIndicators = 2139
                     },
-                    
-                    SystemPerformance = new SystemPerformance
+                    systemPerformance = new
                     {
-                        MemoryUsageGB = 2.1,
-                        CPUUsagePercent = 15.3,
-                        Status = "Online",
-                        LastHealthCheck = DateTime.UtcNow
+                        memoryUsageGB = 2.1,
+                        cpuUsagePercent = 15.3,
+                        status = "Online",
+                        lastHealthCheck = DateTime.UtcNow
                     }
                 };
 
@@ -353,26 +305,26 @@ namespace SecuNik.API.Controllers
         /// Get threat intelligence feed updates
         /// </summary>
         [HttpGet("threat-intel")]
-        [ProducesResponseType(typeof(ThreatIntelligenceResponse), 200)]
-        public async Task<ActionResult<ThreatIntelligenceResponse>> GetThreatIntelligence()
+        [ProducesResponseType(typeof(object), 200)]
+        public async Task<ActionResult> GetThreatIntelligence()
         {
             try
             {
-                var response = new ThreatIntelligenceResponse
+                var response = new
                 {
-                    Timestamp = DateTime.UtcNow,
-                    ActiveFeeds = new List<ThreatFeed>
+                    timestamp = DateTime.UtcNow,
+                    activeFeeds = new[]
                     {
-                        new ThreatFeed { Name = "MITRE ATT&CK", Source = "MITRE", LastUpdate = DateTime.UtcNow.AddMinutes(-15), Status = "Active", IndicatorCount = 1247 },
-                        new ThreatFeed { Name = "Emerging Threats", Source = "Proofpoint", LastUpdate = DateTime.UtcNow.AddMinutes(-8), Status = "Active", IndicatorCount = 892 },
-                        new ThreatFeed { Name = "AlienVault OTX", Source = "AT&T", LastUpdate = DateTime.UtcNow.AddMinutes(-22), Status = "Active", IndicatorCount = 2156 }
+                        new { name = "MITRE ATT&CK", source = "MITRE", lastUpdate = DateTime.UtcNow.AddMinutes(-15), status = "Active", indicatorCount = 1247 },
+                        new { name = "Emerging Threats", source = "Proofpoint", lastUpdate = DateTime.UtcNow.AddMinutes(-8), status = "Active", indicatorCount = 892 },
+                        new { name = "AlienVault OTX", source = "AT&T", lastUpdate = DateTime.UtcNow.AddMinutes(-22), status = "Active", indicatorCount = 2156 }
                     },
-                    RecentIndicators = new List<ThreatIndicator>
+                    recentIndicators = new[]
                     {
-                        new ThreatIndicator { Type = "IP", Value = "192.168.1.100", Severity = "High", Source = "MITRE", FirstSeen = DateTime.UtcNow.AddHours(-2) },
-                        new ThreatIndicator { Type = "Domain", Value = "malicious-domain.com", Severity = "Medium", Source = "Emerging Threats", FirstSeen = DateTime.UtcNow.AddMinutes(-45) }
+                        new { type = "IP", value = "192.168.1.100", severity = "High", source = "MITRE", firstSeen = DateTime.UtcNow.AddHours(-2) },
+                        new { type = "Domain", value = "malicious-domain.com", severity = "Medium", source = "Emerging Threats", firstSeen = DateTime.UtcNow.AddMinutes(-45) }
                     },
-                    TotalIndicators = 4295
+                    totalIndicators = 4295
                 };
 
                 return Ok(response);
@@ -401,95 +353,29 @@ namespace SecuNik.API.Controllers
         }
 
         /// <summary>
-        /// Analyze a file by local path (for development/testing)
-        /// </summary>
-        [HttpPost("analyze-path")]
-        [ProducesResponseType(typeof(AdvancedAnalysisResponse), 200)]
-        [ProducesResponseType(typeof(ErrorResponse), 400)]
-        [ProducesResponseType(typeof(ErrorResponse), 404)]
-        public async Task<ActionResult<AdvancedAnalysisResponse>> AnalyzeFilePath([FromBody] AnalyzePathRequest request)
-        {
-            if (string.IsNullOrEmpty(request.FilePath))
-            {
-                return BadRequest(new ErrorResponse("File path is required"));
-            }
-
-            if (!System.IO.File.Exists(request.FilePath))
-            {
-                return NotFound(new ErrorResponse("File not found"));
-            }
-
-            try
-            {
-                var analysisRequest = new AnalysisRequest
-                {
-                    FilePath = request.FilePath,
-                    OriginalFileName = Path.GetFileName(request.FilePath),
-                    Options = request.Options ?? new AnalysisOptions()
-                };
-
-                var result = await _analysisEngine.AnalyzeFileAsync(analysisRequest);
-                
-                var response = new AdvancedAnalysisResponse
-                {
-                    Success = true,
-                    AnalysisId = Guid.NewGuid().ToString(),
-                    FileName = Path.GetFileName(request.FilePath),
-                    Timestamp = DateTime.UtcNow,
-                    Result = result
-                };
-
-                return Ok(response);
-            }
-            catch (UnsupportedFileTypeException ex)
-            {
-                return BadRequest(new ErrorResponse($"Unsupported file type: {ex.FileType}"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error analyzing file: {FilePath}", request.FilePath);
-                return StatusCode(500, new ErrorResponse($"An error occurred during analysis: {ex.Message}"));
-            }
-        }
-
-        /// <summary>
-        /// Get supported file types with enhanced metadata
+        /// Get supported file types
         /// </summary>
         [HttpGet("supported-types")]
-        [ProducesResponseType(typeof(SupportedTypesResponse), 200)]
-        public async Task<ActionResult<SupportedTypesResponse>> GetSupportedFileTypes()
+        [ProducesResponseType(typeof(object), 200)]
+        public async Task<ActionResult> GetSupportedFileTypes()
         {
             try
             {
                 var supportedTypes = await _analysisEngine.GetSupportedFileTypesAsync();
-                
-                var response = new SupportedTypesResponse
+                return Ok(new
                 {
-                    SupportedTypes = supportedTypes,
-                    Description = "File extensions supported by SecuNik Professional Analysis Engine",
-                    MaxFileSize = "200MB",
-                    MaxFilesPerSession = 50,
-                    SupportedCategories = new Dictionary<string, List<string>>
+                    supportedTypes = supportedTypes,
+                    description = "File extensions supported by SecuNik analysis engine",
+                    maxFileSize = "50MB",
+                    supportedCategories = new Dictionary<string, List<string>>
                     {
                         ["Windows Event Logs"] = new List<string> { "EVTX", "EVT" },
                         ["Network Captures"] = new List<string> { "PCAP", "PCAPNG" },
                         ["System Logs"] = new List<string> { "SYSLOG", "LOG", "TXT" },
                         ["Structured Data"] = new List<string> { "CSV", "JSON" },
                         ["Linux Session Logs"] = new List<string> { "WTMP", "UTMP", "BTMP", "LASTLOG" }
-                    },
-                    AnalysisCapabilities = new List<string>
-                    {
-                        "AI-powered threat detection",
-                        "Real-time IOC extraction",
-                        "Behavioral analysis",
-                        "Network forensics",
-                        "Malware detection",
-                        "Compliance assessment",
-                        "Executive reporting"
                     }
-                };
-
-                return Ok(response);
+                });
             }
             catch (Exception ex)
             {
@@ -499,19 +385,19 @@ namespace SecuNik.API.Controllers
         }
 
         /// <summary>
-        /// Health check for the professional analysis service
+        /// Health check for the analysis service
         /// </summary>
         [HttpGet("health")]
-        [ProducesResponseType(typeof(HealthResponse), 200)]
+        [ProducesResponseType(typeof(object), 200)]
         public IActionResult Health()
         {
-            return Ok(new HealthResponse
+            return Ok(new
             {
-                Status = "Healthy",
-                Timestamp = DateTime.UtcNow,
-                Version = "2.0-Professional-SOC",
-                ServiceName = "SecuNik Advanced Cybersecurity Analysis Platform",
-                Features = new List<string>
+                status = "Healthy",
+                timestamp = DateTime.UtcNow,
+                version = "2.0-Professional",
+                serviceName = "SecuNik Advanced Cybersecurity Analysis Platform",
+                features = new[]
                 {
                     "AI-Enhanced Threat Detection",
                     "Real-time Dashboard Metrics",
@@ -521,7 +407,7 @@ namespace SecuNik.API.Controllers
                     "Executive Reporting",
                     "Threat Intelligence Integration"
                 },
-                SystemMetrics = new Dictionary<string, object>
+                systemMetrics = new Dictionary<string, object>
                 {
                     ["ActiveSessions"] = _sessions.Count,
                     ["TotalAnalyses"] = _sessions.Count,
@@ -533,75 +419,7 @@ namespace SecuNik.API.Controllers
         }
     }
 
-    // Enhanced DTOs for professional API responses
-    public class AdvancedAnalysisResponse
-    {
-        public bool Success { get; set; }
-        public string AnalysisId { get; set; } = string.Empty;
-        public string FileName { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
-        public AnalysisResult Result { get; set; } = new();
-        public ProcessingMetrics ProcessingMetrics { get; set; } = new();
-        public DashboardIntegrationData DashboardData { get; set; } = new();
-        public ExecutiveSummaryData ExecutiveSummary { get; set; } = new();
-    }
-
-    public class ProcessingMetrics
-    {
-        public double ProcessingTimeMs { get; set; }
-        public double MemoryUsageGB { get; set; }
-        public double CPUUsagePercent { get; set; }
-        public string AnalysisEngine { get; set; } = string.Empty;
-        public string AIModelUsed { get; set; } = string.Empty;
-        public double ConfidenceScore { get; set; }
-    }
-
-    public class DashboardIntegrationData
-    {
-        public DashboardMetrics RealtimeMetrics { get; set; } = new();
-        public ThreatIntelligence ThreatIntelligence { get; set; } = new();
-        public ComplianceAssessment ComplianceStatus { get; set; } = new();
-        public SystemPerformance SystemPerformance { get; set; } = new();
-    }
-
-    public class ExecutiveSummaryData
-    {
-        public string RiskLevel { get; set; } = string.Empty;
-        public string BusinessImpact { get; set; } = string.Empty;
-        public string ImmediateActions { get; set; } = string.Empty;
-        public double ComplianceScore { get; set; }
-        public int ThreatCount { get; set; }
-    }
-
-    public class DashboardMetricsResponse
-    {
-        public DateTime Timestamp { get; set; }
-        public string SystemStatus { get; set; } = string.Empty;
-        public int ActiveSessions { get; set; }
-        public DashboardMetrics RealtimeMetrics { get; set; } = new();
-        public ThreatIntelligence ThreatIntelligence { get; set; } = new();
-        public SystemPerformance SystemPerformance { get; set; } = new();
-    }
-
-    public class ThreatIntelligenceResponse
-    {
-        public DateTime Timestamp { get; set; }
-        public List<ThreatFeed> ActiveFeeds { get; set; } = new();
-        public List<ThreatIndicator> RecentIndicators { get; set; } = new();
-        public int TotalIndicators { get; set; }
-    }
-
-    public class SupportedTypesResponse
-    {
-        public List<string> SupportedTypes { get; set; } = new();
-        public string Description { get; set; } = string.Empty;
-        public string MaxFileSize { get; set; } = string.Empty;
-        public int MaxFilesPerSession { get; set; }
-        public Dictionary<string, List<string>> SupportedCategories { get; set; } = new();
-        public List<string> AnalysisCapabilities { get; set; } = new();
-    }
-
-    // Existing DTOs
+    // DTOs for API requests/responses
     public class AnalysisOptionsDto
     {
         public bool EnableAIAnalysis { get; set; } = true;
@@ -609,12 +427,6 @@ namespace SecuNik.API.Controllers
         public bool IncludeTimeline { get; set; } = true;
         public int MaxSecurityEvents { get; set; } = 10000;
         public List<string> FocusKeywords { get; set; } = new();
-    }
-
-    public class AnalyzePathRequest
-    {
-        public string FilePath { get; set; } = string.Empty;
-        public AnalysisOptions? Options { get; set; }
     }
 
     public class ErrorResponse
@@ -629,15 +441,5 @@ namespace SecuNik.API.Controllers
             Timestamp = DateTime.UtcNow;
             RequestId = Guid.NewGuid().ToString("N")[..8];
         }
-    }
-
-    public class HealthResponse
-    {
-        public string Status { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
-        public string Version { get; set; } = string.Empty;
-        public string ServiceName { get; set; } = string.Empty;
-        public List<string> Features { get; set; } = new();
-        public Dictionary<string, object> SystemMetrics { get; set; } = new();
     }
 }

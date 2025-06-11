@@ -4,592 +4,325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecuNik - Advanced Cybersecurity Operations Center</title>
+    <title>SecuNik - Professional Cybersecurity Platform</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <meta name="description" content="Advanced AI-powered cybersecurity operations center with real-time threat analysis">
-    <meta name="keywords" content="cybersecurity, SOC, threat detection, AI analysis, EVTX, IOC, SIEM">
+    <meta name="description"
+        content="Professional AI-powered cybersecurity platform with advanced threat analysis and forensic capabilities">
+    <meta name="keywords"
+        content="cybersecurity, professional security, AI analysis, threat detection, forensics, SIEM">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 </head>
 
 <body>
-    <!-- Top Navigation Bar -->
-    <header class="top-nav">
-        <div class="nav-left">
-            <div class="logo">
-                <span class="logo-text">SecuNik</span>
-            </div>
-        </div>
-        <div class="nav-right">
-            <button class="nav-btn primary" id="uploadAnotherBtn" style="display: none;">
-                <span class="btn-icon">+</span>
-                <span class="btn-text">Upload Another</span>
-            </button>
-            <div class="dropdown">
-                <button class="nav-btn dropdown-toggle" id="exportBtn">
-                    <span class="btn-icon">📤</span>
-                    <span class="btn-text">Export</span>
-                    <span class="dropdown-arrow">▼</span>
-                </button>
-                <div class="dropdown-menu" id="exportMenu">
-                    <a href="#" onclick="exportResults('json')">Export as JSON</a>
-                    <a href="#" onclick="exportResults('csv')">Export as CSV</a>
-                    <a href="#" onclick="exportResults('pdf')">Export as PDF</a>
+    <!-- Professional Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">
+                    <div class="logo-icon">SN</div>
+                    <div class="logo-text">SecuNik</div>
+                    <div class="version-badge">Professional</div>
                 </div>
-            </div>
-            <button class="nav-btn" id="shareBtn">
-                <span class="btn-icon">🔗</span>
-                <span class="btn-text">Share</span>
-            </button>
+                <div class="nav-controls">
+                    <div class="analysis-counter">
+                        <span id="analysisCounter">0 Files Analyzed</span>
+                    </div>
+                    <div class="nav-status">
+                        <div class="status-dot"></div>
+                        <span id="systemStatus">System Online</span>
+                    </div>
+                    <button class="nav-btn" id="helpBtn" title="Help & Documentation">
+                        <span>❓</span>
+                    </button>
+                    <button class="nav-btn" id="settingsBtn" title="Settings">
+                        <span>⚙️</span>
+                    </button>
+                </div>
+            </nav>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <div class="main-container">
-        <!-- Sidebar Navigation -->
-        <nav class="sidebar" id="sidebar">
-            <div class="sidebar-content">
-                <div class="nav-section">
-                    <div class="nav-item active" data-tab="dashboard">
-                        <span class="nav-icon">📊</span>
-                        <span class="nav-text">Dashboard</span>
-                    </div>
-                    <div class="nav-item" data-tab="overview">
-                        <span class="nav-icon">📋</span>
-                        <span class="nav-text">Overview</span>
-                    </div>
-                    <div class="nav-item" data-tab="threats">
-                        <span class="nav-icon">🚨</span>
-                        <span class="nav-text">Threats</span>
-                    </div>
-                    <div class="nav-item" data-tab="iocs">
-                        <span class="nav-icon">🎯</span>
-                        <span class="nav-text">IOCs</span>
-                    </div>
-                    <div class="nav-item" data-tab="timeline">
-                        <span class="nav-icon">⏰</span>
-                        <span class="nav-text">Timeline</span>
-                    </div>
-                    <div class="nav-item" data-tab="executive">
-                        <span class="nav-icon">👔</span>
-                        <span class="nav-text">Executive</span>
-                    </div>
-                    <div class="nav-item" data-tab="cases">
-                        <span class="nav-icon">📁</span>
-                        <span class="nav-text">Cases</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- System Status -->
-            <div class="sidebar-footer">
-                <div class="system-status">
-                    <div class="status-indicator"></div>
-                    <div class="status-text">
-                        <div class="status-title">SYSTEM STATUS</div>
-                        <div class="status-value" id="systemStatus">Online</div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Main Content Area -->
-        <main class="content-area">
-            <!-- Dashboard Content -->
-            <div class="tab-content active" id="dashboard">
-                <div class="dashboard-layout">
-                    <!-- Main Content -->
-                    <div class="main-content">
-                        <!-- Analysis Status -->
-                        <div class="analysis-status" id="analysisStatus" style="display: none;">
-                            <div class="status-icon">✓</div>
-                            <div class="status-content">
-                                <h2>Analysis complete</h2>
-                                <p>AI-enhanced insights are ready.</p>
-                            </div>
-                            <div class="file-id" id="fileId">AFD10000DR</div>
+    <!-- Main Dashboard -->
+    <main class="main">
+        <div class="container">
+            <div class="dashboard-container">
+                <!-- Left Sidebar - Upload Zone -->
+                <div class="upload-sidebar">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">📤</div>
+                        <div class="upload-text">Drop Files Here</div>
+                        <div class="upload-subtext">
+                            Upload evidence files for AI-powered cybersecurity analysis
                         </div>
-
-                        <!-- Upload Zone -->
-                        <div class="upload-zone" id="uploadZone">
-                            <div class="upload-icon">📤</div>
-                            <div class="upload-text">Drag and drop files</div>
-                            <div class="upload-subtext">OR</div>
-                            <button class="upload-btn" id="chooseFilesBtn">Choose Files</button>
-                            <div class="supported-formats">
-                                <div class="format-text">Supported formats</div>
-                                <div class="format-list">EVT, CSV, WEMP™, P2PCIP, SYSLOG, PCAP</div>
-                            </div>
-                            <input type="file" id="fileInput" multiple
-                                accept=".csv,.json,.log,.txt,.evtx,.evt,.wtmp,.utmp,.btmp,.lastlog,.pcap,.pcapng,.syslog,.fwlog,.dblog,.maillog,.dnslog"
-                                style="display: none;">
+                        <div class="upload-actions">
+                            <button class="btn primary" id="chooseFilesBtn">
+                                <span>📁</span>
+                                Choose Files
+                            </button>
+                            <button class="btn secondary" id="uploadAnotherBtn" style="display: none;">
+                                <span>➕</span>
+                                Upload Another
+                            </button>
                         </div>
+                        <input type="file" id="fileInput" multiple
+                            accept=".csv,.json,.log,.txt,.evtx,.evt,.wtmp,.utmp,.btmp,.lastlog,.pcap,.pcapng,.syslog,.fwlog,.dblog,.maillog,.dnslog"
+                            style="display: none;">
+                    </div>
 
-                        <!-- Real-time Monitoring Grid -->
-                        <div class="realtime-grid" id="realtimeGrid" style="display: none;">
-                            <div class="realtime-card">
-                                <div class="realtime-value" id="activeThreats">0</div>
-                                <div class="realtime-label">Active Threats</div>
-                                <div class="realtime-status">MONITORING</div>
-                            </div>
-                            <div class="realtime-card">
-                                <div class="realtime-value" id="eventsProcessed">0</div>
-                                <div class="realtime-label">Events Processed</div>
-                                <div class="realtime-status">LIVE</div>
-                            </div>
-                            <div class="realtime-card">
-                                <div class="realtime-value" id="iocsDetected">0</div>
-                                <div class="realtime-label">IOCs Detected</div>
-                                <div class="realtime-status">SCANNING</div>
-                            </div>
-                            <div class="realtime-card">
-                                <div class="realtime-value" id="riskScore">0</div>
-                                <div class="realtime-label">Risk Score</div>
-                                <div class="realtime-status">CALCULATED</div>
-                            </div>
-                            <div class="realtime-card">
-                                <div class="realtime-value" id="filesAnalyzed">0</div>
-                                <div class="realtime-label">Files Analyzed</div>
-                                <div class="realtime-status">COMPLETE</div>
-                            </div>
-                            <div class="realtime-card">
-                                <div class="realtime-value" id="aiConfidence">0%</div>
-                                <div class="realtime-label">AI Confidence</div>
-                                <div class="realtime-status">READY</div>
-                            </div>
+                    <!-- File Queue -->
+                    <div class="file-queue" id="fileQueue" style="display: none;">
+                        <h4>📋 Analysis Queue</h4>
+                        <div class="queue-items" id="queueItems"></div>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div class="upload-progress" id="uploadProgress" style="display: none;">
+                        <div class="progress-info">
+                            <span class="progress-icon">🔄</span>
+                            <span class="progress-text">AI Analysis in Progress...</span>
+                            <span class="progress-percentage">0%</span>
                         </div>
-
-                        <!-- Advanced Feature Grid -->
-                        <div class="feature-grid" id="featureGrid" style="display: none;">
-                            <!-- Threat Intelligence -->
-                            <div class="feature-card">
-                                <div class="feature-header">
-                                    <div class="feature-icon danger">🚨</div>
-                                    <div>
-                                        <div class="feature-title">Threat Intelligence</div>
-                                        <div class="feature-subtitle">REAL-TIME ANALYSIS</div>
-                                    </div>
-                                </div>
-                                <div class="feature-content">
-                                    <div class="feature-description">Advanced AI-powered threat detection with real-time correlation against global threat intelligence feeds</div>
-                                    <div class="feature-stats">
-                                        <div>
-                                            <div class="feature-value" id="threatIntelCount">0</div>
-                                            <div class="feature-label">Threats Identified</div>
-                                        </div>
-                                        <div class="feature-badge badge-danger" id="threatIntelBadge">SCANNING</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Behavioral Analysis -->
-                            <div class="feature-card">
-                                <div class="feature-header">
-                                    <div class="feature-icon purple">🧠</div>
-                                    <div>
-                                        <div class="feature-title">Behavioral Analysis</div>
-                                        <div class="feature-subtitle">ML ANOMALY DETECTION</div>
-                                    </div>
-                                </div>
-                                <div class="feature-content">
-                                    <div class="feature-description">Machine learning algorithms detect unusual patterns and anomalous behavior in system activities</div>
-                                    <div class="feature-stats">
-                                        <div>
-                                            <div class="feature-value" id="behaviorAnomalies">0</div>
-                                            <div class="feature-label">Anomalies Found</div>
-                                        </div>
-                                        <div class="feature-badge badge-info" id="behaviorBadge">LEARNING</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Network Forensics -->
-                            <div class="feature-card">
-                                <div class="feature-header">
-                                    <div class="feature-icon info">🌐</div>
-                                    <div>
-                                        <div class="feature-title">Network Forensics</div>
-                                        <div class="feature-subtitle">PACKET ANALYSIS</div>
-                                    </div>
-                                </div>
-                                <div class="feature-content">
-                                    <div class="feature-description">Deep packet inspection and network traffic analysis for comprehensive forensic investigation</div>
-                                    <div class="feature-stats">
-                                        <div>
-                                            <div class="feature-value" id="networkConnections">0</div>
-                                            <div class="feature-label">Connections Analyzed</div>
-                                        </div>
-                                        <div class="feature-badge badge-info" id="networkBadge">MONITORING</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Malware Detection -->
-                            <div class="feature-card">
-                                <div class="feature-header">
-                                    <div class="feature-icon warning">🦠</div>
-                                    <div>
-                                        <div class="feature-title">Malware Detection</div>
-                                        <div class="feature-subtitle">SIGNATURE & HEURISTIC</div>
-                                    </div>
-                                </div>
-                                <div class="feature-content">
-                                    <div class="feature-description">Multi-layered malware detection using signature-based and heuristic analysis techniques</div>
-                                    <div class="feature-stats">
-                                        <div>
-                                            <div class="feature-value" id="malwareDetected">0</div>
-                                            <div class="feature-label">Malware Samples</div>
-                                        </div>
-                                        <div class="feature-badge badge-warning" id="malwareBadge">SCANNING</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Data Exfiltration -->
-                            <div class="feature-card">
-                                <div class="feature-header">
-                                    <div class="feature-icon pink">📤</div>
-                                    <div>
-                                        <div class="feature-title">Data Exfiltration</div>
-                                        <div class="feature-subtitle">DLP MONITORING</div>
-                                    </div>
-                                </div>
-                                <div class="feature-content">
-                                    <div class="feature-description">Advanced data loss prevention monitoring for unauthorized data transfers and exfiltration attempts</div>
-                                    <div class="feature-stats">
-                                        <div>
-                                            <div class="feature-value" id="dataTransfers">0</div>
-                                            <div class="feature-label">Suspicious Transfers</div>
-                                        </div>
-                                        <div class="feature-badge badge-success" id="dlpBadge">PROTECTED</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Compliance Monitoring -->
-                            <div class="feature-card">
-                                <div class="feature-header">
-                                    <div class="feature-icon success">✅</div>
-                                    <div>
-                                        <div class="feature-title">Compliance Monitoring</div>
-                                        <div class="feature-subtitle">REGULATORY COMPLIANCE</div>
-                                    </div>
-                                </div>
-                                <div class="feature-content">
-                                    <div class="feature-description">Automated compliance monitoring for GDPR, HIPAA, SOX, and other regulatory frameworks</div>
-                                    <div class="feature-stats">
-                                        <div>
-                                            <div class="feature-value" id="complianceScore">0%</div>
-                                            <div class="feature-label">Compliance Score</div>
-                                        </div>
-                                        <div class="feature-badge badge-success" id="complianceBadge">COMPLIANT</div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
                         </div>
-
-                        <!-- Metrics Grid -->
-                        <div class="metrics-grid" id="metricsGrid" style="display: none;">
-                            <div class="metric-card">
-                                <div class="metric-icon">🔍</div>
-                                <div class="metric-value" id="totalEvents">0</div>
-                                <div class="metric-label">Total Events</div>
-                                <div class="metric-change change-positive" id="eventsChange">+0%</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-icon">⚡</div>
-                                <div class="metric-value" id="processingSpeed">0</div>
-                                <div class="metric-label">Events/Sec</div>
-                                <div class="metric-change change-positive" id="speedChange">+0%</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-icon">🎯</div>
-                                <div class="metric-value" id="accuracy">0%</div>
-                                <div class="metric-label">Detection Accuracy</div>
-                                <div class="metric-change change-positive" id="accuracyChange">+0%</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-icon">⏱️</div>
-                                <div class="metric-value" id="responseTime">0ms</div>
-                                <div class="metric-label">Avg Response Time</div>
-                                <div class="metric-change change-negative" id="responseChange">-0%</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-icon">🛡️</div>
-                                <div class="metric-value" id="blockedThreats">0</div>
-                                <div class="metric-label">Threats Blocked</div>
-                                <div class="metric-change change-positive" id="blockedChange">+0%</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-icon">📊</div>
-                                <div class="metric-value" id="uptime">99.9%</div>
-                                <div class="metric-label">System Uptime</div>
-                                <div class="metric-change change-positive" id="uptimeChange">+0.1%</div>
-                            </div>
-                        </div>
-
-                        <!-- Charts Container -->
-                        <div class="charts-container" id="chartsContainer" style="display: none;">
-                            <div class="chart-card">
-                                <div class="chart-header">
-                                    <div class="chart-title">Threat Trends</div>
-                                    <div class="chart-period">Last 24 Hours</div>
-                                </div>
-                                <div class="chart-content">
-                                    <div style="height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
-                                        📈 Threat activity visualization
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="chart-card">
-                                <div class="chart-header">
-                                    <div class="chart-title">Event Distribution</div>
-                                    <div class="chart-period">Current Session</div>
-                                </div>
-                                <div class="chart-content">
-                                    <div style="height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
-                                        🥧 Event type breakdown
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Analysis Results -->
-                        <div class="analysis-results" id="analysisResults" style="display: none;">
-                            <!-- Threats Panel -->
-                            <div class="results-panel">
-                                <div class="panel-header">
-                                    <h3 class="panel-title">Threats</h3>
-                                    <span class="panel-badge specified" id="threatsBadge">SPECIFIED</span>
-                                </div>
-                                <div class="panel-content" id="threatsContent">
-                                    <div class="threat-item">
-                                        <div class="threat-icon">⚠️</div>
-                                        <div class="threat-content">
-                                            <div class="threat-title">Suspicious Login Activity</div>
-                                            <div class="threat-description">Repeated failed login attempt from IP 97 to 1.32</div>
-                                            <div class="threat-meta">
-                                                <span class="threat-timestamp">Apr 28, 2024 | 05:62</span>
-                                                <span class="threat-status status-suggested">SUGGESTED</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Executive Summary Panel -->
-                            <div class="results-panel">
-                                <div class="panel-header">
-                                    <h3 class="panel-title">Executive Summary</h3>
-                                </div>
-                                <div class="panel-content">
-                                    <div class="executive-summary">
-                                        <div class="risk-header">
-                                            <span>Risk level</span>
-                                            <span class="risk-level risk-elevated">ELEVATED</span>
-                                        </div>
-                                        <div class="summary-text" id="executiveSummaryText">
-                                            Detected attacks, from linux organizational impact recommendations ready for new threat actors.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="progress-details">
+                            <span id="progressDetails">Initializing analysis...</span>
                         </div>
                     </div>
 
-                    <!-- Sidebar Panels -->
-                    <div class="sidebar-panels">
-                        <!-- Analysis Queue -->
-                        <div class="sidebar-panel">
-                            <h3>ANALYSIS QUEUE</h3>
-                            <div id="analysisQueue">
-                                <div class="queue-item" style="display: none;">
-                                    <div class="queue-icon">📄</div>
-                                    <div class="queue-content">
-                                        <div class="queue-filename">security.evt</div>
-                                        <div class="queue-meta">Apr 21, 2024 • 7.33 MB</div>
-                                    </div>
-                                </div>
-                                <div class="queue-item" style="display: none;">
-                                    <div class="queue-icon">📄</div>
-                                    <div class="queue-content">
-                                        <div class="queue-filename">syslog-2024.csv</div>
-                                        <div class="queue-meta">Apr 21, 2024 • 2.03 MB</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- AI Engine Status -->
-                        <div class="sidebar-panel">
-                            <h3>AI ENGINE STATUS</h3>
-                            <div class="feature-stats">
-                                <div>
-                                    <div class="feature-value" id="aiStatus">READY</div>
-                                    <div class="feature-label">Engine Status</div>
-                                </div>
-                                <div class="feature-badge badge-success">ONLINE</div>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 95%"></div>
-                            </div>
-                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
-                                Model: GPT-4o-mini • Confidence: 95%
-                            </div>
-                        </div>
-
-                        <!-- Threat Intelligence Feed -->
-                        <div class="sidebar-panel">
-                            <h3>THREAT INTEL FEED</h3>
-                            <div class="queue-item">
-                                <div class="queue-icon">🚨</div>
-                                <div class="queue-content">
-                                    <div class="queue-filename">New APT Campaign</div>
-                                    <div class="queue-meta">2 min ago • HIGH</div>
-                                </div>
-                            </div>
-                            <div class="queue-item">
-                                <div class="queue-icon">⚠️</div>
-                                <div class="queue-content">
-                                    <div class="queue-filename">Malware Signature Update</div>
-                                    <div class="queue-meta">15 min ago • MEDIUM</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- System Performance -->
-                        <div class="sidebar-panel">
-                            <h3>SYSTEM PERFORMANCE</h3>
-                            <div class="metrics-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 18px; font-weight: 600; color: var(--accent-success);">2.1GB</div>
-                                    <div style="font-size: 10px; color: var(--text-muted);">MEMORY USED</div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 18px; font-weight: 600; color: var(--accent-info);">15%</div>
-                                    <div style="font-size: 10px; color: var(--text-muted);">CPU USAGE</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- System Status -->
-                        <div class="sidebar-panel">
-                            <h3>SYSTEM STATUS</h3>
-                            <div class="system-status">
-                                <div class="status-indicator"></div>
-                                <div class="status-text">
-                                    <div class="status-title">Online</div>
-                                </div>
-                            </div>
+                    <!-- Supported Formats -->
+                    <div class="supported-formats">
+                        <h4>🔧 Supported Formats</h4>
+                        <div class="format-list">
+                            <span class="format-tag">EVTX</span>
+                            <span class="format-tag">PCAP</span>
+                            <span class="format-tag">CSV</span>
+                            <span class="format-tag">JSON</span>
+                            <span class="format-tag">LOG</span>
+                            <span class="format-tag">SYSLOG</span>
+                            <span class="format-tag">WTMP</span>
+                            <span class="format-tag">UTMP</span>
+                            <span class="format-tag">BTMP</span>
+                            <span class="format-tag">FWLOG</span>
+                            <span class="format-tag">MAILLOG</span>
+                            <span class="format-tag">DNSLOG</span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Overview Tab Content -->
-            <div class="tab-content" id="overview">
-                <div class="analysis-header">
-                    <div class="status-indicator-large">
-                        <div class="status-icon">✓</div>
-                        <span class="status-text">Analysis complete</span>
+                <!-- Right Side - Widget Dashboard -->
+                <div class="widgets-dashboard" id="widgetsDashboard">
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-state-icon">🛡️</div>
+                        <div class="empty-state-title">Ready for Analysis</div>
+                        <div class="empty-state-description">
+                            Upload your cybersecurity evidence files to begin comprehensive AI-powered analysis.
+                            The dashboard will populate with real-time metrics, threat intelligence, and professional
+                            insights.
+                        </div>
                     </div>
-                    <div class="file-info">
-                        <span class="file-id" id="overviewFileId">Ready for Analysis</span>
-                    </div>
-                </div>
 
-                <div class="insights-section">
-                    <h2 class="insights-title">Analysis Results</h2>
-                    <div class="insights-subtitle">Detailed forensic findings</div>
-
-                    <div class="insights-grid" id="overviewInsights">
-                        <!-- Insights will be populated here -->
+                    <!-- Security Events Widget -->
+                    <div class="widget metric-widget" id="securityEventsWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🚨</span>
+                                Security Events
+                            </div>
+                            <div class="widget-badge" id="eventsStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="securityEventsCount">--</div>
+                        <div class="metric-label">Events Detected</div>
+                        <div class="metric-change" id="eventsChange">
+                            <span>📈</span>
+                            <span>+0%</span>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Threats Tab Content -->
-            <div class="tab-content" id="threats">
-                <div class="threats-container">
-                    <h2>Threat Analysis</h2>
-                    <div id="detailedThreatsList">
-                        <!-- Detailed threats will be populated here -->
+                    <!-- IOCs Widget -->
+                    <div class="widget metric-widget" id="iocsWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🎯</span>
+                                IOCs Found
+                            </div>
+                            <div class="widget-badge info" id="iocsStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="iocsCount">--</div>
+                        <div class="metric-label">Indicators</div>
+                        <div class="metric-change positive" id="iocsChange">
+                            <span>🔍</span>
+                            <span>New</span>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- IOCs Tab Content -->
-            <div class="tab-content" id="iocs">
-                <div class="iocs-container">
-                    <h2>Indicators of Compromise</h2>
-                    <div id="detailedIocsList">
-                        <!-- Detailed IOCs will be populated here -->
+                    <!-- Risk Score Widget -->
+                    <div class="widget metric-widget" id="riskScoreWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⚠️</span>
+                                Risk Score
+                            </div>
+                            <div class="widget-badge" id="riskStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="riskScoreValue">--</div>
+                        <div class="metric-label">/ 10</div>
+                        <div class="metric-change" id="riskChange">
+                            <span>📊</span>
+                            <span>Calculated</span>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Timeline Tab Content -->
-            <div class="tab-content" id="timeline">
-                <div class="timeline-container">
-                    <h2>Forensic Timeline</h2>
-                    <div id="detailedTimeline">
-                        <!-- Detailed timeline will be populated here -->
+                    <!-- AI Confidence Widget -->
+                    <div class="widget metric-widget" id="aiConfidenceWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🤖</span>
+                                AI Confidence
+                            </div>
+                            <div class="widget-badge success" id="aiStatus">AI</div>
+                        </div>
+                        <div class="metric-value" id="aiConfidenceValue">--</div>
+                        <div class="metric-label">Confidence</div>
+                        <div class="metric-change positive" id="aiChange">
+                            <span>✨</span>
+                            <span>High</span>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Executive Tab Content -->
-            <div class="tab-content" id="executive">
-                <div class="executive-container">
-                    <h2>Executive Summary</h2>
-                    <div id="detailedExecutiveReport">
-                        <!-- Detailed executive report will be populated here -->
+                    <!-- File Analysis Status Widget -->
+                    <div class="widget status-widget large" id="fileStatusWidget" style="display: none;">
+                        <div class="status-indicator success" id="fileStatusIndicator">
+                            <span>📄</span>
+                        </div>
+                        <div class="status-content">
+                            <div class="status-title" id="fileStatusTitle">Analysis Complete</div>
+                            <div class="status-description" id="fileStatusDescription">
+                                File successfully analyzed with AI-enhanced threat detection
+                            </div>
+                        </div>
+                        <div class="widget-badge success" id="fileStatusBadge">Complete</div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Cases Tab Content -->
-            <div class="tab-content" id="cases">
-                <div class="cases-container">
-                    <h2>Case Management</h2>
-                    <div id="casesList">
-                        <!-- Cases will be populated here -->
+                    <!-- Threat Intelligence Widget -->
+                    <div class="widget list-widget" id="threatIntelWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🔍</span>
+                                Threat Intelligence
+                            </div>
+                            <div class="widget-badge" id="threatIntelStatus">--</div>
+                        </div>
+                        <div id="threatIntelList">
+                            <!-- Dynamic threat intel items -->
+                        </div>
                     </div>
-                </div>
-            </div>
-        </main>
-    </div>
 
-    <!-- Upload Progress Modal -->
-    <div class="modal" id="uploadProgressModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>🔄 Analysis in Progress</h3>
-            </div>
-            <div class="modal-body">
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
+                    <!-- Timeline Widget -->
+                    <div class="widget list-widget" id="timelineWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⏰</span>
+                                Event Timeline
+                            </div>
+                            <div class="widget-badge info" id="timelineStatus">--</div>
+                        </div>
+                        <div id="timelineList">
+                            <!-- Dynamic timeline items -->
+                        </div>
                     </div>
-                    <div class="progress-text" id="progressText">Initializing analysis...</div>
-                    <div class="progress-percentage" id="progressPercentage">0%</div>
-                </div>
-                <div class="analysis-steps" id="analysisSteps">
-                    <div class="step active">📁 Processing file headers</div>
-                    <div class="step">🔍 Extracting events</div>
-                    <div class="step">🤖 Running AI analysis</div>
-                    <div class="step">🚨 Detecting threats</div>
-                    <div class="step">📊 Generating insights</div>
-                    <div class="step">✅ Compiling results</div>
+
+                    <!-- System Performance Widget -->
+                    <div class="widget progress-widget" id="performanceWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⚡</span>
+                                System Performance
+                            </div>
+                            <div class="widget-badge success" id="performanceStatus">Online</div>
+                        </div>
+                        <div class="progress-widget">
+                            <div class="progress-item">
+                                <span class="progress-item-label">CPU Usage</span>
+                                <span class="progress-item-value" id="cpuUsage">--</span>
+                            </div>
+                            <div class="progress-bar-widget">
+                                <div class="progress-bar-fill" id="cpuProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-item">
+                                <span class="progress-item-label">Memory Usage</span>
+                                <span class="progress-item-value" id="memoryUsage">--</span>
+                            </div>
+                            <div class="progress-bar-widget">
+                                <div class="progress-bar-fill" id="memoryProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-item">
+                                <span class="progress-item-label">Analysis Speed</span>
+                                <span class="progress-item-value" id="analysisSpeed">--</span>
+                            </div>
+                            <div class="progress-bar-widget">
+                                <div class="progress-bar-fill" id="speedProgress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Executive Summary Widget -->
+                    <div class="widget large" id="executiveSummaryWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">👔</span>
+                                Executive Summary
+                            </div>
+                            <div class="widget-badge" id="executiveStatus">AI Generated</div>
+                        </div>
+                        <div id="executiveSummaryContent">
+                            <!-- Dynamic executive summary -->
+                        </div>
+                    </div>
+
+                    <!-- Compliance Widget -->
+                    <div class="widget metric-widget" id="complianceWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">✅</span>
+                                Compliance
+                            </div>
+                            <div class="widget-badge success" id="complianceStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="complianceScore">--</div>
+                        <div class="metric-label">Score</div>
+                        <div class="metric-change positive" id="complianceChange">
+                            <span>📋</span>
+                            <span>Assessed</span>
+                        </div>
+                    </div>
+
+                    <!-- Processing Time Widget -->
+                    <div class="widget metric-widget" id="processingTimeWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⏱️</span>
+                                Processing Time
+                            </div>
+                            <div class="widget-badge info" id="processingStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="processingTimeValue">--</div>
+                        <div class="metric-label">Seconds</div>
+                        <div class="metric-change" id="processingChange">
+                            <span>🚀</span>
+                            <span>Fast</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Notification Container -->
-    <div class="notification-container" id="notificationContainer"></div>
+    </main>
 
     <script src="js/app.js"></script>
 </body>
