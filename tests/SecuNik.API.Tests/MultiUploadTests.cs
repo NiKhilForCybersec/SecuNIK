@@ -33,7 +33,7 @@ public class MultiUploadTests
 
         var result = await controller.UploadMultiple(files, null, new AnalysisOptionsDto());
 
-        result.Result.Should().BeOfType<OkObjectResult>();
+        result.Should().BeOfType<OkObjectResult>();
         mockEngine.Verify(e => e.AnalyzeFilesAsync(It.IsAny<IEnumerable<AnalysisRequest>>()), Times.Once());
     }
 }
