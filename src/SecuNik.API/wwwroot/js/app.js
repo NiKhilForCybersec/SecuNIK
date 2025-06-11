@@ -232,7 +232,9 @@ class SecuNikAdvancedDashboard {
 
     updateThreatIntelligenceDisplay(data) {
         // Update threat intelligence feed in sidebar
-        const threatFeedContainer = document.querySelector('.sidebar-panel h3:contains("THREAT INTEL FEED")');
+        const heading = Array.from(document.querySelectorAll('.sidebar-panel h3'))
+            .find(h => h.textContent.trim().toUpperCase() === 'THREAT INTEL FEED');
+        const threatFeedContainer = heading?.parentElement;
         if (threatFeedContainer && data.recentIndicators) {
             // Update with latest threat indicators
             console.log('Updated threat intelligence:', data.totalIndicators, 'indicators');
