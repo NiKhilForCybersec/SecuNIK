@@ -483,16 +483,6 @@ body {
     color: white;
 }
 
-<<<<<<< Updated upstream
-.feature-icon.primary { background: var(--accent-primary); }
-.feature-icon.secondary { background: var(--accent-secondary); }
-.feature-icon.warning { background: var(--accent-warning); }
-.feature-icon.danger { background: var(--accent-danger); }
-.feature-icon.success { background: var(--accent-success); }
-.feature-icon.info { background: var(--accent-info); }
-.feature-icon.purple { background: var(--accent-purple); }
-.feature-icon.pink { background: var(--accent-pink); }
-=======
 .feature-icon.primary {
     background: var(--accent-primary);
 }
@@ -524,7 +514,6 @@ body {
 .feature-icon.pink {
     background: var(--accent-pink);
 }
->>>>>>> Stashed changes
 
 .feature-title {
     font-size: 16px;
@@ -951,11 +940,6 @@ body {
     .feature-grid {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
-<<<<<<< Updated upstream
-    
-=======
-
->>>>>>> Stashed changes
     .metrics-grid {
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     }
@@ -966,18 +950,6 @@ body {
         grid-template-columns: 1fr;
         grid-template-rows: auto 1fr;
     }
-<<<<<<< Updated upstream
-    
-    .feature-grid {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-    
-    .analysis-results {
-        grid-template-columns: 1fr;
-    }
-    
-=======
-
     .feature-grid {
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
@@ -985,8 +957,6 @@ body {
     .analysis-results {
         grid-template-columns: 1fr;
     }
-
->>>>>>> Stashed changes
     .charts-container {
         grid-template-columns: 1fr;
     }
@@ -1030,18 +1000,9 @@ body {
 
 /* Animations */
 @keyframes pulse {
-<<<<<<< Updated upstream
     0%, 100% {
         opacity: 1;
     }
-=======
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
->>>>>>> Stashed changes
     50% {
         opacity: 0.5;
     }
@@ -1052,10 +1013,6 @@ body {
         opacity: 0;
         transform: translateY(10px);
     }
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1201,10 +1158,6 @@ body {
         transform: translateX(100%);
         opacity: 0;
     }
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
     to {
         transform: translateX(0);
         opacity: 1;
