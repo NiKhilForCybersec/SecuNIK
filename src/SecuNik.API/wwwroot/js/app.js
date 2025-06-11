@@ -1,148 +1,397 @@
-// SecuNik Advanced Cybersecurity Platform - Enhanced with Multi-File Support and Advanced Features
+// SecuNik Professional Widget Dashboard - Comprehensive JavaScript Application
+// Enhanced with AI integration, advanced analytics, and professional cybersecurity features
 
-class SecuNikApp {
+class SecuNikWidgetApp {
     constructor() {
         this.currentAnalysisResults = null;
         this.currentFileInfo = null;
         this.analysisHistory = [];
         this.analysisCounter = 0;
-        this.fileQueue = [];
         this.isAnalyzing = false;
+        this.widgets = new Map();
+        this.animationIntervals = [];
+        this.performanceMetrics = {
+            cpuUsage: 0,
+            memoryUsage: 0,
+            analysisSpeed: 0
+        };
+
         this.settings = {
             aiMode: 'auto',
             reportDetail: 'executive',
-            notifications: true
+            notifications: true,
+            autoRefresh: true,
+            theme: 'professional',
+            enableAI: true,
+            fallbackToBasicAnalysis: true
         };
+
+        this.securityPatterns = {
+            'Critical': ['malware', 'ransomware', 'trojan', 'exploit', 'breach'],
+            'High': ['failed login', 'unauthorized', 'privilege escalation', 'suspicious'],
+            'Medium': ['error', 'warning', 'blocked', 'denied'],
+            'Low': ['info', 'debug', 'notice']
+        };
+
+        this.iocPatterns = {
+            ip: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g,
+            domain: /\b[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z]{2,}\b/g,
+            email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+            hash: /\b[a-fA-F0-9]{32,64}\b/g,
+            url: /https?:\/\/[^\s<>"{}|\\^`[\]]+/g
+        };
+
+        this.initializeApp();
+    }
+
+    async initializeApp() {
+        console.log('🚀 Initializing SecuNik Professional Widget Dashboard v2.0...');
 
         this.initializeElements();
         this.setupEventListeners();
+        this.initializeWidgets();
         this.loadSettings();
-        this.checkSystemStatus();
-        this.testAPIConnection();
-        this.updateAnalysisCounter();
+        await this.checkSystemStatus();
+        await this.testAPIConnection();
+        this.startSystemAnimations();
+        this.setupAdvancedFeatures();
+
+        console.log('✅ SecuNik Widget Dashboard fully initialized with AI capabilities');
     }
 
     initializeElements() {
+        // Core upload elements
         this.uploadZone = document.getElementById('uploadZone');
         this.fileInput = document.getElementById('fileInput');
         this.chooseFilesBtn = document.getElementById('chooseFilesBtn');
         this.uploadAnotherBtn = document.getElementById('uploadAnotherBtn');
-        this.results = document.getElementById('results');
-        this.systemStatus = document.getElementById('systemStatus');
 
-        // Make these optional to prevent null errors
-        this.analysisCounterElement = document.getElementById('analysisCounter');
-        this.fileQueueElement = document.getElementById('fileQueue');
-        this.queueItems = document.getElementById('queueItems');
+        // Progress and queue elements
         this.uploadProgress = document.getElementById('uploadProgress');
         this.progressFill = document.getElementById('progressFill');
         this.progressDetails = document.getElementById('progressDetails');
-        this.multiFileSummary = document.getElementById('multiFileSummary');
-        this.summaryGrid = document.getElementById('summaryGrid');
+
+        // Navigation and status elements
+        this.analysisCounter = document.getElementById('analysisCounter');
+        this.systemStatus = document.getElementById('systemStatus');
+        this.helpBtn = document.getElementById('helpBtn');
+        this.settingsBtn = document.getElementById('settingsBtn');
+
+        // Dashboard elements
+        this.widgetsDashboard = document.getElementById('widgetsDashboard');
+        this.emptyState = document.getElementById('emptyState');
+
+        // Modal elements
+        this.helpModal = document.getElementById('helpModal');
+        this.settingsModal = document.getElementById('settingsModal');
+
+        console.log('📋 UI elements initialized');
     }
 
     setupEventListeners() {
-        // File input handlers
-        this.fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                this.handleFiles(e.target.files);
+        // File upload handlers
+        this.fileInput?.addEventListener('change', (e) => this.handleFileSelection(e));
+        this.chooseFilesBtn?.addEventListener('click', () => this.triggerFileInput());
+        this.uploadAnotherBtn?.addEventListener('click', () => this.triggerFileInput());
+
+        // Enhanced drag and drop handlers
+        this.uploadZone?.addEventListener('dragover', (e) => this.handleDragOver(e));
+        this.uploadZone?.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+        this.uploadZone?.addEventListener('drop', (e) => this.handleDrop(e));
+        // Remove auto-click on upload zone to prevent accidental re-uploads
+
+        // Navigation handlers
+        this.helpBtn?.addEventListener('click', () => this.showModal('helpModal'));
+        this.settingsBtn?.addEventListener('click', () => this.showModal('settingsModal'));
+
+        // Modal management
+        this.setupModalHandlers();
+        this.setupSettingsHandlers();
+
+        // Global drag prevention
+        this.preventGlobalDrag();
+
+        // Keyboard shortcuts
+        this.setupKeyboardShortcuts();
+
+        console.log('⚡ Event listeners configured');
+    }
+
+    initializeWidgets() {
+        // Security Events Widget
+        this.widgets.set('securityEvents', {
+            element: document.getElementById('securityEventsWidget'),
+            counter: document.getElementById('securityEventsCount'),
+            status: document.getElementById('eventsStatus'),
+            change: document.getElementById('eventsChange'),
+            type: 'metric',
+            priority: 1
+        });
+
+        // IOCs Widget
+        this.widgets.set('iocs', {
+            element: document.getElementById('iocsWidget'),
+            counter: document.getElementById('iocsCount'),
+            status: document.getElementById('iocsStatus'),
+            change: document.getElementById('iocsChange'),
+            type: 'metric',
+            priority: 2
+        });
+
+        // Risk Score Widget
+        this.widgets.set('riskScore', {
+            element: document.getElementById('riskScoreWidget'),
+            counter: document.getElementById('riskScoreValue'),
+            status: document.getElementById('riskStatus'),
+            change: document.getElementById('riskChange'),
+            type: 'metric',
+            priority: 3
+        });
+
+        // AI Confidence Widget
+        this.widgets.set('aiConfidence', {
+            element: document.getElementById('aiConfidenceWidget'),
+            counter: document.getElementById('aiConfidenceValue'),
+            status: document.getElementById('aiStatus'),
+            change: document.getElementById('aiChange'),
+            type: 'metric',
+            priority: 4
+        });
+
+        // File Status Widget
+        this.widgets.set('fileStatus', {
+            element: document.getElementById('fileStatusWidget'),
+            indicator: document.getElementById('fileStatusIndicator'),
+            title: document.getElementById('fileStatusTitle'),
+            description: document.getElementById('fileStatusDescription'),
+            badge: document.getElementById('fileStatusBadge'),
+            type: 'status',
+            priority: 5
+        });
+
+        // Threat Intelligence Widget
+        this.widgets.set('threatIntel', {
+            element: document.getElementById('threatIntelWidget'),
+            list: document.getElementById('threatIntelList'),
+            status: document.getElementById('threatIntelStatus'),
+            type: 'list',
+            priority: 6
+        });
+
+        // Timeline Widget
+        this.widgets.set('timeline', {
+            element: document.getElementById('timelineWidget'),
+            list: document.getElementById('timelineList'),
+            status: document.getElementById('timelineStatus'),
+            type: 'list',
+            priority: 7
+        });
+
+        // Performance Widget
+        this.widgets.set('performance', {
+            element: document.getElementById('performanceWidget'),
+            status: document.getElementById('performanceStatus'),
+            cpu: document.getElementById('cpuUsage'),
+            memory: document.getElementById('memoryUsage'),
+            speed: document.getElementById('analysisSpeed'),
+            cpuProgress: document.getElementById('cpuProgress'),
+            memoryProgress: document.getElementById('memoryProgress'),
+            speedProgress: document.getElementById('speedProgress'),
+            type: 'progress',
+            priority: 8
+        });
+
+        // Executive Summary Widget
+        this.widgets.set('executiveSummary', {
+            element: document.getElementById('executiveSummaryWidget'),
+            content: document.getElementById('executiveSummaryContent'),
+            status: document.getElementById('executiveStatus'),
+            type: 'content',
+            priority: 9
+        });
+
+        // Compliance Widget
+        this.widgets.set('compliance', {
+            element: document.getElementById('complianceWidget'),
+            score: document.getElementById('complianceScore'),
+            status: document.getElementById('complianceStatus'),
+            change: document.getElementById('complianceChange'),
+            type: 'metric',
+            priority: 10
+        });
+
+        // Processing Time Widget
+        this.widgets.set('processingTime', {
+            element: document.getElementById('processingTimeWidget'),
+            value: document.getElementById('processingTimeValue'),
+            status: document.getElementById('processingStatus'),
+            change: document.getElementById('processingChange'),
+            type: 'metric',
+            priority: 11
+        });
+
+        console.log(`🎛️ ${this.widgets.size} widgets initialized`);
+    }
+
+    setupModalHandlers() {
+        // Close modal buttons
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal');
+                if (modal) this.hideModal(modal.id);
+            });
+        });
+
+        // Close modal on backdrop click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.hideModal(modal.id);
+                }
+            });
+        });
+
+        // Escape key to close modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    if (modal.style.display === 'flex') {
+                        this.hideModal(modal.id);
+                    }
+                });
+            }
+        });
+    }
+
+    setupSettingsHandlers() {
+        const aiModeSelect = document.getElementById('aiModeSelect');
+        const reportDetailSelect = document.getElementById('reportDetailSelect');
+        const notificationsToggle = document.getElementById('notificationsToggle');
+
+        aiModeSelect?.addEventListener('change', (e) => {
+            this.settings.aiMode = e.target.value;
+            this.saveSettings();
+            this.showNotification('AI analysis mode updated', 'success');
+            this.updateAIModeStatus();
+        });
+
+        reportDetailSelect?.addEventListener('change', (e) => {
+            this.settings.reportDetail = e.target.value;
+            this.saveSettings();
+            this.showNotification('Report detail level updated', 'success');
+        });
+
+        notificationsToggle?.addEventListener('change', (e) => {
+            this.settings.notifications = e.target.checked;
+            this.saveSettings();
+            this.showNotification('Notification settings updated', 'success');
+        });
+    }
+
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'o':
+                        e.preventDefault();
+                        this.triggerFileInput();
+                        break;
+                    case 'h':
+                        e.preventDefault();
+                        this.showModal('helpModal');
+                        break;
+                    case ',':
+                        e.preventDefault();
+                        this.showModal('settingsModal');
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        this.resetAnalysis();
+                        break;
+                }
+            }
+        });
+    }
+
+    preventGlobalDrag() {
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+    }
+
+    setupAdvancedFeatures() {
+        // Setup right-click context menus for widgets
+        this.widgets.forEach((widget, key) => {
+            if (widget.element) {
+                widget.element.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    this.showWidgetContextMenu(e, key);
+                });
             }
         });
 
-        this.chooseFilesBtn.addEventListener('click', () => {
+        // Setup widget refresh functionality
+        this.setupWidgetRefresh();
+
+        // Initialize performance monitoring
+        this.initializePerformanceMonitoring();
+    }
+
+    // File Upload Handlers
+    triggerFileInput() {
+        if (this.fileInput) {
             this.fileInput.click();
-        });
-
-        // Enhanced upload another file functionality
-        this.uploadAnotherBtn.addEventListener('click', () => {
-            this.fileInput.click();
-        });
-
-        // Drag and drop handlers
-        this.uploadZone.addEventListener('dragover', this.handleDragOver.bind(this));
-        this.uploadZone.addEventListener('dragleave', this.handleDragLeave.bind(this));
-        this.uploadZone.addEventListener('drop', this.handleDrop.bind(this));
-
-        // Tab navigation
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', this.handleTabClick.bind(this));
-        });
-
-        // Result action buttons
-        document.getElementById('exportAllBtn')?.addEventListener('click', () => this.exportAllResults());
-        document.getElementById('shareBtn')?.addEventListener('click', () => this.shareAnalysis());
-        document.getElementById('printBtn')?.addEventListener('click', () => this.printReport());
-        document.getElementById('resetBtn')?.addEventListener('click', () => this.resetAnalysis());
-
-        // Global drag and drop prevention
-        document.addEventListener('dragover', (e) => e.preventDefault());
-        document.addEventListener('drop', (e) => e.preventDefault());
-
-        // Settings handlers
-        document.getElementById('aiModeSelect')?.addEventListener('change', (e) => {
-            this.settings.aiMode = e.target.value;
-            this.saveSettings();
-        });
-
-        document.getElementById('reportDetailSelect')?.addEventListener('change', (e) => {
-            this.settings.reportDetail = e.target.value;
-            this.saveSettings();
-        });
-
-        document.getElementById('notificationsToggle')?.addEventListener('change', (e) => {
-            this.settings.notifications = e.target.checked;
-            this.saveSettings();
-        });
-    }
-
-    handleDragOver(e) {
-        e.preventDefault();
-        this.uploadZone.classList.add('dragover');
-    }
-
-    handleDragLeave(e) {
-        e.preventDefault();
-        this.uploadZone.classList.remove('dragover');
-    }
-
-    handleDrop(e) {
-        e.preventDefault();
-        this.uploadZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            this.handleFiles(files);
         }
     }
 
-    handleTabClick(e) {
-        const tabName = e.target.closest('.tab').dataset.tab;
-        if (!tabName) return;
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-
-        e.target.closest('.tab').classList.add('active');
-        document.getElementById(tabName).classList.add('active');
+    handleFileSelection(event) {
+        const file = event.target.files[0];
+        if (file) {
+            this.processFile(file);
+        }
+        // Reset file input
+        event.target.value = '';
     }
 
-    async handleFiles(files) {
-        // Add files to queue if already analyzing
+    handleDragOver(event) {
+        event.preventDefault();
+        this.uploadZone?.classList.add('dragover');
+        this.showDragFeedback(true);
+    }
+
+    handleDragLeave(event) {
+        event.preventDefault();
+        if (!this.uploadZone?.contains(event.relatedTarget)) {
+            this.uploadZone?.classList.remove('dragover');
+            this.showDragFeedback(false);
+        }
+    }
+
+    handleDrop(event) {
+        event.preventDefault();
+        this.uploadZone?.classList.remove('dragover');
+        this.showDragFeedback(false);
+
+        const file = event.dataTransfer.files[0];
+        if (file) {
+            this.processFile(file);
+        }
+    }
+
+    showDragFeedback(show) {
+        if (show) {
+            this.uploadZone?.classList.add('drag-active');
+        } else {
+            this.uploadZone?.classList.remove('drag-active');
+        }
+    }
+
+    async processFile(file) {
+        console.log('📁 Processing file:', file.name);
+
         if (this.isAnalyzing) {
-            this.addFilesToQueue(files);
+            this.showNotification('Analysis already in progress. Please wait.', 'warning');
             return;
         }
-
-        const file = files[0];
-        console.log('=== ENHANCED FILE UPLOAD WITH AI INTEGRATION ===');
-        console.log('File details:', {
-            name: file.name,
-            size: file.size,
-            type: file.type
-        });
 
         if (!this.validateFile(file)) {
             return;
@@ -151,216 +400,37 @@ class SecuNikApp {
         this.currentFileInfo = {
             name: file.name,
             size: file.size,
-            type: file.type,
+            type: file.type || this.detectFileType(file.name),
             lastModified: file.lastModified
         };
 
-        // Show upload progress and results
-        this.showUploadProgress();
-        this.showResults();
-        this.updateFileInfo(file);
-        this.showLoadingStates();
-        this.showUploadAnotherButton();
-
-        const startTime = performance.now();
         this.isAnalyzing = true;
-
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // Enhanced analysis options based on settings
-            formData.append('EnableAIAnalysis', this.settings.aiMode !== 'rules-only');
-            formData.append('GenerateExecutiveReport', this.settings.reportDetail !== 'technical');
-            formData.append('IncludeTimeline', 'true');
-            formData.append('DetailLevel', this.settings.reportDetail);
-
-            console.log('Sending enhanced request with AI integration...');
-
-            // Simulate progress for better UX
-            this.simulateProgress();
-
-            const response = await fetch('/api/analysis/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            const endTime = performance.now();
-            const processingTime = ((endTime - startTime) / 1000).toFixed(2);
-
-            console.log('Enhanced analysis response:', {
-                status: response.status,
-                processingTime: processingTime + 's'
-            });
-
-            if (!response.ok) {
-                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                try {
-                    const errorData = await response.text();
-                    const jsonError = JSON.parse(errorData);
-                    errorMessage = jsonError.error || jsonError.message || errorMessage;
-                } catch (e) {
-                    errorMessage = errorData || errorMessage;
-                }
-                throw new Error(errorMessage);
-            }
-
-            const result = await response.json();
-            console.log('✅ Enhanced AI Analysis Complete:', result);
-
-            // Enhanced result processing
-            result.fileInfo = this.currentFileInfo;
-            result.processingTime = `${processingTime}s`;
-            result.fileSize = file.size;
-            result.analysisId = this.generateAnalysisId();
-            result.timestamp = new Date().toISOString();
-
-            this.currentAnalysisResults = result;
-            this.analysisHistory.push(result);
-            this.analysisCounter++;
-
-            this.hideUploadProgress();
-            this.displayEnhancedAnalysisResults(result);
-            this.updateAnalysisCounter();
-            this.updateTabBadges(result);
-
-            // Process queue if files waiting
-            if (this.fileQueue.length > 0) {
-                setTimeout(() => this.processNextFileInQueue(), 2000);
-            }
-
-        } catch (error) {
-            console.error('❌ Enhanced analysis error:', error);
-            this.hideUploadProgress();
-            this.displayError(error.message);
-        } finally {
-            this.isAnalyzing = false;
-        }
-    }
-
-    addFilesToQueue(files) {
-        Array.from(files).forEach(file => {
-            if (this.validateFile(file)) {
-                this.fileQueue.push({
-                    file: file,
-                    id: this.generateAnalysisId(),
-                    status: 'queued'
-                });
-            }
-        });
-        this.updateFileQueueDisplay();
-        this.showNotification(`${files.length} file(s) added to analysis queue`, 'info');
-    }
-
-    async processNextFileInQueue() {
-        if (this.fileQueue.length === 0 || this.isAnalyzing) return;
-
-        const nextFile = this.fileQueue.shift();
-        nextFile.status = 'processing';
-        this.updateFileQueueDisplay();
-
-        await this.handleFiles([nextFile.file]);
-    }
-
-    updateFileQueueDisplay() {
-        if (this.fileQueue.length === 0) {
-            this.fileQueue.style.display = 'none';
-            return;
-        }
-
-        this.fileQueue.style.display = 'block';
-        this.queueItems.innerHTML = this.fileQueue.map(item => `
-            <div class="queue-item">
-                <span class="queue-file-name">${item.file.name}</span>
-                <span class="queue-status">${item.status}</span>
-            </div>
-        `).join('');
+        await this.analyzeFile(file);
+        this.isAnalyzing = false;
     }
 
     validateFile(file) {
-        const maxSize = 50 * 1024 * 1024;
+        // Size validation
+        const maxSize = 50 * 1024 * 1024; // 50MB
         if (file.size > maxSize) {
             this.showNotification('File too large. Maximum size is 50MB.', 'error');
             return false;
         }
 
-        const fileName = file.name.toLowerCase();
-        const allowedExtensions = [
+        // Type validation
+        const validExtensions = [
             '.csv', '.json', '.log', '.txt', '.evtx', '.evt',
-            '.wtmp', '.utmp', '.btmp', '.lastlog', '.pcap',
-            '.pcapng', '.syslog', '.fwlog', '.dblog',
-            '.maillog', '.dnslog'
+            '.wtmp', '.utmp', '.btmp', '.lastlog', '.pcap', '.pcapng',
+            '.syslog', '.fwlog', '.dblog', '.maillog', '.dnslog'
         ];
-        const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
 
-        if (!hasValidExtension) {
-            this.showNotification(`Unsupported file type. Supported formats: ${allowedExtensions.join(', ')}`, 'error');
+        const extension = '.' + file.name.split('.').pop().toLowerCase();
+        if (!validExtensions.includes(extension)) {
+            this.showNotification(`Unsupported file type: ${extension}. Supported formats: ${validExtensions.join(', ')}`, 'error');
             return false;
         }
 
         return true;
-    }
-
-    showResults() {
-        this.results.classList.remove('hidden');
-        this.results.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    showUploadAnotherButton() {
-        this.uploadAnotherBtn.style.display = 'inline-flex';
-    }
-
-    showUploadProgress() {
-        this.uploadProgress.style.display = 'block';
-    }
-
-    hideUploadProgress() {
-        this.uploadProgress.style.display = 'none';
-    }
-
-    simulateProgress() {
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 15;
-            if (progress > 90) progress = 90;
-
-            this.progressFill.style.width = `${progress}%`;
-            document.querySelector('.progress-percentage').textContent = `${Math.round(progress)}%`;
-
-            // Update progress details
-            const stages = [
-                'Initializing analysis...',
-                'Processing file headers...',
-                'Extracting events...',
-                'Running AI analysis...',
-                'Detecting threats...',
-                'Generating insights...',
-                'Compiling results...'
-            ];
-
-            const stageIndex = Math.floor(progress / 15);
-            if (stages[stageIndex]) {
-                this.progressDetails.textContent = stages[stageIndex];
-            }
-
-            if (progress >= 90) {
-                clearInterval(interval);
-                this.progressFill.style.width = '100%';
-                document.querySelector('.progress-percentage').textContent = '100%';
-                this.progressDetails.textContent = 'Analysis complete!';
-            }
-        }, 300);
-    }
-
-    updateFileInfo(file) {
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('fileType').textContent = file.type || this.detectFileType(file.name);
-
-        // Update file indicator
-        const fileIndicator = document.getElementById('fileIndicator');
-        if (fileIndicator) {
-            fileIndicator.textContent = `File ${this.analysisCounter + 1} of ${this.analysisCounter + 1 + this.fileQueue.length}`;
-        }
     }
 
     detectFileType(fileName) {
@@ -377,1185 +447,1260 @@ class SecuNikApp {
             'syslog': 'System Log',
             'wtmp': 'Unix Login Log',
             'utmp': 'Unix User Log',
-            'btmp': 'Unix Bad Login Log'
+            'btmp': 'Unix Bad Login Log',
+            'lastlog': 'Unix Last Login Log',
+            'fwlog': 'Firewall Log',
+            'dblog': 'Database Log',
+            'maillog': 'Mail Server Log',
+            'dnslog': 'DNS Server Log'
         };
         return typeMap[ext] || 'Unknown';
     }
 
-    showLoadingStates() {
-        document.getElementById('eventCount').textContent = '-';
-        document.getElementById('iocCount').textContent = '-';
-        document.getElementById('riskScore').textContent = '-';
-
-        const loadingHTML = `
-            <div class="loading">
-                <div class="spinner"></div>
-                <span>🤖 Enhanced AI Analysis in progress...</span>
-            </div>
-        `;
-
-        document.getElementById('threatsList').innerHTML = loadingHTML;
-        document.getElementById('iocsList').innerHTML = loadingHTML;
-        document.getElementById('timelineData').innerHTML = loadingHTML;
-        document.getElementById('executiveReport').innerHTML = loadingHTML;
-        document.getElementById('technicalDetails').innerHTML = loadingHTML;
-    }
-
-    updateTabBadges(result) {
-        const data = result.result || result;
-        const threatCount = data.technical?.securityEvents?.length || 0;
-        const iocCount = data.technical?.detectedIOCs?.length || 0;
-
-        document.getElementById('threatsBadge').textContent = threatCount;
-        document.getElementById('iocsBadge').textContent = iocCount;
-
-        // Update badge colors based on count
-        const threatsBadge = document.getElementById('threatsBadge');
-        const iocsBadge = document.getElementById('iocsBadge');
-
-        threatsBadge.style.background = threatCount > 10 ? '#ef4444' : threatCount > 5 ? '#f59e0b' : '#10b981';
-        iocsBadge.style.background = iocCount > 20 ? '#ef4444' : iocCount > 10 ? '#f59e0b' : '#10b981';
-    }
-
-    displayEnhancedAnalysisResults(result) {
-        const data = result.result || result;
+    async analyzeFile(file) {
+        console.log('🔍 Starting comprehensive analysis for:', file.name);
 
         try {
-            console.log('🎯 Displaying Enhanced AI Results:', data);
+            this.prepareAnalysisUI();
+            this.showUploadProgress();
+            this.updateFileStatusWidget('analyzing', file.name);
+            this.simulateProgress();
 
-            const hasAI = data.ai && (data.ai.attackVector || data.ai.severityScore);
-            const aiStatus = hasAI ? '🤖 AI-Powered' : '⚙️ Rule-Based';
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('EnableAIAnalysis', this.settings.aiMode !== 'rules-only');
+            formData.append('GenerateExecutiveReport', this.settings.reportDetail !== 'technical');
+            formData.append('IncludeTimeline', 'true');
+            formData.append('DetailLevel', this.settings.reportDetail);
 
-            this.showNotification(`${aiStatus} Analysis completed successfully!`, 'success');
+            const startTime = Date.now();
 
-            this.updateOverviewMetrics(data);
-            this.updateAISeverityBadge(data);
-            this.updateAIThreatsTab(data);
-            this.updateEnhancedIOCsTab(data);
-            this.updateTimelineTab(data);
-            this.updateAIExecutiveTab(data);
-            this.updateTechnicalTab(data);
+            const response = await fetch('/api/analysis/upload', {
+                method: 'POST',
+                body: formData
+            });
 
-            // Show multi-file summary if multiple analyses
-            if (this.analysisHistory.length > 1) {
-                this.updateMultiFileSummary();
+            const processingTime = Date.now() - startTime;
+
+            if (!response.ok) {
+                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                try {
+                    const errorData = await response.text();
+                    const jsonError = JSON.parse(errorData);
+                    errorMessage = jsonError.error || jsonError.message || errorMessage;
+                } catch (e) {
+                    errorMessage = errorData || errorMessage;
+                }
+                throw new Error(errorMessage);
             }
+
+            const result = await response.json();
+            console.log('✅ Analysis complete:', result);
+
+            // Enhanced result processing
+            result.fileInfo = this.currentFileInfo;
+            result.processingTime = `${(processingTime / 1000).toFixed(2)}s`;
+            result.fileSize = file.size;
+            result.analysisId = this.generateAnalysisId();
+            result.timestamp = new Date().toISOString();
+
+            this.hideUploadProgress();
+            this.displayComprehensiveResults(result, processingTime);
+            this.updateAnalysisCounter();
+
+            this.currentAnalysisResults = result;
+            this.analysisHistory.push(result);
+            this.analysisCounter++;
+
+            this.showNotification('Analysis completed successfully!', 'success');
 
         } catch (error) {
-            console.error('Error displaying enhanced results:', error);
-            this.displayError('Error displaying analysis results');
+            console.error('❌ Analysis failed:', error);
+            this.hideUploadProgress();
+            this.showAnalysisError(error.message);
+            this.showNotification('Analysis failed: ' + error.message, 'error');
         }
     }
 
-    updateTechnicalTab(data) {
-        const technical = data.technical || {};
-        const technicalDetails = document.getElementById('technicalDetails');
-
-        const technicalHTML = `
-            <div class="technical-analysis">
-                <div class="technical-section">
-                    <h4>📊 File Analysis</h4>
-                    <div class="tech-metric">
-                        <span>File Size:</span>
-                        <span class="tech-value">${this.formatFileSize(data.fileSize || 0)}</span>
-                    </div>
-                    <div class="tech-metric">
-                        <span>Processing Time:</span>
-                        <span class="tech-value">${data.processingTime || 'N/A'}</span>
-                    </div>
-                    <div class="tech-metric">
-                        <span>Total Events:</span>
-                        <span class="tech-value">${technical.securityEvents?.length || 0}</span>
-                    </div>
-                    <div class="tech-metric">
-                        <span>IOCs Detected:</span>
-                        <span class="tech-value">${technical.detectedIOCs?.length || 0}</span>
-                    </div>
-                    <div class="tech-metric">
-                        <span>Analysis Engine:</span>
-                        <span class="tech-value">${data.ai?.attackVector ? 'OpenAI GPT-4' : 'Pattern Matching'}</span>
-                    </div>
-                </div>
-
-                <div class="technical-section">
-                    <h4>🔍 Detection Statistics</h4>
-                    ${this.renderDetectionStats(technical)}
-                </div>
-
-                <div class="technical-section">
-                    <h4>⚡ Performance Metrics</h4>
-                    ${this.renderPerformanceMetrics(data)}
-                </div>
-
-                <div class="technical-section">
-                    <h4>🔧 System Information</h4>
-                    ${this.renderSystemInfo(data)}
-                </div>
-            </div>
-        `;
-
-        technicalDetails.innerHTML = technicalHTML;
+    prepareAnalysisUI() {
+        this.showWidgets();
+        this.hideEmptyState();
+        this.resetAllWidgets();
     }
 
-    renderDetectionStats(technical) {
-        const eventsByType = technical.eventsByType || {};
-        const iocsByCategory = technical.iocsByCategory || {};
+    displayComprehensiveResults(result, processingTime) {
+        console.log('📊 Displaying comprehensive analysis results');
 
-        return `
-            <div class="stats-grid">
-                <div class="stat-group">
-                    <h5>Events by Type</h5>
-                    ${Object.entries(eventsByType).map(([type, count]) => `
-                        <div class="tech-metric">
-                            <span>${type}:</span>
-                            <span class="tech-value">${count}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="stat-group">
-                    <h5>IOCs by Category</h5>
-                    ${Object.entries(iocsByCategory).map(([category, count]) => `
-                        <div class="tech-metric">
-                            <span>${category}:</span>
-                            <span class="tech-value">${count}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
+        const data = result.result || result;
+        const hasAI = data.ai && (data.ai.attackVector || data.ai.severityScore);
+
+        // Update all widgets with comprehensive data
+        this.updateSecurityEventsWidget(data);
+        this.updateIOCsWidget(data);
+        this.updateRiskScoreWidget(data);
+        this.updateAIConfidenceWidget(data, hasAI);
+        this.updateFileStatusWidget('complete', this.currentFileInfo?.name || 'Unknown');
+        this.updateThreatIntelWidget(data);
+        this.updateTimelineWidget(data);
+        this.updatePerformanceWidget(processingTime);
+        this.updateExecutiveSummaryWidget(data, hasAI);
+        this.updateComplianceWidget(data);
+        this.updateProcessingTimeWidget(processingTime);
+
+        // Store comprehensive analysis data
+        this.storeAnalysisData(data, processingTime);
+
+        // Note: Upload another button functionality disabled for single upload mode
     }
 
-    renderPerformanceMetrics(data) {
-        const startTime = new Date(data.timestamp || Date.now());
-        const memoryUsage = Math.round(Math.random() * 100 + 50); // Simulated
+    // Comprehensive Widget Update Methods
+    updateSecurityEventsWidget(data) {
+        const widget = this.widgets.get('securityEvents');
+        if (!widget?.element) return;
 
-        return `
-            <div class="tech-metric">
-                <span>Analysis Started:</span>
-                <span class="tech-value">${startTime.toLocaleTimeString()}</span>
-            </div>
-            <div class="tech-metric">
-                <span>Processing Speed:</span>
-                <span class="tech-value">${data.processingTime || 'N/A'}</span>
-            </div>
-            <div class="tech-metric">
-                <span>Memory Usage:</span>
-                <span class="tech-value">${memoryUsage} MB</span>
-            </div>
-            <div class="tech-metric">
-                <span>Analysis ID:</span>
-                <span class="tech-value">${data.analysisId || 'N/A'}</span>
-            </div>
-        `;
-    }
+        const events = data.technical?.securityEvents || [];
+        const eventCount = events.length;
+        const severity = this.calculateEventSeverity(events);
+        const trend = this.calculateEventTrend(events);
 
-    renderSystemInfo(data) {
-        return `
-            <div class="tech-metric">
-                <span>Platform:</span>
-                <span class="tech-value">SecuNik v2.0 Ultimate</span>
-            </div>
-            <div class="tech-metric">
-                <span>AI Model:</span>
-                <span class="tech-value">${data.ai?.attackVector ? 'OpenAI GPT-4o-mini' : 'Pattern Engine'}</span>
-            </div>
-            <div class="tech-metric">
-                <span>User Agent:</span>
-                <span class="tech-value">${navigator.userAgent.split(' ')[0]}</span>
-            </div>
-            <div class="tech-metric">
-                <span>Session ID:</span>
-                <span class="tech-value">${this.generateSessionId()}</span>
-            </div>
-        `;
-    }
-
-    updateMultiFileSummary() {
-        this.multiFileSummary.style.display = 'block';
-
-        const totalThreats = this.analysisHistory.reduce((sum, analysis) =>
-            sum + (analysis.result?.technical?.securityEvents?.length || 0), 0);
-        const totalIOCs = this.analysisHistory.reduce((sum, analysis) =>
-            sum + (analysis.result?.technical?.detectedIOCs?.length || 0), 0);
-        const aiAnalyses = this.analysisHistory.filter(analysis =>
-            analysis.result?.ai?.attackVector).length;
-
-        this.summaryGrid.innerHTML = `
-            <div class="summary-card">
-                <div class="summary-title">📊 Total Files Analyzed</div>
-                <div class="summary-stats">
-                    <div class="summary-stat">
-                        <span>Files:</span>
-                        <span>${this.analysisHistory.length}</span>
-                    </div>
-                    <div class="summary-stat">
-                        <span>AI-Powered:</span>
-                        <span>${aiAnalyses}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="summary-card">
-                <div class="summary-title">🚨 Threat Summary</div>
-                <div class="summary-stats">
-                    <div class="summary-stat">
-                        <span>Total Events:</span>
-                        <span>${totalThreats}</span>
-                    </div>
-                    <div class="summary-stat">
-                        <span>Average per File:</span>
-                        <span>${Math.round(totalThreats / this.analysisHistory.length)}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="summary-card">
-                <div class="summary-title">🎯 IOC Summary</div>
-                <div class="summary-stats">
-                    <div class="summary-stat">
-                        <span>Total IOCs:</span>
-                        <span>${totalIOCs}</span>
-                    </div>
-                    <div class="summary-stat">
-                        <span>Unique Indicators:</span>
-                        <span>${this.countUniqueIOCs()}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="summary-card">
-                <div class="summary-title">⏱️ Session Stats</div>
-                <div class="summary-stats">
-                    <div class="summary-stat">
-                        <span>Session Duration:</span>
-                        <span>${this.getSessionDuration()}</span>
-                    </div>
-                    <div class="summary-stat">
-                        <span>Analysis Rate:</span>
-                        <span>${this.getAnalysisRate()}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    countUniqueIOCs() {
-        const allIOCs = new Set();
-        this.analysisHistory.forEach(analysis => {
-            const iocs = analysis.result?.technical?.detectedIOCs || [];
-            iocs.forEach(ioc => allIOCs.add(ioc));
-        });
-        return allIOCs.size;
-    }
-
-    getSessionDuration() {
-        if (this.analysisHistory.length === 0) return '0m';
-        const firstAnalysis = new Date(this.analysisHistory[0].timestamp);
-        const lastAnalysis = new Date(this.analysisHistory[this.analysisHistory.length - 1].timestamp);
-        const diffMinutes = Math.round((lastAnalysis - firstAnalysis) / 60000);
-        return `${diffMinutes}m`;
-    }
-
-    getAnalysisRate() {
-        const duration = this.getSessionDuration();
-        const minutes = parseInt(duration);
-        if (minutes === 0) return '1/min';
-        return `${Math.round(this.analysisHistory.length / minutes * 10) / 10}/min`;
-    }
-
-    // Enhanced action functions
-    exportAllResults() {
-        if (this.analysisHistory.length === 0) {
-            this.showNotification('No analysis results to export', 'error');
-            return;
+        if (widget.counter) {
+            widget.counter.textContent = eventCount;
+            this.animateCounter(widget.counter, 0, eventCount, 1000);
         }
 
-        const exportData = {
-            export_metadata: {
-                export_time: new Date().toISOString(),
-                platform: 'SecuNik Ultimate v2.0',
-                total_files: this.analysisHistory.length,
-                ai_analyses: this.analysisHistory.filter(a => a.result?.ai?.attackVector).length,
-                session_duration: this.getSessionDuration()
+        if (widget.status) {
+            widget.status.textContent = severity;
+            widget.status.className = 'widget-badge ' + severity.toLowerCase();
+        }
+
+        if (widget.change) {
+            const trendIcon = trend > 0 ? '📈' : trend < 0 ? '📉' : '📊';
+            widget.change.innerHTML = `<span>${trendIcon}</span><span>+${eventCount}</span>`;
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    updateIOCsWidget(data) {
+        const widget = this.widgets.get('iocs');
+        if (!widget?.element) return;
+
+        const iocs = data.technical?.detectedIOCs || [];
+        const iocCount = iocs.length;
+        const categorized = this.categorizeIOCs(iocs);
+
+        if (widget.counter) {
+            widget.counter.textContent = iocCount;
+            this.animateCounter(widget.counter, 0, iocCount, 1000);
+        }
+
+        if (widget.status) {
+            const status = iocCount > 0 ? 'Detected' : 'None';
+            widget.status.textContent = status;
+            widget.status.className = `widget-badge ${iocCount > 0 ? 'info' : 'success'}`;
+        }
+
+        if (widget.change) {
+            widget.change.innerHTML = `<span>🔍</span><span>Analyzed</span>`;
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+
+        // Store IOC data for detailed view
+        widget.element.setAttribute('data-iocs', JSON.stringify(categorized));
+    }
+
+    updateRiskScoreWidget(data) {
+        const widget = this.widgets.get('riskScore');
+        if (!widget?.element) return;
+
+        const riskScore = data.ai?.severityScore || this.calculateRiskScore(data);
+        const riskLevel = this.getRiskLevel(riskScore);
+        const riskColor = this.getRiskColor(riskLevel);
+
+        if (widget.counter) {
+            widget.counter.textContent = riskScore;
+            widget.counter.style.color = riskColor;
+            this.animateCounter(widget.counter, 0, riskScore, 1500);
+        }
+
+        if (widget.status) {
+            widget.status.textContent = riskLevel;
+            widget.status.className = 'widget-badge ' + riskLevel.toLowerCase();
+        }
+
+        if (widget.change) {
+            widget.change.innerHTML = `<span>📊</span><span>Calculated</span>`;
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    updateAIConfidenceWidget(data, hasAI) {
+        const widget = this.widgets.get('aiConfidence');
+        if (!widget?.element) return;
+
+        const confidence = hasAI ? this.calculateAIConfidence(data) : this.calculateRuleConfidence(data);
+        const confidencePercent = Math.round(confidence * 100);
+
+        if (widget.counter) {
+            widget.counter.textContent = `${confidencePercent}%`;
+            this.animateCounter(widget.counter, 0, confidencePercent, 1200);
+        }
+
+        if (widget.status) {
+            widget.status.textContent = hasAI ? 'AI' : 'Rules';
+            widget.status.className = `widget-badge ${hasAI ? 'success' : 'info'}`;
+        }
+
+        if (widget.change) {
+            const level = confidencePercent >= 90 ? 'High' : confidencePercent >= 70 ? 'Medium' : 'Low';
+            widget.change.innerHTML = `<span>✨</span><span>${level}</span>`;
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    updateFileStatusWidget(status, fileName) {
+        const widget = this.widgets.get('fileStatus');
+        if (!widget?.element) return;
+
+        const statusConfig = {
+            analyzing: {
+                icon: '🔄',
+                title: 'Analysis in Progress',
+                description: `Processing ${fileName} with AI-enhanced detection`,
+                badge: 'Processing',
+                class: 'info'
             },
-            analyses: this.analysisHistory.map(analysis => ({
-                file_info: analysis.fileInfo,
-                analysis_id: analysis.analysisId,
-                timestamp: analysis.timestamp,
-                processing_time: analysis.processingTime,
-                results: analysis.result,
-                ai_powered: !!analysis.result?.ai?.attackVector
-            })),
-            summary: {
-                total_threats: this.analysisHistory.reduce((sum, a) =>
-                    sum + (a.result?.technical?.securityEvents?.length || 0), 0),
-                total_iocs: this.analysisHistory.reduce((sum, a) =>
-                    sum + (a.result?.technical?.detectedIOCs?.length || 0), 0),
-                unique_iocs: this.countUniqueIOCs()
+            complete: {
+                icon: '✅',
+                title: 'Analysis Complete',
+                description: `Successfully analyzed ${fileName} - ${this.getAnalysisSummary()}`,
+                badge: 'Complete',
+                class: 'success'
+            },
+            error: {
+                icon: '❌',
+                title: 'Analysis Failed',
+                description: `Failed to analyze ${fileName} - check file format`,
+                badge: 'Error',
+                class: 'error'
             }
         };
 
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `secunik_analysis_session_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const config = statusConfig[status] || statusConfig.complete;
 
-        this.showNotification(`Exported ${this.analysisHistory.length} analysis results`, 'success');
-    }
-
-    shareAnalysis() {
-        if (!this.currentAnalysisResults) {
-            this.showNotification('No analysis results to share', 'error');
-            return;
+        if (widget.indicator) {
+            widget.indicator.innerHTML = `<span>${config.icon}</span>`;
+            if (status === 'analyzing') {
+                widget.indicator.classList.add('spinning');
+            } else {
+                widget.indicator.classList.remove('spinning');
+            }
         }
 
-        const shareData = {
-            title: 'SecuNik Cybersecurity Analysis',
-            text: `Analysis of ${this.currentAnalysisResults.fileInfo?.name || 'unknown file'}`,
-            url: window.location.href
+        if (widget.title) widget.title.textContent = config.title;
+        if (widget.description) widget.description.textContent = config.description;
+        if (widget.badge) {
+            widget.badge.textContent = config.badge;
+            widget.badge.className = 'widget-badge ' + config.class;
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    updateThreatIntelWidget(data) {
+        const widget = this.widgets.get('threatIntel');
+        if (!widget?.element || !widget.list) return;
+
+        const events = data.technical?.securityEvents || [];
+        const threats = this.extractThreatIntelligence(events);
+        const threatCount = threats.length;
+
+        if (widget.status) {
+            widget.status.textContent = threatCount > 0 ? `${threatCount} Threats` : 'No Threats';
+            widget.status.className = `widget-badge ${threatCount > 0 ? 'error' : 'success'}`;
+        }
+
+        if (threats.length > 0) {
+            widget.list.innerHTML = threats.slice(0, 5).map(threat => `
+                <div class="threat-intel-item" data-severity="${threat.severity.toLowerCase()}">
+                    <div class="threat-icon">${this.getThreatIcon(threat.type)}</div>
+                    <div class="threat-content">
+                        <div class="threat-title">${threat.title}</div>
+                        <div class="threat-description">${this.truncateText(threat.description, 80)}</div>
+                        <div class="threat-metadata">
+                            <span class="threat-time">${this.formatTime(threat.timestamp)}</span>
+                            <span class="threat-source">${threat.source}</span>
+                        </div>
+                    </div>
+                    <div class="threat-severity severity-${threat.severity.toLowerCase()}">${threat.severity}</div>
+                </div>
+            `).join('');
+        } else {
+            widget.list.innerHTML = '<div class="no-threats">No security threats detected</div>';
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    updateTimelineWidget(data) {
+        const widget = this.widgets.get('timeline');
+        if (!widget?.element || !widget.list) return;
+
+        const events = data.timeline?.events || this.buildTimelineFromEvents(data.technical?.securityEvents || []);
+        const eventCount = events.length;
+
+        if (widget.status) {
+            widget.status.textContent = `${eventCount} Events`;
+            widget.status.className = 'widget-badge info';
+        }
+
+        if (events.length > 0) {
+            widget.list.innerHTML = events.slice(0, 6).map((event, index) => `
+                <div class="timeline-event-item" style="animation-delay: ${index * 100}ms">
+                    <div class="timeline-timestamp">${this.formatTimestamp(event.timestamp)}</div>
+                    <div class="timeline-event-content">
+                        <div class="timeline-event-title">${event.event || event.eventType || 'System Event'}</div>
+                        <div class="timeline-event-source">${event.source || 'System'}</div>
+                        <div class="timeline-event-confidence">${event.confidence || 'High'} confidence</div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            widget.list.innerHTML = '<div class="no-events">No timeline events available</div>';
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    updatePerformanceWidget(processingTime) {
+        const widget = this.widgets.get('performance');
+        if (!widget?.element) return;
+
+        // Calculate performance metrics
+        const cpuUsage = this.calculateCPUUsage(processingTime);
+        const memoryUsage = this.calculateMemoryUsage();
+        const analysisSpeed = this.calculateAnalysisSpeed(processingTime);
+
+        // Update display values
+        if (widget.cpu) {
+            widget.cpu.textContent = `${cpuUsage}%`;
+            this.animateCounter(widget.cpu, 0, cpuUsage, 800);
+        }
+        if (widget.memory) {
+            widget.memory.textContent = `${memoryUsage}%`;
+            this.animateCounter(widget.memory, 0, memoryUsage, 900);
+        }
+        if (widget.speed) {
+            widget.speed.textContent = `${analysisSpeed}/s`;
+        }
+
+        // Update progress bars
+        if (widget.cpuProgress) {
+            this.animateProgressBar(widget.cpuProgress, cpuUsage);
+        }
+        if (widget.memoryProgress) {
+            this.animateProgressBar(widget.memoryProgress, memoryUsage);
+        }
+        if (widget.speedProgress) {
+            this.animateProgressBar(widget.speedProgress, Math.min(analysisSpeed * 10, 100));
+        }
+
+        if (widget.status) {
+            widget.status.textContent = 'Optimal';
+            widget.status.className = 'widget-badge success';
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+
+        // Store metrics for trending
+        this.performanceMetrics = { cpuUsage, memoryUsage, analysisSpeed };
+    }
+
+    updateExecutiveSummaryWidget(data, hasAI) {
+        const widget = this.widgets.get('executiveSummary');
+        if (!widget?.element || !widget.content) return;
+
+        if (hasAI && (data.executive?.summary || data.ai?.businessImpact)) {
+            const aiSummary = this.generateAIExecutiveSummary(data);
+            widget.content.innerHTML = aiSummary;
+            if (widget.status) {
+                widget.status.textContent = 'AI Generated';
+                widget.status.className = 'widget-badge success';
+            }
+        } else {
+            const basicSummary = this.generateBasicExecutiveSummary(data);
+            widget.content.innerHTML = basicSummary;
+            if (widget.status) {
+                widget.status.textContent = 'Rule-Based';
+                widget.status.className = 'widget-badge info';
+            }
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    updateComplianceWidget(data) {
+        const widget = this.widgets.get('compliance');
+        if (!widget?.element) return;
+
+        const complianceScore = this.calculateComplianceScore(data);
+        const complianceStatus = this.getComplianceStatus(complianceScore);
+
+        if (widget.score) {
+            widget.score.textContent = `${complianceScore}%`;
+            this.animateCounter(widget.score, 0, complianceScore, 1300);
+        }
+
+        if (widget.status) {
+            widget.status.textContent = complianceStatus;
+            widget.status.className = `widget-badge ${this.getComplianceClass(complianceScore)}`;
+        }
+
+        if (widget.change) {
+            widget.change.innerHTML = `<span>📋</span><span>Assessed</span>`;
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    updateProcessingTimeWidget(processingTime) {
+        const widget = this.widgets.get('processingTime');
+        if (!widget?.element) return;
+
+        const seconds = Math.round(processingTime / 1000 * 10) / 10;
+        const timeStatus = this.getProcessingTimeStatus(seconds);
+
+        if (widget.value) {
+            widget.value.textContent = seconds;
+            this.animateCounter(widget.value, 0, seconds, 800);
+        }
+
+        if (widget.status) {
+            widget.status.textContent = timeStatus;
+            widget.status.className = `widget-badge ${this.getTimeStatusClass(seconds)}`;
+        }
+
+        if (widget.change) {
+            widget.change.innerHTML = `<span>🚀</span><span>${timeStatus}</span>`;
+        }
+
+        widget.element.style.display = 'block';
+        this.addWidgetAnimation(widget.element);
+    }
+
+    // Progress and Animation Methods
+    showUploadProgress() {
+        if (this.uploadProgress) {
+            this.uploadProgress.style.display = 'block';
+        }
+    }
+
+    hideUploadProgress() {
+        if (this.uploadProgress) {
+            this.uploadProgress.style.display = 'none';
+        }
+        if (this.progressFill) {
+            this.progressFill.style.width = '0%';
+        }
+    }
+
+    simulateProgress() {
+        let progress = 0;
+        const stages = [
+            'Initializing AI analysis engine...',
+            'Parsing file structure and headers...',
+            'Extracting security events and patterns...',
+            'Running advanced threat detection...',
+            'Analyzing with machine learning models...',
+            'Correlating indicators of compromise...',
+            'Generating threat intelligence insights...',
+            'Compiling executive summary...',
+            'Finalizing comprehensive report...'
+        ];
+
+        const interval = setInterval(() => {
+            progress += Math.random() * 12 + 3;
+            if (progress > 95) progress = 95;
+
+            if (this.progressFill) {
+                this.progressFill.style.width = `${progress}%`;
+            }
+
+            const stageIndex = Math.floor(progress / 12);
+            if (this.progressDetails && stages[stageIndex]) {
+                this.progressDetails.textContent = stages[stageIndex];
+            }
+
+            if (progress >= 95) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    if (this.progressFill) this.progressFill.style.width = '100%';
+                    if (this.progressDetails) this.progressDetails.textContent = 'Analysis complete!';
+                }, 500);
+            }
+        }, 200);
+    }
+
+    animateCounter(element, start, end, duration) {
+        if (!element) return;
+
+        const startTime = Date.now();
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const current = Math.floor(start + (end - start) * this.easeOutCubic(progress));
+
+            element.textContent = current;
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                element.textContent = end;
+            }
         };
 
-        if (navigator.share) {
-            navigator.share(shareData).then(() => {
-                this.showNotification('Analysis shared successfully', 'success');
-            }).catch(err => {
-                console.log('Error sharing:', err);
-                this.copyAnalysisLink();
-            });
-        } else {
-            this.copyAnalysisLink();
-        }
+        requestAnimationFrame(animate);
     }
 
-    copyAnalysisLink() {
-        const analysisUrl = `${window.location.origin}${window.location.pathname}?analysis=${this.currentAnalysisResults.analysisId}`;
-        navigator.clipboard.writeText(analysisUrl).then(() => {
-            this.showNotification('Analysis link copied to clipboard', 'success');
-        }).catch(() => {
-            this.showNotification('Unable to copy link', 'error');
+    animateProgressBar(element, targetWidth) {
+        if (!element) return;
+
+        element.style.transition = 'width 1s ease-out';
+        element.style.width = `${targetWidth}%`;
+    }
+
+    addWidgetAnimation(element) {
+        if (!element) return;
+
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            element.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, 100);
+    }
+
+    easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+    }
+
+    startSystemAnimations() {
+        // Animate system status indicators
+        setInterval(() => {
+            if (this.isAnalyzing) {
+                this.updatePerformanceMetrics();
+            }
+        }, 2000);
+
+        // Pulse animation for active elements
+        setInterval(() => {
+            document.querySelectorAll('.status-dot').forEach(dot => {
+                dot.style.animation = 'pulse 2s infinite';
+            });
+        }, 1000);
+    }
+
+    updatePerformanceMetrics() {
+        if (!this.isAnalyzing) return;
+
+        const widget = this.widgets.get('performance');
+        if (!widget) return;
+
+        // Simulate realistic performance fluctuations during analysis
+        const cpuVariation = Math.random() * 10 - 5;
+        const memoryVariation = Math.random() * 8 - 4;
+
+        const newCpu = Math.max(0, Math.min(100, this.performanceMetrics.cpuUsage + cpuVariation));
+        const newMemory = Math.max(0, Math.min(100, this.performanceMetrics.memoryUsage + memoryVariation));
+
+        if (widget.cpu) widget.cpu.textContent = `${Math.round(newCpu)}%`;
+        if (widget.memory) widget.memory.textContent = `${Math.round(newMemory)}%`;
+        if (widget.cpuProgress) widget.cpuProgress.style.width = `${newCpu}%`;
+        if (widget.memoryProgress) widget.memoryProgress.style.width = `${newMemory}%`;
+
+        this.performanceMetrics.cpuUsage = newCpu;
+        this.performanceMetrics.memoryUsage = newMemory;
+    }
+
+    // Widget Management
+    showWidgets() {
+        this.widgets.forEach((widget, key) => {
+            if (widget.element) {
+                widget.element.style.display = 'block';
+            }
         });
     }
 
-    printReport() {
-        if (!this.currentAnalysisResults) {
-            this.showNotification('No analysis results to print', 'error');
-            return;
+    hideEmptyState() {
+        if (this.emptyState) {
+            this.emptyState.style.display = 'none';
+        }
+    }
+
+    showEmptyState() {
+        if (this.emptyState) {
+            this.emptyState.style.display = 'block';
         }
 
-        const printWindow = window.open('', '_blank');
-        const printContent = this.generatePrintReport();
-
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>SecuNik Analysis Report</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; }
-                        h1, h2, h3 { color: #333; }
-                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; }
-                        .section { margin: 20px 0; }
-                        .metric { display: flex; justify-content: space-between; margin: 5px 0; }
-                        .ai-badge { background: #e7f3ff; padding: 5px; border-radius: 5px; }
-                        @media print { body { margin: 0; } }
-                    </style>
-                </head>
-                <body>
-                    ${printContent}
-                </body>
-            </html>
-        `);
-
-        printWindow.document.close();
-        printWindow.print();
-
-        this.showNotification('Report prepared for printing', 'success');
-    }
-
-    generatePrintReport() {
-        const data = this.currentAnalysisResults.result || this.currentAnalysisResults;
-        const hasAI = data.ai && data.ai.attackVector;
-
-        return `
-            <div class="header">
-                <h1>SecuNik Cybersecurity Analysis Report</h1>
-                <p>Generated: ${new Date().toLocaleString()}</p>
-                <p>File: ${this.currentAnalysisResults.fileInfo?.name || 'N/A'}</p>
-                ${hasAI ? '<div class="ai-badge">🤖 AI-Powered Analysis</div>' : ''}
-            </div>
-            
-            <div class="section">
-                <h2>Executive Summary</h2>
-                <p>${data.executive?.summary || 'No executive summary available'}</p>
-            </div>
-            
-            <div class="section">
-                <h2>Key Metrics</h2>
-                <div class="metric"><span>Security Events:</span><span>${data.technical?.securityEvents?.length || 0}</span></div>
-                <div class="metric"><span>IOCs Detected:</span><span>${data.technical?.detectedIOCs?.length || 0}</span></div>
-                <div class="metric"><span>Risk Score:</span><span>${data.ai?.severityScore || 'N/A'}</span></div>
-                <div class="metric"><span>Processing Time:</span><span>${this.currentAnalysisResults.processingTime || 'N/A'}</span></div>
-            </div>
-            
-            ${hasAI ? `
-            <div class="section">
-                <h2>AI Analysis</h2>
-                <p><strong>Attack Vector:</strong> ${data.ai.attackVector}</p>
-                <p><strong>Business Impact:</strong> ${data.ai.businessImpact}</p>
-                <p><strong>Threat Assessment:</strong> ${data.ai.threatAssessment}</p>
-            </div>
-            ` : ''}
-            
-            <div class="section">
-                <h2>Recommendations</h2>
-                ${data.ai?.recommendedActions ? data.ai.recommendedActions.map(action => `<p>• ${action}</p>`).join('') : '<p>No specific recommendations available</p>'}
-            </div>
-        `;
-    }
-
-    resetAnalysis() {
-        if (confirm('Are you sure you want to start a new analysis session? This will clear all current results.')) {
-            this.currentAnalysisResults = null;
-            this.currentFileInfo = null;
-            this.analysisHistory = [];
-            this.analysisCounter = 0;
-            this.fileQueue = [];
-
-            this.results.classList.add('hidden');
+        // Hide upload another button when showing empty state
+        if (this.uploadAnotherBtn) {
             this.uploadAnotherBtn.style.display = 'none';
-            this.multiFileSummary.style.display = 'none';
-            this.fileQueue.style.display = 'none';
+        }
 
-            this.updateAnalysisCounter();
-            this.showNotification('Analysis session reset', 'info');
+        this.resetAllWidgets();
+    }
+
+    resetAllWidgets() {
+        this.widgets.forEach((widget, key) => {
+            if (widget.element) {
+                widget.element.style.display = 'none';
+            }
+        });
+    }
+
+    setupWidgetRefresh() {
+        this.widgets.forEach((widget, key) => {
+            if (widget.element) {
+                // Add refresh button to widget headers
+                const header = widget.element.querySelector('.widget-header');
+                if (header && !header.querySelector('.widget-refresh')) {
+                    const refreshBtn = document.createElement('button');
+                    refreshBtn.className = 'widget-refresh';
+                    refreshBtn.innerHTML = '🔄';
+                    refreshBtn.title = 'Refresh widget';
+                    refreshBtn.addEventListener('click', () => this.refreshWidget(key));
+                    header.appendChild(refreshBtn);
+                }
+            }
+        });
+    }
+
+    refreshWidget(widgetKey) {
+        if (this.currentAnalysisResults) {
+            switch (widgetKey) {
+                case 'securityEvents':
+                    this.updateSecurityEventsWidget(this.currentAnalysisResults.result || this.currentAnalysisResults);
+                    break;
+                case 'iocs':
+                    this.updateIOCsWidget(this.currentAnalysisResults.result || this.currentAnalysisResults);
+                    break;
+                case 'riskScore':
+                    this.updateRiskScoreWidget(this.currentAnalysisResults.result || this.currentAnalysisResults);
+                    break;
+                // Add more widget refresh handlers as needed
+            }
+            this.showNotification(`${widgetKey} widget refreshed`, 'info');
+        }
+    }
+
+    showWidgetContextMenu(event, widgetKey) {
+        // Create context menu for widget actions
+        const contextMenu = document.createElement('div');
+        contextMenu.className = 'widget-context-menu';
+        contextMenu.style.position = 'fixed';
+        contextMenu.style.left = `${event.clientX}px`;
+        contextMenu.style.top = `${event.clientY}px`;
+        contextMenu.style.zIndex = '1000';
+
+        contextMenu.innerHTML = `
+            <div class="context-menu-item" onclick="window.secuNikApp.refreshWidget('${widgetKey}')">🔄 Refresh</div>
+            <div class="context-menu-item" onclick="window.secuNikApp.exportWidget('${widgetKey}')">📤 Export</div>
+            <div class="context-menu-item" onclick="window.secuNikApp.minimizeWidget('${widgetKey}')">➖ Minimize</div>
+        `;
+
+        document.body.appendChild(contextMenu);
+
+        // Remove context menu on click outside
+        setTimeout(() => {
+            document.addEventListener('click', () => {
+                if (contextMenu.parentNode) {
+                    contextMenu.remove();
+                }
+            }, { once: true });
+        }, 100);
+    }
+
+    exportWidget(widgetKey) {
+        const widget = this.widgets.get(widgetKey);
+        if (!widget || !this.currentAnalysisResults) return;
+
+        const data = this.currentAnalysisResults.result || this.currentAnalysisResults;
+        let exportData = {};
+
+        switch (widgetKey) {
+            case 'securityEvents':
+                exportData = {
+                    widget: 'Security Events',
+                    events: data.technical?.securityEvents || [],
+                    count: data.technical?.securityEvents?.length || 0,
+                    exportTime: new Date().toISOString()
+                };
+                break;
+            case 'iocs':
+                exportData = {
+                    widget: 'Indicators of Compromise',
+                    iocs: data.technical?.detectedIOCs || [],
+                    categorized: this.categorizeIOCs(data.technical?.detectedIOCs || []),
+                    exportTime: new Date().toISOString()
+                };
+                break;
+            // Add more widget export handlers
+        }
+
+        this.downloadJSON(exportData, `secunik-${widgetKey}-export.json`);
+        this.showNotification(`${widgetKey} widget data exported`, 'success');
+    }
+
+    minimizeWidget(widgetKey) {
+        const widget = this.widgets.get(widgetKey);
+        if (!widget?.element) return;
+
+        const content = widget.element.querySelector('.widget-content, .metric-value, .status-content');
+        if (content) {
+            content.style.display = content.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    // Modal Management
+    showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    hideModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    // Settings Management
+    loadSettings() {
+        const saved = localStorage.getItem('secunik_widget_settings');
+        if (saved) {
+            try {
+                this.settings = { ...this.settings, ...JSON.parse(saved) };
+            } catch (e) {
+                console.warn('Failed to load settings:', e);
+            }
+        }
+        this.applySettings();
+    }
+
+    saveSettings() {
+        localStorage.setItem('secunik_widget_settings', JSON.stringify(this.settings));
+    }
+
+    applySettings() {
+        const aiModeSelect = document.getElementById('aiModeSelect');
+        const reportDetailSelect = document.getElementById('reportDetailSelect');
+        const notificationsToggle = document.getElementById('notificationsToggle');
+
+        if (aiModeSelect) aiModeSelect.value = this.settings.aiMode;
+        if (reportDetailSelect) reportDetailSelect.value = this.settings.reportDetail;
+        if (notificationsToggle) notificationsToggle.checked = this.settings.notifications;
+    }
+
+    updateAIModeStatus() {
+        // Update UI elements based on AI mode
+        const aiIndicators = document.querySelectorAll('.ai-indicator');
+        aiIndicators.forEach(indicator => {
+            indicator.style.display = this.settings.aiMode === 'ai-only' ? 'block' : 'none';
+        });
+    }
+
+    initializePerformanceMonitoring() {
+        // Initial performance metrics
+        this.performanceMetrics = {
+            cpuUsage: Math.floor(Math.random() * 20 + 10),
+            memoryUsage: Math.floor(Math.random() * 30 + 20),
+            analysisSpeed: 0
+        };
+    }
+
+    // API Methods
+    async checkSystemStatus() {
+        try {
+            const response = await fetch('/health');
+            if (response.ok) {
+                const data = await response.json();
+                if (this.systemStatus) {
+                    this.systemStatus.textContent = 'System Online';
+                }
+                console.log('✅ System health check passed:', data);
+                return true;
+            } else {
+                throw new Error(`Health check failed: ${response.status}`);
+            }
+        } catch (error) {
+            if (this.systemStatus) {
+                this.systemStatus.textContent = 'System Issues';
+            }
+            console.warn('❌ System health check failed:', error);
+            return false;
+        }
+    }
+
+    async testAPIConnection() {
+        try {
+            console.log('🔗 Testing API connectivity...');
+
+            const healthResponse = await fetch('/api/analysis/health');
+            if (healthResponse.ok) {
+                const healthData = await healthResponse.json();
+                console.log('✅ API health check:', healthData);
+            }
+
+            const typesResponse = await fetch('/api/analysis/supported-types');
+            if (typesResponse.ok) {
+                const typesData = await typesResponse.json();
+                console.log('✅ Supported file types:', typesData);
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('❌ API connection test failed:', error);
+            return false;
         }
     }
 
     updateAnalysisCounter() {
-        if (this.analysisCounterElement) {
-            this.analysisCounterElement.textContent = `${this.analysisCounter} Files Analyzed`;
+        if (this.analysisCounter) {
+            this.analysisCounter.textContent = `${this.analysisCounter} Files Analyzed`;
         }
     }
 
-    // Settings management
-    loadSettings() {
-        const saved = localStorage.getItem('secunik_settings');
-        if (saved) {
-            this.settings = { ...this.settings, ...JSON.parse(saved) };
-            this.applySettings();
-        }
+    // Calculation and Analysis Methods
+    calculateEventSeverity(events) {
+        const criticalCount = events.filter(e => e.severity?.toLowerCase() === 'critical').length;
+        const highCount = events.filter(e => e.severity?.toLowerCase() === 'high').length;
+
+        if (criticalCount > 0) return 'Critical';
+        if (highCount > 3) return 'High';
+        if (events.length > 10) return 'Medium';
+        return 'Low';
     }
 
-    saveSettings() {
-        localStorage.setItem('secunik_settings', JSON.stringify(this.settings));
-        this.showNotification('Settings saved', 'success');
+    calculateEventTrend(events) {
+        // Simple trend calculation based on event timestamps
+        if (events.length < 2) return 0;
+
+        const recent = events.filter(e => {
+            const eventTime = new Date(e.timestamp);
+            const now = new Date();
+            return (now - eventTime) < (24 * 60 * 60 * 1000); // Last 24 hours
+        });
+
+        return recent.length / events.length > 0.5 ? 1 : -1;
     }
 
-    applySettings() {
-        document.getElementById('aiModeSelect').value = this.settings.aiMode;
-        document.getElementById('reportDetailSelect').value = this.settings.reportDetail;
-        document.getElementById('notificationsToggle').checked = this.settings.notifications;
-    }
-
-    // Utility functions
-    generateAnalysisId() {
-        return 'ANL_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    }
-
-    generateSessionId() {
-        return 'SES_' + Date.now().toString(36).substr(-8);
-    }
-
-    // Keep all existing functions from the original app.js
-    updateOverviewMetrics(data) {
-        const technical = data.technical || {};
-        const ai = data.ai || {};
-
-        document.getElementById('eventCount').textContent = technical.securityEvents?.length || 0;
-        document.getElementById('iocCount').textContent = technical.detectedIOCs?.length || 0;
-        document.getElementById('riskScore').textContent = ai.severityScore || 'N/A';
-
-        this.createAIEnhancedOverview(data);
-    }
-
-    updateAISeverityBadge(data) {
-        const severityScore = data.ai?.severityScore || data.technical?.securityEvents?.length || 3;
-        const badge = document.getElementById('severityBadge');
-
-        if (severityScore >= 7) {
-            badge.textContent = 'High Risk';
-            badge.className = 'severity high';
-        } else if (severityScore >= 4) {
-            badge.textContent = 'Medium Risk';
-            badge.className = 'severity medium';
-        } else {
-            badge.textContent = 'Low Risk';
-            badge.className = 'severity low';
-        }
-    }
-
-    // Continue with all the existing methods from the original app.js...
-    createAIEnhancedOverview(data) {
-        const technical = data.technical || {};
-        const ai = data.ai || {};
-        const executive = data.executive || {};
-
-        const overviewContent = document.getElementById('overview');
-        const iocAnalysis = this.analyzeIOCs(technical.detectedIOCs || []);
-        const threatAnalysis = this.analyzeThreats(technical.securityEvents || []);
-
-        const hasAI = ai.attackVector || ai.severityScore;
-        const aiIndicator = hasAI ? '🤖 AI-Powered Analysis' : '⚙️ Rule-Based Analysis';
-        const aiColor = hasAI ? '#00ff9d' : '#94a3b8';
-
-        const enhancedHTML = `
-            <div class="overview-enhanced">
-                <!-- AI Status Banner -->
-                <div class="ai-status-banner" style="background: rgba(0, 255, 157, 0.1); border: 1px solid rgba(0, 255, 157, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; text-align: center;">
-                    <div style="color: ${aiColor}; font-weight: 600; font-size: 1.1rem;">${aiIndicator}</div>
-                    ${hasAI ? '<div style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.25rem;">Advanced threat intelligence and recommendations generated</div>' : '<div style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.25rem;">Pattern-based analysis completed</div>'}
-                </div>
-
-                <!-- Quick Stats Grid -->
-                <div class="quick-stats-grid">
-                    <div class="stat-card ${threatAnalysis.critical > 0 ? 'critical' : 'info'}">
-                        <div class="stat-icon">🚨</div>
-                        <div class="stat-info">
-                            <div class="stat-number">${threatAnalysis.critical}</div>
-                            <div class="stat-label">Critical Threats</div>
-                        </div>
-                    </div>
-                    <div class="stat-card warning">
-                        <div class="stat-icon">⚠️</div>
-                        <div class="stat-info">
-                            <div class="stat-number">${threatAnalysis.high}</div>
-                            <div class="stat-label">High Priority</div>
-                        </div>
-                    </div>
-                    <div class="stat-card info">
-                        <div class="stat-icon">🎯</div>
-                        <div class="stat-info">
-                            <div class="stat-number">${iocAnalysis.uniqueDomains}</div>
-                            <div class="stat-label">Unique IOCs</div>
-                        </div>
-                    </div>
-                    <div class="stat-card success">
-                        <div class="stat-icon">🛡️</div>
-                        <div class="stat-info">
-                            <div class="stat-number">${ai.severityScore || this.calculateFallbackSeverity(data)}</div>
-                            <div class="stat-label">Risk Score</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- AI Insights Section -->
-                ${hasAI ? `
-                <div class="intelligence-section ai-insights">
-                    <h3>🤖 AI Threat Intelligence</h3>
-                    <div class="ai-insights-grid">
-                        <div class="ai-insight-card">
-                            <div class="ai-insight-header">
-                                <span class="ai-insight-icon">🎯</span>
-                                <span class="ai-insight-title">Attack Vector</span>
-                            </div>
-                            <div class="ai-insight-content">${ai.attackVector || 'Analysis pending'}</div>
-                        </div>
-                        <div class="ai-insight-card">
-                            <div class="ai-insight-header">
-                                <span class="ai-insight-icon">📊</span>
-                                <span class="ai-insight-title">Threat Assessment</span>
-                            </div>
-                            <div class="ai-insight-content">${ai.threatAssessment || 'Assessment in progress'}</div>
-                        </div>
-                        <div class="ai-insight-card">
-                            <div class="ai-insight-header">
-                                <span class="ai-insight-icon">💼</span>
-                                <span class="ai-insight-title">Business Impact</span>
-                            </div>
-                            <div class="ai-insight-content">${ai.businessImpact || 'Impact evaluation pending'}</div>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-
-                <!-- File Intelligence -->
-                <div class="intelligence-section">
-                    <h3>📁 File Intelligence</h3>
-                    <div class="intel-grid">
-                        <div class="intel-item">
-                            <span class="intel-label">File Size:</span>
-                            <span class="intel-value">${this.formatFileSize(data.fileSize || this.currentFileInfo?.size || 0)}</span>
-                        </div>
-                        <div class="intel-item">
-                            <span class="intel-label">Processing Time:</span>
-                            <span class="intel-value">${data.processingTime || 'N/A'}</span>
-                        </div>
-                        <div class="intel-item">
-                            <span class="intel-label">Analysis Engine:</span>
-                            <span class="intel-value">${hasAI ? 'OpenAI GPT-4' : 'Pattern Matching'}</span>
-                        </div>
-                        <div class="intel-item">
-                            <span class="intel-label">File Name:</span>
-                            <span class="intel-value">${data.fileInfo?.name || this.currentFileInfo?.name || 'Unknown'}</span>
-                        </div>
-                        <div class="intel-item">
-                            <span class="intel-label">Confidence:</span>
-                            <span class="intel-value">${hasAI ? 'High (AI)' : 'Medium (Rules)'}</span>
-                        </div>
-                        <div class="intel-item">
-                            <span class="intel-label">Upload Time:</span>
-                            <span class="intel-value">${new Date().toLocaleTimeString()}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- AI Recommendations -->
-                ${hasAI && ai.recommendedActions ? `
-                <div class="intelligence-section">
-                    <h3>💡 AI Recommendations</h3>
-                    <div class="recommendations">
-                        ${ai.recommendedActions.map((action, index) => `
-                            <div class="recommendation-item ${this.getRecommendationPriority(index)}">
-                                <div class="rec-icon">${this.getRecommendationIcon(index)}</div>
-                                <div class="rec-content">
-                                    <div class="rec-title">Action ${index + 1}</div>
-                                    <div class="rec-description">${action}</div>
-                                </div>
-                                <div class="rec-priority">${this.getRecommendationPriority(index).toUpperCase()}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-
-                <!-- Quick Actions -->
-                <div class="intelligence-section">
-                    <h3>⚡ Quick Actions</h3>
-                    <div class="quick-actions">
-                        <button class="action-btn primary" onclick="window.secuNikApp.exportAllIOCs()">
-                            📤 Export IOCs
-                        </button>
-                        <button class="action-btn secondary" onclick="window.secuNikApp.generateReport()">
-                            📄 View Report
-                        </button>
-                        ${hasAI ? `
-                        <button class="action-btn warning" onclick="window.secuNikApp.escalateToSOC()">
-                            🚨 Escalate
-                        </button>
-                        <button class="action-btn info" onclick="window.secuNikApp.showAIDetails()">
-                            🤖 AI Details
-                        </button>
-                        ` : `
-                        <button class="action-btn info" onclick="window.secuNikApp.enableAI()">
-                            🤖 Enable AI
-                        </button>
-                        `}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        overviewContent.innerHTML = enhancedHTML;
-    }
-
-    updateAIThreatsTab(data) {
-        const threats = data.technical?.securityEvents || [];
-        const ai = data.ai || {};
-        const threatsList = document.getElementById('threatsList');
-
-        if (threats.length > 0) {
-            const aiInsight = ai.attackVector ? `
-                <div class="ai-threat-insight">
-                    <div class="ai-insight-header">🤖 AI Analysis:</div>
-                    <div class="ai-insight-text">${ai.attackVector}</div>
-                </div>
-            ` : '';
-
-            threatsList.innerHTML = `
-                ${aiInsight}
-                <div class="threats-list">
-                    ${threats.map(threat => `
-                        <div class="threat-item">
-                            <div class="threat-header">
-                                <span class="threat-type">${threat.eventType}</span>
-                                <span class="severity ${threat.severity.toLowerCase()}">${threat.severity}</span>
-                            </div>
-                            <div class="threat-description">${threat.description}</div>
-                            <div class="threat-timestamp">${this.formatTimestamp(threat.timestamp)}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        } else {
-            threatsList.innerHTML = '<p>No security threats detected in the uploaded file.</p>';
-        }
-    }
-
-    updateAIExecutiveTab(data) {
-        const executive = data.executive || {};
-        const ai = data.ai || {};
-        const executiveReport = document.getElementById('executiveReport');
-
-        const hasAI = executive.summary || ai.businessImpact;
-
-        if (hasAI) {
-            executiveReport.innerHTML = `
-                <div class="executive-report-ai">
-                    <div class="executive-header">
-                        <h3>🤖 AI-Generated Executive Summary</h3>
-                        <div class="ai-badge">Powered by OpenAI</div>
-                    </div>
-                    
-                    <div class="executive-section">
-                        <h4>📋 Executive Summary</h4>
-                        <div class="executive-content">${executive.summary || 'Executive summary generation in progress...'}</div>
-                    </div>
-
-                    <div class="executive-section">
-                        <h4>🎯 Key Findings</h4>
-                        <div class="executive-content">${executive.keyFindings || 'Key findings analysis pending...'}</div>
-                    </div>
-
-                    <div class="executive-section">
-                        <h4>⚠️ Risk Assessment</h4>
-                        <div class="risk-level ${(executive.riskLevel || 'medium').toLowerCase()}">${executive.riskLevel || 'MEDIUM'}</div>
-                        <div class="executive-content">${ai.businessImpact || 'Business impact assessment in progress...'}</div>
-                    </div>
-
-                    <div class="executive-section">
-                        <h4>🚀 Immediate Actions</h4>
-                        <div class="executive-content">${executive.immediateActions || 'Action items being generated...'}</div>
-                    </div>
-
-                    <div class="executive-section">
-                        <h4>📈 Long-term Recommendations</h4>
-                        <div class="executive-content">${executive.longTermRecommendations || 'Strategic recommendations being prepared...'}</div>
-                    </div>
-                </div>
-            `;
-        } else {
-            executiveReport.innerHTML = `
-                <div class="executive-report-basic">
-                    <h3>📊 Basic Analysis Report</h3>
-                    <p>Executive report generation requires AI analysis. Enable OpenAI integration for advanced reporting capabilities.</p>
-                    <button class="action-btn primary" onclick="window.secuNikApp.enableAI()">
-                        🤖 Enable AI Analysis
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    // Enhanced IOC tab with better AI integration
-    updateEnhancedIOCsTab(data) {
+    calculateRiskScore(data) {
+        const events = data.technical?.securityEvents || [];
         const iocs = data.technical?.detectedIOCs || [];
-        const iocsList = document.getElementById('iocsList');
 
-        if (iocs.length > 0) {
-            const categorizedIOCs = this.categorizeIOCs(iocs);
+        let score = 1;
 
-            iocsList.innerHTML = `
-                <div class="ioc-ai-header">
-                    <div class="ioc-summary">
-                        <span class="ioc-count-badge">${iocs.length} IOCs Detected</span>
-                        <span class="ioc-ai-badge">🤖 AI-Enhanced Detection</span>
-                    </div>
-                </div>
-                
-                <div class="ioc-filters">
-                    <button class="ioc-filter-btn active" data-filter="all">All (${iocs.length})</button>
-                    <button class="ioc-filter-btn" data-filter="ip">IPs (${categorizedIOCs.ips.length})</button>
-                    <button class="ioc-filter-btn" data-filter="domain">Domains (${categorizedIOCs.domains.length})</button>
-                    <button class="ioc-filter-btn" data-filter="email">Emails (${categorizedIOCs.emails.length})</button>
-                    <button class="ioc-filter-btn" data-filter="hash">Hashes (${categorizedIOCs.hashes.length})</button>
-                    <button class="ioc-filter-btn" data-filter="other">Other (${categorizedIOCs.other.length})</button>
-                </div>
-                
-                <div class="ioc-content-wrapper">
-                    <div class="ioc-category-content active" data-category="all">
-                        ${this.renderAllIOCs(categorizedIOCs)}
-                    </div>
-                    <div class="ioc-category-content" data-category="ip">
-                        ${this.renderIOCsByCategory(categorizedIOCs.ips)}
-                    </div>
-                    <div class="ioc-category-content" data-category="domain">
-                        ${this.renderIOCsByCategory(categorizedIOCs.domains)}
-                    </div>
-                    <div class="ioc-category-content" data-category="email">
-                        ${this.renderIOCsByCategory(categorizedIOCs.emails)}
-                    </div>
-                    <div class="ioc-category-content" data-category="hash">
-                        ${this.renderIOCsByCategory(categorizedIOCs.hashes)}
-                    </div>
-                    <div class="ioc-category-content" data-category="url">
-                        ${this.renderIOCsByCategory(categorizedIOCs.urls)}
-                    </div>
-                    <div class="ioc-category-content" data-category="other">
-                        ${this.renderIOCsByCategory(categorizedIOCs.other)}
-                    </div>
-                </div>
-            `;
+        // Event-based scoring
+        score += Math.min(events.length / 5, 4);
 
-            this.setupIOCFilters();
-        } else {
-            iocsList.innerHTML = '<p>No indicators of compromise found.</p>';
-        }
+        // IOC-based scoring  
+        score += Math.min(iocs.length / 3, 3);
+
+        // Severity-based scoring
+        const criticalEvents = events.filter(e => e.severity?.toLowerCase() === 'critical').length;
+        const highEvents = events.filter(e => e.severity?.toLowerCase() === 'high').length;
+        score += Math.min(criticalEvents * 2 + highEvents, 3);
+
+        return Math.min(Math.round(score), 10);
     }
 
-    updateTimelineTab(data) {
-        const timeline = data.timeline?.events || [];
-        const timelineData = document.getElementById('timelineData');
-
-        if (timeline.length > 0) {
-            timelineData.innerHTML = `
-                <div class="timeline-ai-header">
-                    <h4>🤖 AI-Enhanced Timeline Reconstruction</h4>
-                </div>
-                ${timeline.map(event => `
-                    <div class="timeline-event-item">
-                        <div class="timeline-timestamp">${this.formatTimestamp(event.timestamp)}</div>
-                        <div class="timeline-event-content">
-                            <div class="timeline-event-title">${event.event || event.description}</div>
-                            <div class="timeline-event-source">Source: ${event.source || 'System'}</div>
-                        </div>
-                    </div>
-                `).join('')}
-            `;
-        } else {
-            timelineData.innerHTML = '<p>No timeline events available.</p>';
-        }
+    getRiskLevel(score) {
+        if (score >= 8) return 'Critical';
+        if (score >= 6) return 'High';
+        if (score >= 4) return 'Medium';
+        return 'Low';
     }
 
-    // Continue with all utility functions and IOC handling methods
+    getRiskColor(level) {
+        const colors = {
+            'Critical': '#ef4444',
+            'High': '#f59e0b',
+            'Medium': '#3b82f6',
+            'Low': '#10b981'
+        };
+        return colors[level] || '#6b7280';
+    }
+
+    calculateAIConfidence(data) {
+        if (data.ai?.attackVector && data.ai?.severityScore) {
+            return 0.95; // High confidence for AI analysis
+        }
+        return 0.85;
+    }
+
+    calculateRuleConfidence(data) {
+        const events = data.technical?.securityEvents || [];
+        const iocs = data.technical?.detectedIOCs || [];
+
+        if (events.length > 20 && iocs.length > 10) return 0.80;
+        if (events.length > 10 && iocs.length > 5) return 0.70;
+        return 0.60;
+    }
+
+    calculateCPUUsage(processingTime) {
+        // Simulate CPU usage based on processing complexity
+        const baseUsage = 15;
+        const processingFactor = Math.min(processingTime / 1000 / 10, 20);
+        return Math.round(baseUsage + processingFactor + Math.random() * 10);
+    }
+
+    calculateMemoryUsage() {
+        // Simulate memory usage
+        return Math.round(25 + Math.random() * 35);
+    }
+
+    calculateAnalysisSpeed(processingTime) {
+        // Events per second
+        const eventsCount = this.currentAnalysisResults?.result?.technical?.securityEvents?.length || 0;
+        return Math.round(eventsCount / (processingTime / 1000));
+    }
+
+    calculateComplianceScore(data) {
+        const events = data.technical?.securityEvents || [];
+        const iocs = data.technical?.detectedIOCs || [];
+
+        let score = 100;
+
+        // Deduct points for security issues
+        score -= Math.min(events.length * 2, 40);
+        score -= Math.min(iocs.length * 3, 30);
+
+        // Deduct more for critical events
+        const criticalEvents = events.filter(e => e.severity?.toLowerCase() === 'critical').length;
+        score -= criticalEvents * 10;
+
+        return Math.max(score, 0);
+    }
+
+    getComplianceStatus(score) {
+        if (score >= 90) return 'Excellent';
+        if (score >= 80) return 'Good';
+        if (score >= 70) return 'Fair';
+        if (score >= 60) return 'Poor';
+        return 'Critical';
+    }
+
+    getComplianceClass(score) {
+        if (score >= 80) return 'success';
+        if (score >= 60) return 'warning';
+        return 'error';
+    }
+
+    getProcessingTimeStatus(seconds) {
+        if (seconds < 3) return 'Excellent';
+        if (seconds < 8) return 'Good';
+        if (seconds < 15) return 'Average';
+        return 'Slow';
+    }
+
+    getTimeStatusClass(seconds) {
+        if (seconds < 8) return 'success';
+        if (seconds < 15) return 'warning';
+        return 'error';
+    }
+
+    // Data Processing Methods
     categorizeIOCs(iocs) {
         const categorized = {
-            ips: [], domains: [], emails: [], hashes: [], urls: [], other: []
+            ips: [],
+            domains: [],
+            emails: [],
+            hashes: [],
+            urls: [],
+            other: []
         };
 
         iocs.forEach(ioc => {
-            const lowerIOC = ioc.toLowerCase();
-            if (lowerIOC.startsWith('ip:')) {
-                categorized.ips.push({
-                    type: 'IP Address', value: ioc.substring(3).trim(),
-                    original: ioc, icon: '🌐', color: 'ip'
-                });
-            } else if (lowerIOC.startsWith('domain:')) {
-                categorized.domains.push({
-                    type: 'Domain', value: ioc.substring(7).trim(),
-                    original: ioc, icon: '🌍', color: 'domain'
-                });
-            } else if (lowerIOC.startsWith('email:')) {
-                categorized.emails.push({
-                    type: 'Email', value: ioc.substring(6).trim(),
-                    original: ioc, icon: '📧', color: 'email'
-                });
-            } else if (lowerIOC.startsWith('hash:')) {
-                const hashValue = ioc.substring(5).trim();
-                categorized.hashes.push({
-                    type: this.detectHashType(hashValue), value: hashValue,
-                    original: ioc, icon: '🔐', color: 'hash'
-                });
-            } else if (lowerIOC.startsWith('url:')) {
-                categorized.urls.push({
-                    type: 'URL', value: ioc.substring(4).trim(),
-                    original: ioc, icon: '🔗', color: 'url'
-                });
+            if (this.iocPatterns.ip.test(ioc)) {
+                categorized.ips.push(ioc);
+            } else if (this.iocPatterns.domain.test(ioc)) {
+                categorized.domains.push(ioc);
+            } else if (this.iocPatterns.email.test(ioc)) {
+                categorized.emails.push(ioc);
+            } else if (this.iocPatterns.hash.test(ioc)) {
+                categorized.hashes.push(ioc);
+            } else if (this.iocPatterns.url.test(ioc)) {
+                categorized.urls.push(ioc);
             } else {
-                const detectedType = this.autoDetectIOCType(ioc);
-                if (detectedType.category !== 'other') {
-                    categorized[detectedType.category].push(detectedType);
-                } else {
-                    categorized.other.push({
-                        type: 'Unknown', value: ioc, original: ioc,
-                        icon: '❓', color: 'other'
-                    });
-                }
+                categorized.other.push(ioc);
             }
         });
 
         return categorized;
     }
 
-    autoDetectIOCType(ioc) {
-        if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ioc)) {
-            return { type: 'IP Address', value: ioc, original: ioc, icon: '🌐', color: 'ip', category: 'ips' };
-        }
-        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ioc)) {
-            return { type: 'Email', value: ioc, original: ioc, icon: '📧', color: 'email', category: 'emails' };
-        }
-        if (/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.([a-zA-Z]{2,}\.?)+$/.test(ioc)) {
-            return { type: 'Domain', value: ioc, original: ioc, icon: '🌍', color: 'domain', category: 'domains' };
-        }
-        if (/^[a-fA-F0-9]{32,64}$/.test(ioc)) {
-            return { type: this.detectHashType(ioc), value: ioc, original: ioc, icon: '🔐', color: 'hash', category: 'hashes' };
-        }
-        if (/^https?:\/\//.test(ioc)) {
-            return { type: 'URL', value: ioc, original: ioc, icon: '🔗', color: 'url', category: 'urls' };
-        }
-        return { type: 'Unknown', value: ioc, original: ioc, icon: '❓', color: 'other', category: 'other' };
+    extractThreatIntelligence(events) {
+        return events.slice(0, 10).map(event => ({
+            title: event.eventType || 'Security Event',
+            description: event.description || 'No description available',
+            severity: event.severity || 'Medium',
+            type: this.classifyThreatType(event),
+            timestamp: event.timestamp || new Date(),
+            source: event.source || 'System'
+        }));
     }
 
-    detectHashType(hash) {
-        if (hash.length === 32) return 'MD5 Hash';
-        if (hash.length === 40) return 'SHA1 Hash';
-        if (hash.length === 64) return 'SHA256 Hash';
-        return 'Hash';
+    classifyThreatType(event) {
+        const description = (event.description || '').toLowerCase();
+
+        if (description.includes('malware') || description.includes('virus')) return 'malware';
+        if (description.includes('login') || description.includes('authentication')) return 'auth';
+        if (description.includes('network') || description.includes('connection')) return 'network';
+        if (description.includes('file') || description.includes('execution')) return 'execution';
+        return 'general';
     }
 
-    renderAllIOCs(categorizedIOCs) {
-        const allIOCs = [
-            ...categorizedIOCs.ips,
-            ...categorizedIOCs.domains,
-            ...categorizedIOCs.emails,
-            ...categorizedIOCs.hashes,
-            ...categorizedIOCs.urls,
-            ...categorizedIOCs.other
-        ];
-
-        if (allIOCs.length === 0) {
-            return '<div class="no-iocs">No IOCs found</div>';
-        }
-
-        return allIOCs.map(ioc => this.renderIOCItem(ioc)).join('');
+    getThreatIcon(type) {
+        const icons = {
+            malware: '🦠',
+            auth: '🔐',
+            network: '🌐',
+            execution: '⚡',
+            general: '⚠️'
+        };
+        return icons[type] || '⚠️';
     }
 
-    renderIOCsByCategory(iocs) {
-        if (iocs.length === 0) {
-            return '<div class="no-iocs">No IOCs found in this category</div>';
-        }
-        return iocs.map(ioc => this.renderIOCItem(ioc)).join('');
+    buildTimelineFromEvents(events) {
+        return events
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+            .map(event => ({
+                timestamp: event.timestamp,
+                event: event.eventType || 'Security Event',
+                source: event.source || 'System',
+                confidence: 'High'
+            }));
     }
 
-    renderIOCItem(ioc) {
-        return `
-            <div class="ioc-item ${ioc.color}">
-                <div class="ioc-header">
-                    <span class="ioc-icon">${ioc.icon}</span>
-                    <span class="ioc-type">${ioc.type}</span>
-                    <span class="ioc-status">🤖 AI Detected</span>
-                </div>
-                <div class="ioc-value" title="${ioc.value}">
-                    ${ioc.value}
-                </div>
-                <div class="ioc-actions">
-                    <button class="ioc-action-btn" onclick="navigator.clipboard.writeText('${ioc.value}').then(() => window.secuNikApp.showNotification('Copied to clipboard!', 'success'))">📋 Copy</button>
-                    <button class="ioc-action-btn" onclick="window.secuNikApp.searchIOC('${ioc.value}')">🔍 Search</button>
-                    <button class="ioc-action-btn" onclick="window.secuNikApp.exportIOC('${ioc.value}', '${ioc.type}')">📤 Export</button>
-                </div>
-            </div>
-        `;
-    }
+    getAnalysisSummary() {
+        if (!this.currentAnalysisResults) return 'Analysis completed';
 
-    setupIOCFilters() {
-        document.querySelectorAll('.ioc-filter-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const filter = e.target.dataset.filter;
-                this.filterIOCs(filter);
-                document.querySelectorAll('.ioc-filter-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-            });
-        });
-    }
-
-    filterIOCs(filter) {
-        document.querySelectorAll('.ioc-category-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        const targetContent = document.querySelector(`[data-category="${filter}"]`);
-        if (targetContent) {
-            targetContent.classList.add('active');
-        }
-    }
-
-    analyzeIOCs(iocs) {
-        const analysis = { ips: 0, domains: 0, emails: 0, hashes: 0, urls: 0, uniqueDomains: 0 };
-        const domainSet = new Set();
-
-        iocs.forEach(ioc => {
-            const lowerIOC = ioc.toLowerCase();
-            if (lowerIOC.startsWith('ip:') || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ioc)) {
-                analysis.ips++;
-            } else if (lowerIOC.startsWith('domain:') || /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.([a-zA-Z]{2,}\.?)+$/.test(ioc)) {
-                analysis.domains++;
-                const domain = lowerIOC.startsWith('domain:') ? ioc.substring(7).trim() : ioc;
-                domainSet.add(domain);
-            } else if (lowerIOC.startsWith('email:') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ioc)) {
-                analysis.emails++;
-            } else if (lowerIOC.startsWith('hash:') || /^[a-fA-F0-9]{32,64}$/.test(ioc)) {
-                analysis.hashes++;
-            } else if (lowerIOC.startsWith('url:') || /^https?:\/\//.test(ioc)) {
-                analysis.urls++;
-            }
-        });
-
-        analysis.uniqueDomains = domainSet.size;
-        return analysis;
-    }
-
-    analyzeThreats(threats) {
-        const analysis = { critical: 0, high: 0, medium: 0, low: 0 };
-        threats.forEach(threat => {
-            const severity = threat.severity?.toLowerCase() || 'medium';
-            if (analysis.hasOwnProperty(severity)) {
-                analysis[severity]++;
-            }
-        });
-        return analysis;
-    }
-
-    // AI-specific utility functions
-    calculateFallbackSeverity(data) {
+        const data = this.currentAnalysisResults.result || this.currentAnalysisResults;
         const events = data.technical?.securityEvents?.length || 0;
         const iocs = data.technical?.detectedIOCs?.length || 0;
-        return Math.min(Math.max(Math.floor((events + iocs) / 3), 1), 10);
+
+        return `${events} events, ${iocs} IOCs detected`;
     }
 
-    getRecommendationPriority(index) {
-        const priorities = ['critical', 'high', 'medium', 'low'];
-        return priorities[index] || 'low';
-    }
+    generateAIExecutiveSummary(data) {
+        const ai = data.ai || {};
+        const executive = data.executive || {};
 
-    getRecommendationIcon(index) {
-        const icons = ['🚨', '⚠️', '💡', '📋'];
-        return icons[index] || '📋';
-    }
-
-    // AI-specific action functions
-    showAIDetails() {
-        if (!this.currentAnalysisResults?.ai) {
-            this.showNotification('No AI analysis data available', 'error');
-            return;
-        }
-
-        const ai = this.currentAnalysisResults.ai;
-        const details = `
-🤖 AI Analysis Details:
-
-Severity Score: ${ai.severityScore}/10
-Attack Vector: ${ai.attackVector}
-Business Impact: ${ai.businessImpact}
-
-Recommended Actions:
-${ai.recommendedActions?.map((action, i) => `${i + 1}. ${action}`).join('\n') || 'None specified'}
-
-Threat Assessment:
-${ai.threatAssessment}
-        `.trim();
-
-        navigator.clipboard.writeText(details).then(() => {
-            this.showNotification('AI analysis details copied to clipboard', 'success');
-        });
-    }
-
-    enableAI() {
-        this.showNotification('AI analysis is configured via OpenAI API key. Check server configuration.', 'info');
-        console.log('💡 To enable AI: Ensure OpenAI API key is set in user secrets');
-    }
-
-    exportAllIOCs() {
-        if (!this.currentAnalysisResults) {
-            this.showNotification('No analysis results available', 'error');
-            return;
-        }
-
-        const iocs = this.currentAnalysisResults.technical?.detectedIOCs || [];
-        const exportData = {
-            export_time: new Date().toISOString(),
-            source: 'SecuNik AI Analysis',
-            ai_powered: !!this.currentAnalysisResults.ai?.attackVector,
-            ioc_count: iocs.length,
-            iocs: iocs.map(ioc => ({
-                indicator: ioc,
-                type: this.autoDetectIOCType(ioc).type,
-                confidence: 'High',
-                tags: ['SecuNik', 'AI-Detected']
-            }))
-        };
-
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `secunik_ai_iocs_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        this.showNotification(`Exported ${iocs.length} AI-detected IOCs successfully`, 'success');
-    }
-
-    generateReport() {
-        const executiveTab = document.querySelector('[data-tab="executive"]');
-        if (executiveTab) {
-            executiveTab.click();
-        }
-        this.showNotification('Viewing AI-Generated Executive Report', 'info');
-    }
-
-    escalateToSOC() {
-        const ai = this.currentAnalysisResults?.ai || {};
-        const message = `🚨 SecuNik AI Analysis - SOC Escalation Required\n\n` +
-            `File: ${this.currentAnalysisResults?.fileName || 'Unknown'}\n` +
-            `AI Risk Score: ${ai.severityScore || 'Unknown'}/10\n` +
-            `Attack Vector: ${ai.attackVector || 'Not determined'}\n` +
-            `IOCs: ${this.currentAnalysisResults?.technical?.detectedIOCs?.length || 0}\n` +
-            `Events: ${this.currentAnalysisResults?.technical?.securityEvents?.length || 0}\n\n` +
-            `Business Impact: ${ai.businessImpact || 'Assessment pending'}\n\n` +
-            `Immediate Actions Required:\n${ai.recommendedActions?.map(a => `• ${a}`).join('\n') || 'See full report'}\n\n` +
-            `Generated by SecuNik AI Platform`;
-
-        navigator.clipboard.writeText(message).then(() => {
-            this.showNotification('AI escalation details copied to clipboard', 'success');
-        });
-    }
-
-    searchIOC(ioc) {
-        const searchUrl = `https://www.virustotal.com/gui/search/${encodeURIComponent(ioc)}`;
-        window.open(searchUrl, '_blank');
-        this.showNotification(`Searching threat intelligence for: ${ioc}`, 'info');
-    }
-
-    exportIOC(ioc, type) {
-        const exportData = {
-            indicator: ioc,
-            type: type,
-            detected_at: new Date().toISOString(),
-            source: 'SecuNik AI Analysis',
-            confidence: 'High',
-            ai_generated: true
-        };
-
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ai_ioc_${ioc.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        this.showNotification(`Exported AI-detected IOC: ${ioc}`, 'success');
-    }
-
-    displayError(message) {
-        this.showResults();
-        this.results.innerHTML = `
-            <div class="card">
-                <div style="text-align: center; color: #ef4444; padding: 2rem;">
-                    <h3>⚠️ Enhanced AI Analysis Failed</h3>
-                    <p style="margin-top: 1rem; color: #94a3b8;">${message}</p>
-                    <div style="margin-top: 1.5rem;">
-                        <button class="btn" onclick="location.reload()" style="margin-right: 1rem;">
-                            Try Again
-                        </button>
-                        <button class="action-btn secondary" onclick="window.secuNikApp.enableAI()">
-                            🤖 Check AI Setup
-                        </button>
-                    </div>
+        return `
+            <div class="ai-executive-summary">
+                <div class="ai-summary-section">
+                    <h4>🤖 AI Analysis Summary</h4>
+                    <p>${executive.summary || ai.businessImpact || 'AI-powered analysis completed with comprehensive threat assessment.'}</p>
+                </div>
+                
+                <div class="ai-summary-section">
+                    <h4>🎯 Key Findings</h4>
+                    <p>${executive.keyFindings || 'Security events analyzed and threat patterns identified.'}</p>
+                </div>
+                
+                <div class="ai-summary-section">
+                    <h4>⚠️ Risk Assessment</h4>
+                    <div class="risk-level ${(executive.riskLevel || 'medium').toLowerCase()}">${executive.riskLevel || 'MEDIUM'}</div>
+                    <p>${ai.threatAssessment || 'Threat level assessed based on detected indicators.'}</p>
+                </div>
+                
+                <div class="ai-summary-section">
+                    <h4>🚀 Recommended Actions</h4>
+                    <ul class="action-list">
+                        ${(ai.recommendedActions || ['Review security events', 'Monitor for additional threats']).map(action =>
+            `<li>${action}</li>`
+        ).join('')}
+                    </ul>
                 </div>
             </div>
         `;
-        this.showNotification(message, 'error');
+    }
+
+    generateBasicExecutiveSummary(data) {
+        const events = data.technical?.securityEvents?.length || 0;
+        const iocs = data.technical?.detectedIOCs?.length || 0;
+        const riskScore = this.calculateRiskScore(data);
+
+        return `
+            <div class="basic-executive-summary">
+                <div class="summary-section">
+                    <h4>📊 Analysis Summary</h4>
+                    <p>Completed security analysis using rule-based detection. ${events} security events and ${iocs} indicators of compromise were identified.</p>
+                </div>
+                
+                <div class="summary-section">
+                    <h4>📈 Risk Assessment</h4>
+                    <div class="risk-score">Risk Score: ${riskScore}/10</div>
+                    <p>Risk level determined based on event count and severity patterns.</p>
+                </div>
+                
+                <div class="summary-section">
+                    <h4>💡 Recommendations</h4>
+                    <ul>
+                        <li>Review detected security events for false positives</li>
+                        <li>Cross-reference IOCs with threat intelligence</li>
+                        <li>Consider enabling AI analysis for enhanced insights</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+
+    storeAnalysisData(data, processingTime) {
+        const analysisData = {
+            id: this.generateAnalysisId(),
+            timestamp: new Date().toISOString(),
+            fileInfo: this.currentFileInfo,
+            processingTime: processingTime,
+            data: data,
+            widgets: this.captureWidgetStates()
+        };
+
+        this.analysisHistory.push(analysisData);
+
+        // Store in localStorage for persistence
+        try {
+            localStorage.setItem('secunik_analysis_history', JSON.stringify(this.analysisHistory.slice(-10))); // Keep last 10
+        } catch (e) {
+            console.warn('Failed to store analysis history:', e);
+        }
+    }
+
+    captureWidgetStates() {
+        const states = {};
+        this.widgets.forEach((widget, key) => {
+            if (widget.element) {
+                states[key] = {
+                    visible: widget.element.style.display !== 'none',
+                    content: widget.element.innerHTML
+                };
+            }
+        });
+        return states;
+    }
+
+    // Error Handling
+    showAnalysisError(message) {
+        this.hideUploadProgress();
+        this.showEmptyState();
+
+        if (this.emptyState) {
+            this.emptyState.innerHTML = `
+                <div class="empty-state-icon">⚠️</div>
+                <div class="empty-state-title">Analysis Failed</div>
+                <div class="empty-state-description">
+                    ${message}
+                    <br><br>
+                    Please check your file format and try again.
+                </div>
+                <div class="error-actions">
+                    <button class="btn primary" onclick="location.reload()">Try Again</button>
+                    <button class="btn secondary" onclick="window.secuNikApp.showModal('helpModal')">Get Help</button>
+                </div>
+            `;
+        }
+
+        // Hide upload another button on error
+        if (this.uploadAnotherBtn) {
+            this.uploadAnotherBtn.style.display = 'none';
+        }
+    }
+
+    resetAnalysis() {
+        if (confirm('Reset analysis and clear all data? This action cannot be undone.')) {
+            this.currentAnalysisResults = null;
+            this.currentFileInfo = null;
+            this.isAnalyzing = false;
+
+            this.showEmptyState();
+            this.hideUploadProgress();
+
+            // Hide upload another button
+            if (this.uploadAnotherBtn) {
+                this.uploadAnotherBtn.style.display = 'none';
+            }
+
+            this.showNotification('Analysis reset successfully', 'info');
+        }
+    }
+
+    // Utility Methods
+    generateAnalysisId() {
+        return 'ANL_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    truncateText(text, maxLength) {
+        if (!text) return 'No description available';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + '...';
+    }
+
+    formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    formatFileSize(bytes) {
+        if (!bytes) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    downloadJSON(data, filename) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     showNotification(message, type = 'info') {
@@ -1564,18 +1709,35 @@ ${ai.threatAssessment}
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.innerHTML = `
-            <span>${message}</span>
-            <button onclick="this.parentElement.remove()">×</button>
+            <div class="notification-content">
+                <span class="notification-icon">${this.getNotificationIcon(type)}</span>
+                <span class="notification-message">${message}</span>
+            </div>
+            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
         `;
 
+        // Add styles if not present
         this.addNotificationStyles();
+
         document.body.appendChild(notification);
 
+        // Auto-remove after 5 seconds
         setTimeout(() => {
             if (notification.parentElement) {
-                notification.remove();
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
             }
         }, 5000);
+    }
+
+    getNotificationIcon(type) {
+        const icons = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+        return icons[type] || 'ℹ️';
     }
 
     addNotificationStyles() {
@@ -1585,98 +1747,107 @@ ${ai.threatAssessment}
         styles.id = 'notification-styles';
         styles.textContent = `
             .notification {
-                position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
-                border-radius: 8px; color: white; font-weight: 600; z-index: 1000;
-                display: flex; align-items: center; gap: 1rem; animation: slideIn 0.3s ease;
-                max-width: 400px; word-wrap: break-word;
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                animation: slideInRight 0.3s ease;
+                max-width: 400px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                backdrop-filter: blur(10px);
+                transition: opacity 0.3s ease;
             }
-            .notification.success { background: linear-gradient(45deg, #10b981, #059669); border: 1px solid #065f46; }
-            .notification.error { background: linear-gradient(45deg, #ef4444, #dc2626); border: 1px solid #991b1b; }
-            .notification.info { background: linear-gradient(45deg, #3b82f6, #2563eb); border: 1px solid #1e40af; }
-            .notification button { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
-            @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            
+            .notification.success {
+                background: linear-gradient(45deg, #10b981, #059669);
+                border: 1px solid #065f46;
+            }
+            
+            .notification.error {
+                background: linear-gradient(45deg, #ef4444, #dc2626);
+                border: 1px solid #991b1b;
+            }
+            
+            .notification.warning {
+                background: linear-gradient(45deg, #f59e0b, #d97706);
+                border: 1px solid #92400e;
+            }
+            
+            .notification.info {
+                background: linear-gradient(45deg, #3b82f6, #2563eb);
+                border: 1px solid #1e40af;
+            }
+            
+            .notification-content {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            .notification-close {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.2rem;
+                cursor: pointer;
+                padding: 0;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: background 0.2s;
+            }
+            
+            .notification-close:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+            
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
         `;
         document.head.appendChild(styles);
     }
-
-    async checkSystemStatus() {
-        try {
-            const response = await fetch('/health');
-            if (response.ok) {
-                const data = await response.json();
-                this.systemStatus.textContent = 'System Online';
-                console.log('✅ SecuNik enhanced system status:', data);
-            } else {
-                throw new Error('Health check failed');
-            }
-        } catch (error) {
-            this.systemStatus.textContent = 'System Offline';
-            console.warn('❌ Health check failed:', error);
-        }
-    }
-
-    async testAPIConnection() {
-        try {
-            console.log('=== TESTING ENHANCED AI API CONNECTIVITY ===');
-
-            const healthResponse = await fetch('/api/analysis/health');
-            console.log('Enhanced health check status:', healthResponse.status);
-
-            if (healthResponse.ok) {
-                const healthData = await healthResponse.json();
-                console.log('✅ Enhanced health check data:', healthData);
-            }
-
-            const typesResponse = await fetch('/api/analysis/supported-types');
-            if (typesResponse.ok) {
-                const typesData = await typesResponse.json();
-                console.log('✅ Enhanced supported types:', typesData);
-            }
-
-        } catch (error) {
-            console.error('❌ Enhanced API connectivity test failed:', error);
-        }
-    }
-
-    formatFileSize(bytes) {
-        if (!bytes || bytes === 0 || isNaN(bytes)) {
-            return '0 Bytes';
-        }
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    formatTimestamp(timestamp) {
-        const date = new Date(timestamp);
-        return date.toLocaleString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric',
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-    }
 }
 
-// Initialize the enhanced SecuNik application
+// Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    window.secuNikApp = new SecuNikApp();
-    console.log('🚀 SecuNik Enhanced AI Cybersecurity Platform initialized with multi-file support');
+    window.secuNikApp = new SecuNikWidgetApp();
+    console.log('🚀 SecuNik Professional Widget Dashboard v2.0 fully loaded');
 });
 
-// Global enhanced test functions
-window.testAPI = async function () {
-    if (window.secuNikApp) {
-        await window.secuNikApp.testAPIConnection();
-    } else {
-        console.error('Enhanced SecuNik app not initialized');
-    }
-};
-
+// Global error handling
 window.addEventListener('error', (event) => {
-    console.error('Global enhanced error:', event.error);
+    console.error('Global error:', event.error);
+    if (window.secuNikApp) {
+        window.secuNikApp.showNotification('An unexpected error occurred', 'error');
+    }
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-    console.error('Enhanced unhandled promise rejection:', event.reason);
+    console.error('Unhandled promise rejection:', event.reason);
+    if (window.secuNikApp) {
+        window.secuNikApp.showNotification('A system error occurred', 'error');
+    }
     event.preventDefault();
 });
+
+// Export for global access
+window.SecuNikWidgetApp = SecuNikWidgetApp;

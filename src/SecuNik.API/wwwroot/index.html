@@ -4,22 +4,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecuNik - Advanced Cybersecurity Forensics Platform</title>
+    <title>SecuNik - Professional Cybersecurity Platform</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-    <!-- Enhanced with additional features -->
-    <meta name="description" content="AI-powered cybersecurity forensics platform with real-time threat analysis">
-    <meta name="keywords" content="cybersecurity, forensics, AI analysis, threat detection, EVTX, IOC">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <meta name="description"
+        content="Professional AI-powered cybersecurity platform with advanced threat analysis and forensic capabilities">
+    <meta name="keywords"
+        content="cybersecurity, professional security, AI analysis, threat detection, forensics, SIEM">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 </head>
 
 <body>
+    <!-- Professional Header -->
     <header class="header">
         <div class="container">
             <nav class="nav">
                 <div class="logo">
                     <div class="logo-icon">SN</div>
                     <div class="logo-text">SecuNik</div>
-                    <div class="version-badge">v2.0 Ultimate</div>
+                    <div class="version-badge">Professional</div>
                 </div>
                 <div class="nav-controls">
                     <div class="analysis-counter">
@@ -40,98 +47,18 @@
         </div>
     </header>
 
+    <!-- Main Dashboard -->
     <main class="main">
         <div class="container">
-            <div class="hero">
-                <h1>Advanced Cybersecurity Forensics</h1>
-                <p>Upload digital evidence and get comprehensive AI-powered security analysis with executive reporting,
-                    real-time threat intelligence, and advanced IOC detection across multiple file formats.</p>
-                <div class="hero-stats">
-                    <div class="hero-stat">
-                        <span class="hero-stat-number">15+</span>
-                        <span class="hero-stat-label">File Formats</span>
-                    </div>
-                    <div class="hero-stat">
-                        <span class="hero-stat-number">AI</span>
-                        <span class="hero-stat-label">Powered Analysis</span>
-                    </div>
-                    <div class="hero-stat">
-                        <span class="hero-stat-number">Real-time</span>
-                        <span class="hero-stat-label">Threat Detection</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dashboard">
-                <div class="card feature-card">
-                    <div class="card-header">
-                        <div class="card-icon">🛡️</div>
-                        <h3>AI Threat Detection</h3>
-                        <div class="feature-badge">Enhanced</div>
-                    </div>
-                    <p>Advanced OpenAI-powered algorithms analyze uploaded files to detect security threats, malware
-                        indicators, and
-                        suspicious activities with executive-level insights and business impact assessment.</p>
-                    <div class="feature-list">
-                        <span>• Real EVTX Analysis</span>
-                        <span>• PowerShell Integration</span>
-                        <span>• IOC Auto-Extraction</span>
-                    </div>
-                </div>
-
-                <div class="card feature-card">
-                    <div class="card-header">
-                        <div class="card-icon">📊</div>
-                        <h3>Executive Reports</h3>
-                        <div class="feature-badge ai-badge">AI-Generated</div>
-                    </div>
-                    <p>Generate professional executive summaries with business impact assessments, risk levels, and
-                        actionable recommendations powered by OpenAI for leadership and stakeholders.</p>
-                    <div class="feature-list">
-                        <span>• Business Impact Analysis</span>
-                        <span>• Risk Scoring</span>
-                        <span>• Action Items</span>
-                    </div>
-                </div>
-
-                <div class="card feature-card">
-                    <div class="card-header">
-                        <div class="card-icon">🔍</div>
-                        <h3>Advanced IOC Detection</h3>
-                        <div class="feature-badge">Ultimate</div>
-                    </div>
-                    <p>Automatically extract and categorize Indicators of Compromise including IP addresses, domains,
-                        file
-                        hashes, emails, and URLs with threat intelligence lookup and export capabilities.</p>
-                    <div class="feature-list">
-                        <span>• 6+ IOC Categories</span>
-                        <span>• Threat Intel Lookup</span>
-                        <span>• Export Functions</span>
-                    </div>
-                </div>
-
-                <div class="card feature-card">
-                    <div class="card-header">
-                        <div class="card-icon">⏱️</div>
-                        <h3>Timeline Reconstruction</h3>
-                        <div class="feature-badge">AI-Enhanced</div>
-                    </div>
-                    <p>Reconstruct chronological timelines of security events to understand attack progression and
-                        identify critical incident timeframes with AI-powered correlation analysis.</p>
-                    <div class="feature-list">
-                        <span>• Event Correlation</span>
-                        <span>• Attack Progression</span>
-                        <span>• Critical Moments</span>
-                    </div>
-                </div>
-
-                <!-- Enhanced Upload Zone with Multiple Files Support -->
-                <div class="upload-zone-container" id="uploadZoneContainer">
+            <div class="dashboard-container">
+                <!-- Left Sidebar - Upload Zone -->
+                <div class="upload-sidebar">
                     <div class="upload-zone" id="uploadZone">
                         <div class="upload-icon">📤</div>
-                        <div class="upload-text">Drop Evidence Files Here</div>
-                        <div class="upload-subtext">Supports CSV, JSON, LOG, TXT, EVTX, EVT, WTMP, UTMP, BTMP, LASTLOG,
-                            PCAP/PCAPNG, SYSLOG, FWLOG, DBLOG, MAILLOG, and DNSLOG files up to 50MB</div>
+                        <div class="upload-text">Drop Files Here</div>
+                        <div class="upload-subtext">
+                            Upload evidence files for AI-powered cybersecurity analysis
+                        </div>
                         <div class="upload-actions">
                             <button class="btn primary" id="chooseFilesBtn">
                                 <span>📁</span>
@@ -139,25 +66,25 @@
                             </button>
                             <button class="btn secondary" id="uploadAnotherBtn" style="display: none;">
                                 <span>➕</span>
-                                Upload Another File
+                                Upload Another
                             </button>
                         </div>
                         <input type="file" id="fileInput" multiple
                             accept=".csv,.json,.log,.txt,.evtx,.evt,.wtmp,.utmp,.btmp,.lastlog,.pcap,.pcapng,.syslog,.fwlog,.dblog,.maillog,.dnslog"
                             style="display: none;">
-
-                        <!-- File Queue Display -->
-                        <div class="file-queue" id="fileQueue" style="display: none;">
-                            <h4>📋 Analysis Queue</h4>
-                            <div class="queue-items" id="queueItems"></div>
-                        </div>
                     </div>
 
-                    <!-- Upload Progress Indicator -->
+                    <!-- File Queue -->
+                    <div class="file-queue" id="fileQueue" style="display: none;">
+                        <h4>📋 Analysis Queue</h4>
+                        <div class="queue-items" id="queueItems"></div>
+                    </div>
+
+                    <!-- Upload Progress -->
                     <div class="upload-progress" id="uploadProgress" style="display: none;">
                         <div class="progress-info">
                             <span class="progress-icon">🔄</span>
-                            <span class="progress-text">Analyzing with AI...</span>
+                            <span class="progress-text">AI Analysis in Progress...</span>
                             <span class="progress-percentage">0%</span>
                         </div>
                         <div class="progress-bar">
@@ -167,183 +94,229 @@
                             <span id="progressDetails">Initializing analysis...</span>
                         </div>
                     </div>
-                </div>
 
-                <!-- Enhanced File Format Support Display -->
-                <div class="supported-formats" id="supportedFormats">
-                    <h4>🔧 Supported Analysis Formats</h4>
-                    <div class="format-grid">
-                        <div class="format-item evtx">
-                            <span class="format-icon">🪟</span>
-                            <span class="format-name">Windows Event Logs</span>
-                            <span class="format-ext">EVTX, EVT</span>
-                            <div class="format-features">Real PowerShell analysis</div>
-                        </div>
-                        <div class="format-item network">
-                            <span class="format-icon">🌐</span>
-                            <span class="format-name">Network Captures</span>
-                            <span class="format-ext">PCAP, PCAPNG</span>
-                            <div class="format-features">Traffic analysis</div>
-                        </div>
-                        <div class="format-item logs">
-                            <span class="format-icon">📝</span>
-                            <span class="format-name">System Logs</span>
-                            <span class="format-ext">LOG, SYSLOG</span>
-                            <div class="format-features">Pattern detection</div>
-                        </div>
-                        <div class="format-item data">
-                            <span class="format-icon">📊</span>
-                            <span class="format-name">Structured Data</span>
-                            <span class="format-ext">CSV, JSON</span>
-                            <div class="format-features">AI correlation</div>
-                        </div>
-                        <div class="format-item unix">
-                            <span class="format-icon">🐧</span>
-                            <span class="format-name">Unix/Linux Logs</span>
-                            <span class="format-ext">WTMP, UTMP, BTMP</span>
-                            <div class="format-features">User activity tracking</div>
-                        </div>
-                        <div class="format-item security">
-                            <span class="format-icon">🔒</span>
-                            <span class="format-name">Security Logs</span>
-                            <span class="format-ext">FWLOG, MAILLOG</span>
-                            <div class="format-features">Threat correlation</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="results hidden" id="results">
-                <div class="card analysis-results">
-                    <div class="result-header">
-                        <div class="result-title">
-                            <h3>🔬 Analysis Results</h3>
-                            <div class="analysis-meta">
-                                <span class="file-indicator" id="fileIndicator">File 1 of 1</span>
-                                <div class="severity" id="severityBadge">Medium</div>
-                            </div>
-                        </div>
-                        <div class="result-actions">
-                            <button class="result-action-btn" id="exportAllBtn" title="Export All Results">
-                                <span>📤</span>
-                            </button>
-                            <button class="result-action-btn" id="shareBtn" title="Share Analysis">
-                                <span>🔗</span>
-                            </button>
-                            <button class="result-action-btn" id="printBtn" title="Print Report">
-                                <span>🖨️</span>
-                            </button>
-                            <button class="result-action-btn" id="resetBtn" title="New Analysis">
-                                <span>🔄</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="tabs">
-                        <div class="tab active" data-tab="overview">
-                            <span class="tab-icon">📋</span>
-                            <span>Overview</span>
-                        </div>
-                        <div class="tab" data-tab="threats">
-                            <span class="tab-icon">🚨</span>
-                            <span>Threats</span>
-                            <span class="tab-badge" id="threatsBadge">0</span>
-                        </div>
-                        <div class="tab" data-tab="iocs">
-                            <span class="tab-icon">🎯</span>
-                            <span>IOCs</span>
-                            <span class="tab-badge" id="iocsBadge">0</span>
-                        </div>
-                        <div class="tab" data-tab="timeline">
-                            <span class="tab-icon">⏰</span>
-                            <span>Timeline</span>
-                        </div>
-                        <div class="tab" data-tab="executive">
-                            <span class="tab-icon">👔</span>
-                            <span>Executive</span>
-                            <div class="ai-indicator">🤖</div>
-                        </div>
-                        <div class="tab" data-tab="technical">
-                            <span class="tab-icon">🔧</span>
-                            <span>Technical</span>
-                        </div>
-                    </div>
-
-                    <div class="tab-content active" id="overview">
-                        <div class="metric">
-                            <span>File Name:</span>
-                            <span class="metric-value" id="fileName">-</span>
-                        </div>
-                        <div class="metric">
-                            <span>File Type:</span>
-                            <span class="metric-value" id="fileType">-</span>
-                        </div>
-                        <div class="metric">
-                            <span>Security Events:</span>
-                            <span class="metric-value" id="eventCount">-</span>
-                        </div>
-                        <div class="metric">
-                            <span>IOCs Found:</span>
-                            <span class="metric-value" id="iocCount">-</span>
-                        </div>
-                        <div class="metric">
-                            <span>Risk Score:</span>
-                            <span class="metric-value" id="riskScore">-</span>
-                        </div>
-                    </div>
-
-                    <div class="tab-content" id="threats">
-                        <div id="threatsList">
-                            <div class="loading">
-                                <div class="spinner"></div>
-                                <span>🤖 AI threat analysis in progress...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-content" id="iocs">
-                        <div id="iocsList">
-                            <div class="loading">
-                                <div class="spinner"></div>
-                                <span>🎯 Extracting indicators of compromise...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-content" id="timeline">
-                        <div id="timelineData">
-                            <div class="loading">
-                                <div class="spinner"></div>
-                                <span>⏰ Building forensic timeline...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-content" id="executive">
-                        <div id="executiveReport">
-                            <div class="loading">
-                                <div class="spinner"></div>
-                                <span>👔 Generating executive summary with AI...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-content" id="technical">
-                        <div id="technicalDetails">
-                            <div class="loading">
-                                <div class="spinner"></div>
-                                <span>🔧 Compiling technical analysis...</span>
-                            </div>
+                    <!-- Supported Formats -->
+                    <div class="supported-formats">
+                        <h4>🔧 Supported Formats</h4>
+                        <div class="format-list">
+                            <span class="format-tag">EVTX</span>
+                            <span class="format-tag">PCAP</span>
+                            <span class="format-tag">CSV</span>
+                            <span class="format-tag">JSON</span>
+                            <span class="format-tag">LOG</span>
+                            <span class="format-tag">SYSLOG</span>
+                            <span class="format-tag">WTMP</span>
+                            <span class="format-tag">UTMP</span>
+                            <span class="format-tag">BTMP</span>
+                            <span class="format-tag">FWLOG</span>
+                            <span class="format-tag">MAILLOG</span>
+                            <span class="format-tag">DNSLOG</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Multi-File Analysis Summary -->
-                <div class="multi-file-summary" id="multiFileSummary" style="display: none;">
-                    <div class="card">
-                        <h3>📊 Multi-File Analysis Summary</h3>
-                        <div class="summary-grid" id="summaryGrid">
-                            <!-- Dynamic summary content -->
+                <!-- Right Side - Widget Dashboard -->
+                <div class="widgets-dashboard" id="widgetsDashboard">
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-state-icon">🛡️</div>
+                        <div class="empty-state-title">Ready for Analysis</div>
+                        <div class="empty-state-description">
+                            Upload your cybersecurity evidence files to begin comprehensive AI-powered analysis.
+                            The dashboard will populate with real-time metrics, threat intelligence, and professional
+                            insights.
+                        </div>
+                    </div>
+
+                    <!-- Security Events Widget -->
+                    <div class="widget metric-widget" id="securityEventsWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🚨</span>
+                                Security Events
+                            </div>
+                            <div class="widget-badge" id="eventsStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="securityEventsCount">--</div>
+                        <div class="metric-label">Events Detected</div>
+                        <div class="metric-change" id="eventsChange">
+                            <span>📈</span>
+                            <span>+0%</span>
+                        </div>
+                    </div>
+
+                    <!-- IOCs Widget -->
+                    <div class="widget metric-widget" id="iocsWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🎯</span>
+                                IOCs Found
+                            </div>
+                            <div class="widget-badge info" id="iocsStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="iocsCount">--</div>
+                        <div class="metric-label">Indicators</div>
+                        <div class="metric-change positive" id="iocsChange">
+                            <span>🔍</span>
+                            <span>New</span>
+                        </div>
+                    </div>
+
+                    <!-- Risk Score Widget -->
+                    <div class="widget metric-widget" id="riskScoreWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⚠️</span>
+                                Risk Score
+                            </div>
+                            <div class="widget-badge" id="riskStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="riskScoreValue">--</div>
+                        <div class="metric-label">/ 10</div>
+                        <div class="metric-change" id="riskChange">
+                            <span>📊</span>
+                            <span>Calculated</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Confidence Widget -->
+                    <div class="widget metric-widget" id="aiConfidenceWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🤖</span>
+                                AI Confidence
+                            </div>
+                            <div class="widget-badge success" id="aiStatus">AI</div>
+                        </div>
+                        <div class="metric-value" id="aiConfidenceValue">--</div>
+                        <div class="metric-label">Confidence</div>
+                        <div class="metric-change positive" id="aiChange">
+                            <span>✨</span>
+                            <span>High</span>
+                        </div>
+                    </div>
+
+                    <!-- File Analysis Status Widget -->
+                    <div class="widget status-widget large" id="fileStatusWidget" style="display: none;">
+                        <div class="status-indicator success" id="fileStatusIndicator">
+                            <span>📄</span>
+                        </div>
+                        <div class="status-content">
+                            <div class="status-title" id="fileStatusTitle">Analysis Complete</div>
+                            <div class="status-description" id="fileStatusDescription">
+                                File successfully analyzed with AI-enhanced threat detection
+                            </div>
+                        </div>
+                        <div class="widget-badge success" id="fileStatusBadge">Complete</div>
+                    </div>
+
+                    <!-- Threat Intelligence Widget -->
+                    <div class="widget list-widget" id="threatIntelWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🔍</span>
+                                Threat Intelligence
+                            </div>
+                            <div class="widget-badge" id="threatIntelStatus">--</div>
+                        </div>
+                        <div id="threatIntelList">
+                            <!-- Dynamic threat intel items -->
+                        </div>
+                    </div>
+
+                    <!-- Timeline Widget -->
+                    <div class="widget list-widget" id="timelineWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⏰</span>
+                                Event Timeline
+                            </div>
+                            <div class="widget-badge info" id="timelineStatus">--</div>
+                        </div>
+                        <div id="timelineList">
+                            <!-- Dynamic timeline items -->
+                        </div>
+                    </div>
+
+                    <!-- System Performance Widget -->
+                    <div class="widget progress-widget" id="performanceWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⚡</span>
+                                System Performance
+                            </div>
+                            <div class="widget-badge success" id="performanceStatus">Online</div>
+                        </div>
+                        <div class="progress-widget">
+                            <div class="progress-item">
+                                <span class="progress-item-label">CPU Usage</span>
+                                <span class="progress-item-value" id="cpuUsage">--</span>
+                            </div>
+                            <div class="progress-bar-widget">
+                                <div class="progress-bar-fill" id="cpuProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-item">
+                                <span class="progress-item-label">Memory Usage</span>
+                                <span class="progress-item-value" id="memoryUsage">--</span>
+                            </div>
+                            <div class="progress-bar-widget">
+                                <div class="progress-bar-fill" id="memoryProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-item">
+                                <span class="progress-item-label">Analysis Speed</span>
+                                <span class="progress-item-value" id="analysisSpeed">--</span>
+                            </div>
+                            <div class="progress-bar-widget">
+                                <div class="progress-bar-fill" id="speedProgress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Executive Summary Widget -->
+                    <div class="widget large" id="executiveSummaryWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">👔</span>
+                                Executive Summary
+                            </div>
+                            <div class="widget-badge" id="executiveStatus">AI Generated</div>
+                        </div>
+                        <div id="executiveSummaryContent">
+                            <!-- Dynamic executive summary -->
+                        </div>
+                    </div>
+
+                    <!-- Compliance Widget -->
+                    <div class="widget metric-widget" id="complianceWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">✅</span>
+                                Compliance
+                            </div>
+                            <div class="widget-badge success" id="complianceStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="complianceScore">--</div>
+                        <div class="metric-label">Score</div>
+                        <div class="metric-change positive" id="complianceChange">
+                            <span>📋</span>
+                            <span>Assessed</span>
+                        </div>
+                    </div>
+
+                    <!-- Processing Time Widget -->
+                    <div class="widget metric-widget" id="processingTimeWidget" style="display: none;">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⏱️</span>
+                                Processing Time
+                            </div>
+                            <div class="widget-badge info" id="processingStatus">--</div>
+                        </div>
+                        <div class="metric-value" id="processingTimeValue">--</div>
+                        <div class="metric-label">Seconds</div>
+                        <div class="metric-change" id="processingChange">
+                            <span>🚀</span>
+                            <span>Fast</span>
                         </div>
                     </div>
                 </div>
@@ -351,25 +324,7 @@
         </div>
     </main>
 
-    <!-- Enhanced Footer with More Information -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <p>&copy; 2024 SecuNik. Advanced Cybersecurity Forensics Platform.</p>
-                    <p class="footer-subtitle">AI-Powered | Enterprise-Grade | Real-Time Analysis</p>
-                </div>
-                <div class="footer-links">
-                    <a href="#" class="footer-link">Documentation</a>
-                    <a href="#" class="footer-link">API Reference</a>
-                    <a href="#" class="footer-link">Support</a>
-                    <a href="#" class="footer-link">Privacy</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Enhanced Help Modal -->
+    <!-- Help Modal -->
     <div class="modal" id="helpModal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
@@ -438,40 +393,6 @@
     </div>
 
     <script src="js/app.js"></script>
-    <script>
-        // Initialize enhanced features
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize modals
-            const helpBtn = document.getElementById('helpBtn');
-            const settingsBtn = document.getElementById('settingsBtn');
-            const helpModal = document.getElementById('helpModal');
-            const settingsModal = document.getElementById('settingsModal');
-
-            helpBtn?.addEventListener('click', () => {
-                helpModal.style.display = 'flex';
-            });
-
-            settingsBtn?.addEventListener('click', () => {
-                settingsModal.style.display = 'flex';
-            });
-
-            // Close modals
-            document.querySelectorAll('.modal-close').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.target.closest('.modal').style.display = 'none';
-                });
-            });
-
-            // Close modal on backdrop click
-            document.querySelectorAll('.modal').forEach(modal => {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                    }
-                });
-            });
-        });
-    </script>
 </body>
 
 </html>
