@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -33,7 +32,7 @@ public class MultiUploadTests
 
         var result = await controller.UploadMultiple(files, null, new AnalysisOptionsDto());
 
-        result.Should().BeOfType<OkObjectResult>();
+        Assert.IsType<OkObjectResult>(result);
         mockEngine.Verify(e => e.AnalyzeFilesAsync(It.IsAny<IEnumerable<AnalysisRequest>>()), Times.Once());
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using SecuNik.Core.Interfaces;
 using SecuNik.Core.Models;
@@ -42,8 +41,8 @@ public class MultiFileAnalysisTests
         };
 
         var merged = AnalysisEngine.MergeResults(new[] { r1, r2 });
-        merged.Technical.SecurityEvents.Count.Should().Be(2);
-        merged.AI.SeverityScore.Should().Be(5);
+        Assert.Equal(2, merged.Technical.SecurityEvents.Count);
+        Assert.Equal(5, merged.AI.SeverityScore);
     }
 
     [Fact]
@@ -68,7 +67,7 @@ public class MultiFileAnalysisTests
         };
 
         var result = await engine.AnalyzeFilesAsync(requests);
-        result.Technical.SecurityEvents.Count.Should().Be(2);
+        Assert.Equal(2, result.Technical.SecurityEvents.Count);
 
         File.Delete(temp1);
         File.Delete(temp2);

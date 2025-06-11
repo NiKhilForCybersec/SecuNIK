@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using FluentAssertions;
 using SecuNik.Core.Models;
 using SecuNik.Core.Services;
 using Xunit;
@@ -17,9 +16,9 @@ public class NormalizationAndCorrelationTests
         var norm = new SimpleLogNormalizer();
         var result = norm.Normalize(events);
         var e = Assert.Single(result);
-        e.Timestamp.Kind.Should().Be(DateTimeKind.Utc);
-        e.Source.Should().Be("FW");
-        e.Attributes.Should().ContainKey("ip");
+        Assert.Equal(DateTimeKind.Utc, e.Timestamp.Kind);
+        Assert.Equal("FW", e.Source);
+        Assert.Contains("ip", e.Attributes.Keys);
     }
 
     [Fact]
@@ -33,6 +32,6 @@ public class NormalizationAndCorrelationTests
         };
         var engine = new CorrelationEngine();
         var insights = engine.Correlate(events);
-        insights.Groups.Should().Contain(g => g.Key.StartsWith("IP:1.1.1.1"));
+        Assert.Contains(insights.Groups, g => g.Key.StartsWith("IP:1.1.1.1"));
     }
 }

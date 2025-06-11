@@ -23,6 +23,10 @@ dotnet test
 
 You can also run `npm test` which calls the same command and checks that the SDK is available.
 
+The test projects rely solely on xUnit's built-in `Assert` methods. Earlier versions used the
+FluentAssertions library, but it now requires a commercial license. Switching to xUnit
+assertions keeps the repository fully MIT licensed without additional restrictions.
+
 ## Running the API
 
 Run the API project directly using `dotnet run`:
