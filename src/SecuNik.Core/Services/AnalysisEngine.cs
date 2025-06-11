@@ -57,7 +57,7 @@ namespace SecuNik.Core.Services
                 {
                     _logger.LogInformation("🧠 Step 2: AI-powered threat intelligence analysis");
                     result.AI = await _aiService.GenerateInsightsAsync(result.Technical);
-                    
+
                     // Enhance AI insights with professional metrics
                     await EnhanceAIInsights(result.AI, result.Technical);
                 }
@@ -79,7 +79,7 @@ namespace SecuNik.Core.Services
                     {
                         result.Executive = CreateAdvancedExecutiveReport(result.AI, result.Technical);
                     }
-                    
+
                     // Enhance executive report with business metrics
                     await EnhanceExecutiveReport(result.Executive, result.Technical, result.AI);
                 }
@@ -112,7 +112,7 @@ namespace SecuNik.Core.Services
                 await EnhanceTechnicalFindings(result.Technical);
 
                 var processingTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
-                _logger.LogInformation("✅ PROFESSIONAL ANALYSIS COMPLETED in {ProcessingTime}ms for: {FilePath}", 
+                _logger.LogInformation("✅ PROFESSIONAL ANALYSIS COMPLETED in {ProcessingTime}ms for: {FilePath}",
                     processingTime, request.FilePath);
 
                 return result;
@@ -210,8 +210,8 @@ namespace SecuNik.Core.Services
         private async Task<DashboardMetrics> GenerateDashboardMetrics(TechnicalFindings technical, AIInsights ai)
         {
             var threats = ExtractThreats(technical);
-            var networkEvents = technical.SecurityEvents.Count(e => 
-                e.EventType?.ToLower().Contains("network") == true || 
+            var networkEvents = technical.SecurityEvents.Count(e =>
+                e.EventType?.ToLower().Contains("network") == true ||
                 e.EventType?.ToLower().Contains("connection") == true);
 
             return await Task.FromResult(new DashboardMetrics
@@ -263,21 +263,21 @@ namespace SecuNik.Core.Services
         {
             var frameworks = new Dictionary<string, ComplianceFramework>
             {
-                ["GDPR"] = new ComplianceFramework 
-                { 
-                    Name = "GDPR", 
+                ["GDPR"] = new ComplianceFramework
+                {
+                    Name = "GDPR",
                     Score = Math.Max(100 - (ai.SeverityScore * 2), 70),
                     Status = ai.SeverityScore < 5 ? "Compliant" : "Review Required"
                 },
-                ["HIPAA"] = new ComplianceFramework 
-                { 
-                    Name = "HIPAA", 
+                ["HIPAA"] = new ComplianceFramework
+                {
+                    Name = "HIPAA",
                     Score = Math.Max(100 - (ai.SeverityScore * 1.5), 75),
                     Status = ai.SeverityScore < 6 ? "Compliant" : "Review Required"
                 },
-                ["SOX"] = new ComplianceFramework 
-                { 
-                    Name = "SOX", 
+                ["SOX"] = new ComplianceFramework
+                {
+                    Name = "SOX",
                     Score = Math.Max(100 - (ai.SeverityScore * 1.8), 72),
                     Status = ai.SeverityScore < 5 ? "Compliant" : "Review Required"
                 }
@@ -359,7 +359,7 @@ namespace SecuNik.Core.Services
             if (events.Any(e => e.Description?.ToLower().Contains("ransomware") == true))
                 return "Ransomware attack - critical encryption threat with potential data loss";
 
-            if (events.Count(e => e.Description?.ToLower().Contains("failed") == true && 
+            if (events.Count(e => e.Description?.ToLower().Contains("failed") == true &&
                                  e.Description?.ToLower().Contains("login") == true) > 10)
                 return "Coordinated brute force attack - systematic credential compromise attempt";
 
@@ -390,13 +390,13 @@ namespace SecuNik.Core.Services
         {
             return new Dictionary<string, double>
             {
-                ["DataExfiltration"] = findings.SecurityEvents.Count(e => 
+                ["DataExfiltration"] = findings.SecurityEvents.Count(e =>
                     e.Description?.ToLower().Contains("exfil") == true) * 0.3,
-                ["MalwarePresence"] = findings.SecurityEvents.Count(e => 
+                ["MalwarePresence"] = findings.SecurityEvents.Count(e =>
                     e.Description?.ToLower().Contains("malware") == true) * 0.4,
-                ["UnauthorizedAccess"] = findings.SecurityEvents.Count(e => 
+                ["UnauthorizedAccess"] = findings.SecurityEvents.Count(e =>
                     e.Description?.ToLower().Contains("unauthorized") == true) * 0.2,
-                ["SystemCompromise"] = findings.SecurityEvents.Count(e => 
+                ["SystemCompromise"] = findings.SecurityEvents.Count(e =>
                     e.Description?.ToLower().Contains("compromise") == true) * 0.5
             };
         }
@@ -464,8 +464,8 @@ namespace SecuNik.Core.Services
 
             foreach (var ioc in technical.DetectedIOCs.Take(10))
             {
-                var type = ioc.StartsWith("IP:") ? "IP" : 
-                          ioc.StartsWith("Domain:") ? "Domain" : 
+                var type = ioc.StartsWith("IP:") ? "IP" :
+                          ioc.StartsWith("Domain:") ? "Domain" :
                           ioc.StartsWith("Hash:") ? "Hash" : "Unknown";
 
                 indicators.Add(new ThreatIndicator
@@ -521,7 +521,7 @@ namespace SecuNik.Core.Services
             technical.NetworkAnalysis = new NetworkForensics
             {
                 TotalConnections = technical.SecurityEvents.Count(e => e.EventType?.ToLower().Contains("network") == true),
-                SuspiciousConnections = technical.SecurityEvents.Count(e => 
+                SuspiciousConnections = technical.SecurityEvents.Count(e =>
                     e.EventType?.ToLower().Contains("network") == true && e.Severity?.ToLower() == "high"),
                 Connections = new List<NetworkConnection>(),
                 SuspiciousIPs = technical.DetectedIOCs.Where(ioc => ioc.StartsWith("IP:")).Take(10).ToList(),
@@ -570,7 +570,7 @@ namespace SecuNik.Core.Services
                 Summary = $"Advanced cybersecurity analysis completed with comprehensive risk assessment. Threat severity: {insights.SeverityScore}/10. Professional SOC-level analysis identified {technical.SecurityEvents.Count} security events requiring strategic attention.",
                 KeyFindings = GenerateAdvancedKeyFindings(technical, insights),
                 RiskLevel = insights.SeverityScore > 7 ? "CRITICAL" :
-                          insights.SeverityScore > 4 ? "HIGH" : 
+                          insights.SeverityScore > 4 ? "HIGH" :
                           insights.SeverityScore > 2 ? "MEDIUM" : "LOW",
                 ImmediateActions = string.Join("; ", insights.RecommendedActions.Take(3)),
                 LongTermRecommendations = "Implement enterprise-grade security operations center (SOC) capabilities, establish continuous threat monitoring, and develop incident response playbooks for identified attack vectors."
@@ -612,7 +612,7 @@ namespace SecuNik.Core.Services
             var confidence = findings.SecurityEvents.Count > 50 ? "Very High" :
                            findings.SecurityEvents.Count > 20 ? "High" :
                            findings.SecurityEvents.Count > 5 ? "Medium" : "Moderate";
-            
+
             assessment += $"Analysis confidence: {confidence} based on comprehensive evidence correlation and threat intelligence integration.";
 
             return assessment;
@@ -690,8 +690,7 @@ namespace SecuNik.Core.Services
             {
                 events.Add(new TimelineEvent
                 {
-                    Timestamp = findings.Metadata.Create
-d,
+                    Timestamp = findings.Metadata.Created,
                     Event = "Evidence file created - forensic analysis initiated",
                     Source = "File System",
                     Confidence = "High"
