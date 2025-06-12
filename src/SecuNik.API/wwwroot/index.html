@@ -4,101 +4,368 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecuNik - Professional Cybersecurity Platform</title>
+    <title>SecuNik - Professional Cybersecurity Analysis Platform</title>
+    <meta name="description"
+        content="Advanced AI-powered cybersecurity platform with comprehensive threat analysis and forensic capabilities">
+    <meta name="keywords" content="cybersecurity, AI analysis, threat detection, forensics, SIEM, digital forensics">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <meta name="description"
-        content="Professional AI-powered cybersecurity platform with advanced threat analysis and forensic capabilities">
-    <meta name="keywords"
-        content="cybersecurity, professional security, AI analysis, threat detection, forensics, SIEM">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 </head>
 
 <body>
     <!-- Professional Header -->
-    <header class="header">
-        <div class="container">
-            <nav class="nav">
-                <div class="logo">
-                    <div class="logo-icon">SN</div>
-                    <div class="logo-text">SecuNik</div>
-                    <div class="version-badge">Professional</div>
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <span>🛡️</span>
                 </div>
-                <div class="nav-controls">
-                    <div class="analysis-counter">
-                        <span id="analysisCounter">0 Files Analyzed</span>
+                <div class="logo-text">
+                    <h1>SecuNik</h1>
+                    <span class="version-badge">Professional v2.0</span>
+                </div>
+            </div>
+
+            <div class="header-center">
+                <div class="upload-zone-header" id="headerUploadZone">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">
+                        <span>Drop Evidence Files Here</span>
+                        <small>or click to browse</small>
                     </div>
-                    <div class="nav-status">
+                    <input type="file" id="fileInput" multiple
+                        accept=".csv,.json,.log,.txt,.evtx,.evt,.wtmp,.utmp,.btmp,.lastlog,.pcap,.pcapng,.syslog,.fwlog,.dblog,.maillog,.dnslog"
+                        style="display: none;">
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="analysis-status">
+                    <div class="status-indicator" id="systemStatus">
                         <div class="status-dot"></div>
-                        <span id="systemStatus">System Online</span>
+                        <span>System Online</span>
                     </div>
-                    <button class="nav-btn" id="helpBtn" title="Help & Documentation">
-                        <span>❓</span>
-                    </button>
-                    <button class="nav-btn" id="settingsBtn" title="Settings">
+                    <div class="analysis-counter" id="analysisCounter">
+                        <span>0 Files Analyzed</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-icon" id="settingsBtn" title="Settings">
                         <span>⚙️</span>
                     </button>
+                    <button class="btn-icon" id="helpBtn" title="Help">
+                        <span>❓</span>
+                    </button>
+                    <button class="btn-icon" id="exportBtn" title="Export Report" style="display: none;">
+                        <span>📄</span>
+                    </button>
                 </div>
-            </nav>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="analysis-progress" id="analysisProgress" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-info">
+                <span class="progress-text" id="progressText">Initializing AI analysis...</span>
+                <span class="progress-percentage" id="progressPercentage">0%</span>
+            </div>
         </div>
     </header>
 
-    <!-- Main Dashboard -->
-    <main class="main">
-        <div class="container">
-            <div class="dashboard-container">
-                <!-- Left Sidebar - Upload Zone -->
-                <div class="upload-sidebar">
-                    <div class="upload-zone" id="uploadZone">
-                        <div class="upload-icon">📤</div>
-                        <div class="upload-text">Drop Files Here</div>
-                        <div class="upload-subtext">
-                            Upload evidence files for AI-powered cybersecurity analysis
-                        </div>
-                        <div class="upload-actions">
-                            <button class="btn primary" id="chooseFilesBtn">
-                                <span>📁</span>
-                                Choose Files
-                            </button>
-                            <button class="btn secondary" id="uploadAnotherBtn" style="display: none;">
-                                <span>➕</span>
-                                Upload Another
-                            </button>
-                        </div>
-                        <input type="file" id="fileInput" multiple
-                            accept=".csv,.json,.log,.txt,.evtx,.evt,.wtmp,.utmp,.btmp,.lastlog,.pcap,.pcapng,.syslog,.fwlog,.dblog,.maillog,.dnslog"
-                            style="display: none;">
-                    </div>
+    <!-- Main Content Container -->
+    <div class="main-container">
+        <!-- Detailed Sidebar -->
+        <aside class="details-sidebar" id="detailsSidebar" style="display: none;">
+            <div class="sidebar-header">
+                <h2>Analysis Details</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <span>📊</span>
+                </button>
+            </div>
 
-                    <!-- File Queue -->
-                    <div class="file-queue" id="fileQueue" style="display: none;">
-                        <h4>📋 Analysis Queue</h4>
-                        <div class="queue-items" id="queueItems"></div>
+            <div class="sidebar-content">
+                <!-- File Information Section -->
+                <section class="details-section" id="fileInfoSection">
+                    <div class="section-header">
+                        <h3>📁 File Information</h3>
+                        <button class="section-collapse">▼</button>
                     </div>
-
-                    <!-- Upload Progress -->
-                    <div class="upload-progress" id="uploadProgress" style="display: none;">
-                        <div class="progress-info">
-                            <span class="progress-icon">🔄</span>
-                            <span class="progress-text">AI Analysis in Progress...</span>
-                            <span class="progress-percentage">0%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progressFill"></div>
-                        </div>
-                        <div class="progress-details">
-                            <span id="progressDetails">Initializing analysis...</span>
+                    <div class="section-content">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>File Name:</label>
+                                <span id="fileName">--</span>
+                            </div>
+                            <div class="info-item">
+                                <label>File Size:</label>
+                                <span id="fileSize">--</span>
+                            </div>
+                            <div class="info-item">
+                                <label>File Type:</label>
+                                <span id="fileType">--</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Processing Time:</label>
+                                <span id="processingTime">--</span>
+                            </div>
+                            <div class="info-item">
+                                <label>File Hash:</label>
+                                <span id="fileHash">--</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Analysis ID:</label>
+                                <span id="analysisId">--</span>
+                            </div>
                         </div>
                     </div>
+                </section>
 
-                    <!-- Supported Formats -->
+                <!-- Executive Summary Section -->
+                <section class="details-section" id="executiveSummarySection">
+                    <div class="section-header">
+                        <h3>👔 Executive Summary</h3>
+                        <div class="ai-badge" id="aiIndicator" style="display: none;">AI</div>
+                        <button class="section-collapse">▼</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="executive-content" id="executiveContent">
+                            <div class="placeholder-content">
+                                <span>📝</span>
+                                <p>Upload a file to generate comprehensive executive summary</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Risk Assessment Section -->
+                <section class="details-section" id="riskAssessmentSection">
+                    <div class="section-header">
+                        <h3>⚠️ Risk Assessment</h3>
+                        <button class="section-collapse">▼</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="risk-overview">
+                            <div class="risk-score-display">
+                                <div class="risk-value" id="detailedRiskScore">--</div>
+                                <div class="risk-level" id="detailedRiskLevel">--</div>
+                            </div>
+                            <div class="risk-breakdown" id="riskBreakdown">
+                                <div class="placeholder-content">
+                                    <span>📊</span>
+                                    <p>Risk assessment will appear here after analysis</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- IOCs (Indicators of Compromise) Section -->
+                <section class="details-section" id="iocsSection">
+                    <div class="section-header">
+                        <h3>🎯 Indicators of Compromise</h3>
+                        <div class="ioc-count" id="iocCount">0</div>
+                        <button class="section-collapse">▼</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="ioc-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="ip">IPs</button>
+                            <button class="filter-btn" data-filter="domain">Domains</button>
+                            <button class="filter-btn" data-filter="hash">Hashes</button>
+                            <button class="filter-btn" data-filter="email">Emails</button>
+                        </div>
+                        <div class="ioc-list" id="iocList">
+                            <div class="placeholder-content">
+                                <span>🔍</span>
+                                <p>IOCs will be displayed here after analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Security Events Section -->
+                <section class="details-section" id="securityEventsSection">
+                    <div class="section-header">
+                        <h3>🚨 Security Events</h3>
+                        <div class="event-count" id="eventCount">0</div>
+                        <button class="section-collapse">▼</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="event-filters">
+                            <select id="severityFilter">
+                                <option value="all">All Severities</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                            <select id="eventTypeFilter">
+                                <option value="all">All Types</option>
+                            </select>
+                        </div>
+                        <div class="events-list" id="eventsList">
+                            <div class="placeholder-content">
+                                <span>📋</span>
+                                <p>Security events will be listed here after analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Timeline Section -->
+                <section class="details-section" id="timelineSection">
+                    <div class="section-header">
+                        <h3>⏰ Event Timeline</h3>
+                        <button class="section-collapse">▼</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="timeline-container" id="timelineContainer">
+                            <div class="placeholder-content">
+                                <span>📅</span>
+                                <p>Event timeline will be constructed after analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- File Forensics Section -->
+                <section class="details-section" id="forensicsSection">
+                    <div class="section-header">
+                        <h3>🔬 File Forensics</h3>
+                        <button class="section-collapse">▼</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="forensics-tabs">
+                            <button class="tab-btn active" data-tab="metadata">Metadata</button>
+                            <button class="tab-btn" data-tab="structure">Structure</button>
+                            <button class="tab-btn" data-tab="entropy">Entropy</button>
+                            <button class="tab-btn" data-tab="signatures">Signatures</button>
+                        </div>
+
+                        <div class="forensics-content">
+                            <div class="tab-content active" id="metadataTab">
+                                <div class="forensics-grid" id="metadataGrid">
+                                    <div class="placeholder-content">
+                                        <span>🔍</span>
+                                        <p>File metadata analysis will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-content" id="structureTab">
+                                <div class="structure-analysis" id="structureAnalysis">
+                                    <div class="placeholder-content">
+                                        <span>🏗️</span>
+                                        <p>File structure analysis will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-content" id="entropyTab">
+                                <div class="entropy-analysis" id="entropyAnalysis">
+                                    <div class="placeholder-content">
+                                        <span>📊</span>
+                                        <p>Entropy analysis will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-content" id="signaturesTab">
+                                <div class="signatures-analysis" id="signaturesAnalysis">
+                                    <div class="placeholder-content">
+                                        <span>🔐</span>
+                                        <p>Digital signatures analysis will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recommendations Section -->
+                <section class="details-section" id="recommendationsSection">
+                    <div class="section-header">
+                        <h3>💡 Recommendations</h3>
+                        <button class="section-collapse">▼</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="recommendations-content" id="recommendationsContent">
+                            <div class="placeholder-content">
+                                <span>💡</span>
+                                <p>AI-powered recommendations will appear here after analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Threat Intelligence Section -->
+                <section class="details-section" id="threatIntelSection">
+                    <div class="section-header">
+                        <h3>🌐 Threat Intelligence</h3>
+                        <button class="section-collapse">▼</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="threat-intel-content" id="threatIntelContent">
+                            <div class="placeholder-content">
+                                <span>🌐</span>
+                                <p>Threat intelligence correlations will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Area -->
+        <main class="dashboard-main" id="dashboardMain">
+            <!-- Welcome/Empty State -->
+            <div class="welcome-state" id="welcomeState">
+                <div class="welcome-content">
+                    <div class="welcome-icon">🛡️</div>
+                    <h2>Welcome to SecuNik Professional</h2>
+                    <p>Advanced AI-powered cybersecurity analysis platform</p>
+                    <div class="welcome-features">
+                        <div class="feature-item">
+                            <span>🤖</span>
+                            <div>
+                                <h4>AI-Powered Analysis</h4>
+                                <p>Advanced machine learning for threat detection</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span>🔬</span>
+                            <div>
+                                <h4>Digital Forensics</h4>
+                                <p>Comprehensive file and evidence analysis</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span>📊</span>
+                            <div>
+                                <h4>Executive Reporting</h4>
+                                <p>Professional reports for stakeholders</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span>⚡</span>
+                            <div>
+                                <h4>Real-time Analysis</h4>
+                                <p>Fast processing with detailed insights</p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="supported-formats">
-                        <h4>🔧 Supported Formats</h4>
-                        <div class="format-list">
+                        <h4>Supported File Formats</h4>
+                        <div class="format-tags">
                             <span class="format-tag">EVTX</span>
                             <span class="format-tag">PCAP</span>
                             <span class="format-tag">CSV</span>
@@ -114,284 +381,352 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Right Side - Widget Dashboard -->
-                <div class="widgets-dashboard" id="widgetsDashboard">
-                    <!-- Empty State -->
-                    <div class="empty-state" id="emptyState">
-                        <div class="empty-state-icon">🛡️</div>
-                        <div class="empty-state-title">Ready for Analysis</div>
-                        <div class="empty-state-description">
-                            Upload your cybersecurity evidence files to begin comprehensive AI-powered analysis.
-                            The dashboard will populate with real-time metrics, threat intelligence, and professional
-                            insights.
+            <!-- Analysis Results Dashboard -->
+            <div class="analysis-dashboard" id="analysisDashboard" style="display: none;">
+                <!-- Quick Stats Header -->
+                <div class="quick-stats">
+                    <div class="stat-card critical">
+                        <div class="stat-icon">🚨</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="criticalEvents">0</div>
+                            <div class="stat-label">Critical Events</div>
                         </div>
                     </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalEvents">0</div>
+                            <div class="stat-label">Total Events</div>
+                        </div>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalIOCs">0</div>
+                            <div class="stat-label">IOCs Found</div>
+                        </div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="analysisScore">0</div>
+                            <div class="stat-label">Analysis Score</div>
+                        </div>
+                    </div>
+                </div>
 
-                    <!-- Security Events Widget -->
-                    <div class="widget metric-widget" id="securityEventsWidget" style="display: none;">
+                <!-- Main Highlights Grid -->
+                <div class="highlights-grid">
+                    <!-- Risk Overview Widget -->
+                    <div class="highlight-widget large">
                         <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">🚨</span>
-                                Security Events
+                            <h3>🎯 Risk Overview</h3>
+                            <div class="widget-controls">
+                                <button class="widget-action" title="Refresh">🔄</button>
+                                <button class="widget-action" title="Export">📤</button>
                             </div>
-                            <div class="widget-badge" id="eventsStatus">--</div>
                         </div>
-                        <div class="metric-value" id="securityEventsCount">--</div>
-                        <div class="metric-label">Events Detected</div>
-                        <div class="metric-change" id="eventsChange">
-                            <span>📈</span>
-                            <span>+0%</span>
+                        <div class="widget-content">
+                            <div class="risk-gauge" id="riskGauge">
+                                <div class="gauge-container">
+                                    <div class="gauge-bg">
+                                        <div class="gauge-fill" id="gaugeFill"></div>
+                                    </div>
+                                    <div class="gauge-center">
+                                        <div class="gauge-value" id="gaugeValue">0</div>
+                                        <div class="gauge-label">Risk Score</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="risk-details">
+                                <div class="risk-factors" id="riskFactors">
+                                    <!-- Risk factors will be populated here -->
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- IOCs Widget -->
-                    <div class="widget metric-widget" id="iocsWidget" style="display: none;">
+                    <!-- AI Insights Widget -->
+                    <div class="highlight-widget">
                         <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">🎯</span>
-                                IOCs Found
-                            </div>
-                            <div class="widget-badge info" id="iocsStatus">--</div>
+                            <h3>🤖 AI Insights</h3>
+                            <div class="ai-confidence" id="aiConfidence">--</div>
                         </div>
-                        <div class="metric-value" id="iocsCount">--</div>
-                        <div class="metric-label">Indicators</div>
-                        <div class="metric-change positive" id="iocsChange">
-                            <span>🔍</span>
-                            <span>New</span>
+                        <div class="widget-content">
+                            <div class="ai-summary" id="aiSummary">
+                                <div class="placeholder-content">
+                                    <span>🤖</span>
+                                    <p>AI analysis results will appear here</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Risk Score Widget -->
-                    <div class="widget metric-widget" id="riskScoreWidget" style="display: none;">
+                    <!-- Top Threats Widget -->
+                    <div class="highlight-widget">
                         <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">⚠️</span>
-                                Risk Score
-                            </div>
-                            <div class="widget-badge" id="riskStatus">--</div>
+                            <h3>⚡ Top Threats</h3>
+                            <div class="threat-count" id="threatCount">0</div>
                         </div>
-                        <div class="metric-value" id="riskScoreValue">--</div>
-                        <div class="metric-label">/ 10</div>
-                        <div class="metric-change" id="riskChange">
-                            <span>📊</span>
-                            <span>Calculated</span>
+                        <div class="widget-content">
+                            <div class="threats-list" id="topThreats">
+                                <div class="placeholder-content">
+                                    <span>⚡</span>
+                                    <p>Top threats will be listed here</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- AI Confidence Widget -->
-                    <div class="widget metric-widget" id="aiConfidenceWidget" style="display: none;">
+                    <!-- Event Timeline Widget -->
+                    <div class="highlight-widget large">
                         <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">🤖</span>
-                                AI Confidence
-                            </div>
-                            <div class="widget-badge success" id="aiStatus">AI</div>
-                        </div>
-                        <div class="metric-value" id="aiConfidenceValue">--</div>
-                        <div class="metric-label">Confidence</div>
-                        <div class="metric-change positive" id="aiChange">
-                            <span>✨</span>
-                            <span>High</span>
-                        </div>
-                    </div>
-
-                    <!-- File Analysis Status Widget -->
-                    <div class="widget status-widget large" id="fileStatusWidget" style="display: none;">
-                        <div class="status-indicator success" id="fileStatusIndicator">
-                            <span>📄</span>
-                        </div>
-                        <div class="status-content">
-                            <div class="status-title" id="fileStatusTitle">Analysis Complete</div>
-                            <div class="status-description" id="fileStatusDescription">
-                                File successfully analyzed with AI-enhanced threat detection
+                            <h3>📈 Event Timeline</h3>
+                            <div class="timeline-controls">
+                                <button class="timeline-btn active" data-period="1h">1H</button>
+                                <button class="timeline-btn" data-period="6h">6H</button>
+                                <button class="timeline-btn" data-period="24h">24H</button>
+                                <button class="timeline-btn" data-period="all">All</button>
                             </div>
                         </div>
-                        <div class="widget-badge success" id="fileStatusBadge">Complete</div>
-                    </div>
-
-                    <!-- Threat Intelligence Widget -->
-                    <div class="widget list-widget" id="threatIntelWidget" style="display: none;">
-                        <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">🔍</span>
-                                Threat Intelligence
+                        <div class="widget-content">
+                            <div class="timeline-chart" id="timelineChart">
+                                <div class="placeholder-content">
+                                    <span>📈</span>
+                                    <p>Event timeline chart will appear here</p>
+                                </div>
                             </div>
-                            <div class="widget-badge" id="threatIntelStatus">--</div>
-                        </div>
-                        <div id="threatIntelList">
-                            <!-- Dynamic threat intel items -->
-                        </div>
-                    </div>
-
-                    <!-- Timeline Widget -->
-                    <div class="widget list-widget" id="timelineWidget" style="display: none;">
-                        <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">⏰</span>
-                                Event Timeline
-                            </div>
-                            <div class="widget-badge info" id="timelineStatus">--</div>
-                        </div>
-                        <div id="timelineList">
-                            <!-- Dynamic timeline items -->
                         </div>
                     </div>
 
                     <!-- System Performance Widget -->
-                    <div class="widget progress-widget" id="performanceWidget" style="display: none;">
+                    <div class="highlight-widget">
                         <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">⚡</span>
-                                System Performance
-                            </div>
-                            <div class="widget-badge success" id="performanceStatus">Online</div>
+                            <h3>⚙️ System Performance</h3>
+                            <div class="performance-status" id="performanceStatus">Optimal</div>
                         </div>
-                        <div class="progress-widget">
-                            <div class="progress-item">
-                                <span class="progress-item-label">CPU Usage</span>
-                                <span class="progress-item-value" id="cpuUsage">--</span>
-                            </div>
-                            <div class="progress-bar-widget">
-                                <div class="progress-bar-fill" id="cpuProgress" style="width: 0%"></div>
-                            </div>
-                            <div class="progress-item">
-                                <span class="progress-item-label">Memory Usage</span>
-                                <span class="progress-item-value" id="memoryUsage">--</span>
-                            </div>
-                            <div class="progress-bar-widget">
-                                <div class="progress-bar-fill" id="memoryProgress" style="width: 0%"></div>
-                            </div>
-                            <div class="progress-item">
-                                <span class="progress-item-label">Analysis Speed</span>
-                                <span class="progress-item-value" id="analysisSpeed">--</span>
-                            </div>
-                            <div class="progress-bar-widget">
-                                <div class="progress-bar-fill" id="speedProgress" style="width: 0%"></div>
+                        <div class="widget-content">
+                            <div class="performance-metrics">
+                                <div class="metric">
+                                    <div class="metric-label">CPU Usage</div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill" id="cpuFill"></div>
+                                    </div>
+                                    <div class="metric-value" id="cpuValue">--</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Memory</div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill" id="memoryFill"></div>
+                                    </div>
+                                    <div class="metric-value" id="memoryValue">--</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Analysis Speed</div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill" id="speedFill"></div>
+                                    </div>
+                                    <div class="metric-value" id="speedValue">--</div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Executive Summary Widget -->
-                    <div class="widget large" id="executiveSummaryWidget" style="display: none;">
+                    <!-- IOC Categories Widget -->
+                    <div class="highlight-widget">
                         <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">👔</span>
-                                Executive Summary
-                            </div>
-                            <div class="widget-badge" id="executiveStatus">AI Generated</div>
+                            <h3>🔍 IOC Categories</h3>
+                            <button class="widget-action" title="View All">👁️</button>
                         </div>
-                        <div id="executiveSummaryContent">
-                            <!-- Dynamic executive summary -->
+                        <div class="widget-content">
+                            <div class="ioc-categories" id="iocCategories">
+                                <div class="placeholder-content">
+                                    <span>🔍</span>
+                                    <p>IOC categories will be shown here</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Compliance Widget -->
-                    <div class="widget metric-widget" id="complianceWidget" style="display: none;">
-                        <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">✅</span>
-                                Compliance
-                            </div>
-                            <div class="widget-badge success" id="complianceStatus">--</div>
-                        </div>
-                        <div class="metric-value" id="complianceScore">--</div>
-                        <div class="metric-label">Score</div>
-                        <div class="metric-change positive" id="complianceChange">
+                <!-- Quick Actions Panel -->
+                <div class="quick-actions" id="quickActions">
+                    <h3>Quick Actions</h3>
+                    <div class="action-buttons-grid">
+                        <button class="action-btn" id="generateReportBtn">
+                            <span>📄</span>
+                            Generate Report
+                        </button>
+                        <button class="action-btn" id="exportIOCsBtn">
                             <span>📋</span>
-                            <span>Assessed</span>
+                            Export IOCs
+                        </button>
+                        <button class="action-btn" id="shareAnalysisBtn">
+                            <span>🔗</span>
+                            Share Analysis
+                        </button>
+                        <button class="action-btn" id="newAnalysisBtn">
+                            <span>➕</span>
+                            New Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ Settings & Configuration</h3>
+                <button class="modal-close" id="settingsModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="analysis">Analysis</button>
+                    <button class="settings-tab" data-tab="display">Display</button>
+                    <button class="settings-tab" data-tab="export">Export</button>
+                    <button class="settings-tab" data-tab="ai">AI Config</button>
+                </div>
+
+                <div class="settings-content">
+                    <div class="settings-panel active" id="analysisSettings">
+                        <div class="setting-group">
+                            <label>AI Analysis Mode</label>
+                            <select id="aiModeSelect">
+                                <option value="auto">Auto (AI + Fallback)</option>
+                                <option value="ai-only">AI Only</option>
+                                <option value="rules-only">Rules Only</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label>Analysis Depth</label>
+                            <select id="analysisDepthSelect">
+                                <option value="quick">Quick Scan</option>
+                                <option value="standard">Standard Analysis</option>
+                                <option value="deep">Deep Analysis</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label>Include Timeline</label>
+                            <input type="checkbox" id="includeTimelineToggle" checked>
                         </div>
                     </div>
 
-                    <!-- Processing Time Widget -->
-                    <div class="widget metric-widget" id="processingTimeWidget" style="display: none;">
-                        <div class="widget-header">
-                            <div class="widget-title">
-                                <span class="widget-icon">⏱️</span>
-                                Processing Time
-                            </div>
-                            <div class="widget-badge info" id="processingStatus">--</div>
+                    <div class="settings-panel" id="displaySettings">
+                        <div class="setting-group">
+                            <label>Dashboard Theme</label>
+                            <select id="themeSelect">
+                                <option value="professional">Professional Dark</option>
+                                <option value="light">Light Mode</option>
+                                <option value="high-contrast">High Contrast</option>
+                            </select>
                         </div>
-                        <div class="metric-value" id="processingTimeValue">--</div>
-                        <div class="metric-label">Seconds</div>
-                        <div class="metric-change" id="processingChange">
-                            <span>🚀</span>
-                            <span>Fast</span>
+                        <div class="setting-group">
+                            <label>Sidebar Auto-collapse</label>
+                            <input type="checkbox" id="autoCollapseToggle">
+                        </div>
+                        <div class="setting-group">
+                            <label>Show Animations</label>
+                            <input type="checkbox" id="animationsToggle" checked>
+                        </div>
+                    </div>
+
+                    <div class="settings-panel" id="exportSettings">
+                        <div class="setting-group">
+                            <label>Default Export Format</label>
+                            <select id="exportFormatSelect">
+                                <option value="pdf">PDF Report</option>
+                                <option value="json">JSON Data</option>
+                                <option value="csv">CSV Export</option>
+                                <option value="html">HTML Report</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label>Include Raw Data</label>
+                            <input type="checkbox" id="includeRawDataToggle">
+                        </div>
+                    </div>
+
+                    <div class="settings-panel" id="aiSettings">
+                        <div class="setting-group">
+                            <label>AI Confidence Threshold</label>
+                            <input type="range" id="confidenceThreshold" min="0.5" max="1.0" step="0.1" value="0.8">
+                            <span id="confidenceValue">80%</span>
+                        </div>
+                        <div class="setting-group">
+                            <label>Enable Executive Summary</label>
+                            <input type="checkbox" id="executiveSummaryToggle" checked>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <!-- Help Modal -->
-    <div class="modal" id="helpModal" style="display: none;">
+    <div class="modal" id="helpModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🆘 SecuNik Help & Documentation</h3>
+                <h3>❓ Help & Documentation</h3>
                 <button class="modal-close" id="helpModalClose">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="help-section">
                     <h4>🚀 Getting Started</h4>
-                    <p>Upload your digital evidence files to begin AI-powered cybersecurity analysis.</p>
+                    <p>Upload your digital evidence files using the header drop zone or browse button. SecuNik supports
+                        a wide range of cybersecurity file formats for comprehensive analysis.</p>
                 </div>
+
                 <div class="help-section">
-                    <h4>📁 Supported Formats</h4>
-                    <ul class="help-list">
-                        <li><strong>Windows Events:</strong> EVTX, EVT (Real PowerShell analysis)</li>
-                        <li><strong>Network Traffic:</strong> PCAP, PCAPNG</li>
-                        <li><strong>System Logs:</strong> LOG, SYSLOG, TXT</li>
-                        <li><strong>Structured Data:</strong> CSV, JSON</li>
-                        <li><strong>Unix/Linux:</strong> WTMP, UTMP, BTMP, LASTLOG</li>
-                        <li><strong>Security Logs:</strong> FWLOG, MAILLOG, DNSLOG, DBLOG</li>
+                    <h4>📊 Understanding the Dashboard</h4>
+                    <ul>
+                        <li><strong>Main Dashboard:</strong> Shows key highlights and metrics</li>
+                        <li><strong>Details Sidebar:</strong> Comprehensive analysis results</li>
+                        <li><strong>Risk Gauge:</strong> Overall security risk assessment</li>
+                        <li><strong>IOCs:</strong> Indicators of Compromise found</li>
                     </ul>
                 </div>
+
                 <div class="help-section">
                     <h4>🤖 AI Features</h4>
-                    <ul class="help-list">
-                        <li>OpenAI-powered threat analysis</li>
-                        <li>Executive summary generation</li>
+                    <ul>
+                        <li>Advanced threat detection using machine learning</li>
+                        <li>Automated executive summary generation</li>
                         <li>Business impact assessment</li>
-                        <li>Automated IOC extraction</li>
+                        <li>Intelligent IOC correlation</li>
                     </ul>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Settings Modal -->
-    <div class="modal" id="settingsModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>⚙️ Settings</h3>
-                <button class="modal-close" id="settingsModalClose">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="setting-item">
-                    <label>🤖 AI Analysis</label>
-                    <select id="aiModeSelect">
-                        <option value="auto">Auto (AI + Fallback)</option>
-                        <option value="ai-only">AI Only</option>
-                        <option value="rules-only">Rules Only</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>📊 Report Detail Level</label>
-                    <select id="reportDetailSelect">
-                        <option value="executive">Executive Summary</option>
-                        <option value="detailed">Detailed Analysis</option>
-                        <option value="technical">Technical Deep Dive</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>🔔 Notifications</label>
-                    <input type="checkbox" id="notificationsToggle" checked>
+                <div class="help-section">
+                    <h4>📁 Supported File Types</h4>
+                    <div class="file-types-grid">
+                        <div><strong>Windows:</strong> EVTX, EVT</div>
+                        <div><strong>Network:</strong> PCAP, PCAPNG</div>
+                        <div><strong>Logs:</strong> LOG, SYSLOG, TXT</div>
+                        <div><strong>Data:</strong> CSV, JSON</div>
+                        <div><strong>Unix:</strong> WTMP, UTMP, BTMP</div>
+                        <div><strong>Security:</strong> FWLOG, MAILLOG, DNSLOG</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3>Analyzing Evidence...</h3>
+            <p id="loadingStatus">Initializing AI analysis engine...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="js/app.js"></script>
 </body>
 
