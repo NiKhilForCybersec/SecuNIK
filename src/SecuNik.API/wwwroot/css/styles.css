@@ -507,7 +507,12 @@ textarea {
 .main-content {
     padding: var(--space-lg);
     width: 100%;
+    margin-left: var(--sidebar-width);
     transition: margin-left var(--transition-normal);
+}
+
+.main-content.sidebar-collapsed {
+    margin-left: var(--sidebar-collapsed);
 }
 
 /* ===== WELCOME SCREEN ===== */
@@ -2200,7 +2205,8 @@ textarea {
         width: 280px;
     }
 
-    .main-content {
+    .main-content,
+    .main-content.sidebar-collapsed {
         margin-left: 0;
     }
 
