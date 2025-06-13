@@ -97,6 +97,7 @@ class SecuNikDashboard {
             // Tab navigation
             navTabs: document.querySelectorAll('.nav-tab'),
             tabSections: document.querySelectorAll('.tab-section'),
+            tabLinks: document.querySelectorAll('[data-tab-link]'),
 
             // Upload elements
             fileInput: document.getElementById('fileInput'),
@@ -200,6 +201,17 @@ class SecuNikDashboard {
             this.elements.navTabs.forEach(tab => {
                 tab.addEventListener('click', (e) => {
                     const tabId = e.currentTarget.getAttribute('data-tab');
+                    if (tabId) {
+                        this.switchToTab(tabId);
+                    }
+                });
+            });
+        }
+
+        if (this.elements.tabLinks) {
+            this.elements.tabLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const tabId = e.currentTarget.getAttribute('data-tab-link');
                     if (tabId) {
                         this.switchToTab(tabId);
                     }
