@@ -120,10 +120,10 @@ class SecuNikDashboard {
             sidebarToggle: document.getElementById('sidebarToggle'),
 
             // Main content areas
-            welcomeState: document.getElementById('welcomeState'),
-            analysisDashboard: document.getElementById('analysisDashboard'),
-            detailsSidebar: document.getElementById('sidebarNav'),
-            dashboardMain: document.getElementById('dashboardContent'),
+            welcomeState: document.getElementById('welcomeScreen'),
+            analysisDashboard: document.getElementById('tabContent'),
+            detailsSidebar: document.getElementById('navSidebar'),
+            dashboardMain: document.getElementById('mainContent'),
 
             // Quick stats
             criticalEvents: document.getElementById('criticalEvents'),
@@ -154,27 +154,27 @@ class SecuNikDashboard {
             iocCategories: document.getElementById('iocCategories'),
 
             // Detailed content sections
-            fileName: document.getElementById('fileName'),
-            fileSize: document.getElementById('fileSize'),
-            fileType: document.getElementById('fileType'),
-            processingTime: document.getElementById('processingTime'),
-            fileHash: document.getElementById('fileHash'),
-            analysisId: document.getElementById('analysisId'),
-            executiveContent: document.getElementById('executiveContent'),
+            fileName: document.getElementById('fileNameDetail'),
+            fileSize: document.getElementById('fileSizeDetail'),
+            fileType: document.getElementById('fileTypeDetail'),
+            processingTime: document.getElementById('processingTimeDetail'),
+            fileHash: document.getElementById('fileHashDetail'),
+            analysisId: document.getElementById('analysisIdDetail'),
+            executiveContent: document.getElementById('executiveContentDetail'),
             detailedRiskScore: document.getElementById('detailedRiskScore'),
             detailedRiskLevel: document.getElementById('detailedRiskLevel'),
             riskBreakdown: document.getElementById('riskBreakdown'),
-            iocCount: document.getElementById('iocCount'),
-            iocList: document.getElementById('iocList'),
-            eventCount: document.getElementById('eventCount'),
-            eventsList: document.getElementById('eventsList'),
-            timelineContainer: document.getElementById('timelineContainer'),
-            metadataGrid: document.getElementById('metadataGrid'),
-            structureAnalysis: document.getElementById('structureAnalysis'),
-            entropyAnalysis: document.getElementById('entropyAnalysis'),
-            signaturesAnalysis: document.getElementById('signaturesAnalysis'),
-            recommendationsContent: document.getElementById('recommendationsContent'),
-            threatIntelContent: document.getElementById('threatIntelContent'),
+            iocCount: document.getElementById('iocCountBadge'),
+            iocList: document.getElementById('iocListDetail'),
+            eventCount: document.getElementById('eventCountBadge'),
+            eventsList: document.getElementById('eventsListDetail'),
+            timelineContainer: document.getElementById('timelineContainerDetail'),
+            metadataGrid: document.getElementById('metadataGridDetail'),
+            structureAnalysis: document.getElementById('structureAnalysisDetail'),
+            entropyAnalysis: document.getElementById('entropyAnalysisDetail'),
+            signaturesAnalysis: document.getElementById('signaturesAnalysisDetail'),
+            recommendationsContent: document.getElementById('recommendationsContentDetail'),
+            threatIntelContent: document.getElementById('threatIntelContentDetail'),
 
             // Modals
             settingsModal: document.getElementById('settingsModal'),
@@ -584,8 +584,8 @@ class SecuNikDashboard {
         });
 
         // Event filters
-        const severityFilter = document.getElementById('severityFilter');
-        const eventTypeFilter = document.getElementById('eventTypeFilter');
+        const severityFilter = document.getElementById('severityFilterDetail');
+        const eventTypeFilter = document.getElementById('eventTypeFilterDetail');
 
         if (severityFilter) {
             severityFilter.addEventListener('change', (e) => {
