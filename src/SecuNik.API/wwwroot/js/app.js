@@ -556,14 +556,14 @@ class SecuNikDashboard {
             activeTab.classList.add('active');
         }
 
-        // Show corresponding content
-        document.querySelectorAll('.settings-content').forEach(content => {
-            content.classList.remove('active');
+        // Show corresponding settings panel
+        document.querySelectorAll('.settings-panel').forEach(panel => {
+            panel.classList.remove('active');
         });
 
-        const activeContent = document.getElementById(`${tabName}Settings`);
-        if (activeContent) {
-            activeContent.classList.add('active');
+        const activePanel = document.getElementById(`${tabName}Settings`);
+        if (activePanel) {
+            activePanel.classList.add('active');
         }
     }
 
