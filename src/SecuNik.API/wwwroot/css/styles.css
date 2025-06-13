@@ -541,81 +541,62 @@ body {
 }
 
 /* Risk Overview */
-.risk-overview {
-    display: grid;
-    gap: var(--space-lg);
-}
-
-.risk-score-display {
+/* Compact Risk Score Widget */
+.compact-risk-score {
     display: flex;
-    align-items: center;
-    justify-content: center;
     flex-direction: column;
-    gap: var(--space-sm);
-    padding: var(--space-xl);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
+    align-items: center;
+    padding: 1rem;
+    gap: 0.75rem;
 }
 
-.risk-value {
-    font-size: 48px;
-    font-weight: 800;
-    background: var(--warning-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.compact-score-value {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--text-primary);
     line-height: 1;
 }
 
-.risk-level {
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-secondary);
+.compact-score-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
 }
 
-.risk-breakdown {
-    display: grid;
-    gap: var(--space-sm);
+.compact-score-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, var(--success), var(--warning), var(--danger));
+    transition: width 0.8s ease-out;
 }
 
-/* Filters */
-.ioc-filters,
-.event-filters {
+.risk-level-indicator {
     display: flex;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-lg);
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
 }
 
-.filter-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-secondary);
+.risk-level-label {
     color: var(--text-secondary);
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-size: 12px;
-    font-weight: 500;
 }
 
-.filter-btn:hover,
-.filter-btn.active {
-    background: var(--text-accent);
-    color: white;
-    border-color: var(--text-accent);
+.risk-level-value {
+    font-weight: 600;
 }
 
-.event-filters select {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-secondary);
-    color: var(--text-primary);
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    cursor: pointer;
+.risk-level-value.high {
+    color: var(--severity-critical);
+}
+
+.risk-level-value.medium {
+    color: var(--severity-high);
+}
+
+.risk-level-value.low {
+    color: var(--severity-low);
 }
 
 /* IOC and Events Lists */

@@ -83,8 +83,8 @@
 
     <!-- Main Content Container -->
     <div class="main-container">
-        <!-- Detailed Sidebar -->
-        <aside class="details-sidebar" id="detailsSidebar" style="display: none;">
+        <!-- Detailed Sidebar - FIXED: Removed style="display: none;" -->
+        <aside class="details-sidebar" id="detailsSidebar">
             <div class="sidebar-header">
                 <h2>Analysis Details</h2>
                 <button class="sidebar-toggle" id="sidebarToggle">
@@ -420,34 +420,26 @@
                 <!-- Main Highlights Grid -->
                 <div class="highlights-grid">
                     <!-- Risk Overview Widget -->
-                    <div class="highlight-widget large">
+                    <div class="highlight-widget">
                         <div class="widget-header">
-                            <h3>🎯 Risk Overview</h3>
+                            <h3>🎯 Risk Score</h3>
                             <div class="widget-controls">
-                                <button class="widget-action" title="Refresh">🔄</button>
-                                <button class="widget-action" title="Export">📤</button>
+                                <button class="widget-action" title="Details">📊</button>
                             </div>
                         </div>
                         <div class="widget-content">
-                            <div class="risk-gauge" id="riskGauge">
-                                <div class="gauge-container">
-                                    <div class="gauge-bg">
-                                        <div class="gauge-fill" id="gaugeFill"></div>
-                                    </div>
-                                    <div class="gauge-center">
-                                        <div class="gauge-value" id="gaugeValue">0</div>
-                                        <div class="gauge-label">Risk Score</div>
-                                    </div>
+                            <div class="compact-risk-score" id="riskGauge">
+                                <div class="compact-score-value" id="gaugeValue">0</div>
+                                <div class="compact-score-bar">
+                                    <div class="compact-score-fill" id="gaugeFill"></div>
                                 </div>
-                            </div>
-                            <div class="risk-details">
-                                <div class="risk-factors" id="riskFactors">
-                                    <!-- Risk factors will be populated here -->
+                                <div class="risk-level-indicator">
+                                    <span class="risk-level-label">Risk Level:</span>
+                                    <span class="risk-level-value" id="riskLevelText">Low</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                     <!-- AI Insights Widget -->
                     <div class="highlight-widget">
                         <div class="widget-header">
