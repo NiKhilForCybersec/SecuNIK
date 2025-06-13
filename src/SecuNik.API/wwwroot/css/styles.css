@@ -164,7 +164,7 @@ textarea {
     height: 100%;
     padding: 0 var(--space-lg);
     gap: var(--space-lg);
-    max-width: 1600px;
+    max-width: 1280px;
     margin: 0 auto;
 }
 
@@ -511,6 +511,8 @@ textarea {
 .main-content {
     padding: var(--space-lg);
     width: 100%;
+    margin: 0 auto;
+    max-width: 1280px;
     margin-left: var(--sidebar-width);
     transition: margin-left var(--transition-normal);
 }
@@ -633,6 +635,8 @@ textarea {
 /* ===== TAB CONTENT STYLES ===== */
 .tab-content {
     width: 100%;
+    margin: 0 auto;
+    max-width: 1280px;
 }
 
 .tab-section {
