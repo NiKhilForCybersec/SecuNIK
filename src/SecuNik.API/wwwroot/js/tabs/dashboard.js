@@ -1,4 +1,4 @@
-export function initDashboardTab(analysis) {
+export function initTab(analysis) {
     if (!analysis) return;
 
     const dashboard = window.secuNikDashboard;

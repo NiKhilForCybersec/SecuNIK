@@ -6,7 +6,22 @@
 * @author SecuNik Team
 */
 
-import { initDashboardTab, updateTimelineChart } from './tabs/dashboard.js';
+import Router from "./router.js";
+import * as api from "./services/api.js";
+import * as storage from "./services/storage.js";
+import * as fmt from "./utils/formatters.js";
+import { initTab as initDashboardTab, updateTimelineChart } from "./tabs/dashboard.js";
+import { initTab as initFileDetailsTab } from "./tabs/fileDetails.js";
+import { initTab as initExecutiveTab } from "./tabs/executive.js";
+import { initTab as initEventsTab } from "./tabs/events.js";
+import { initTab as initIocsTab } from "./tabs/iocs.js";
+import { initTab as initTimelineTab } from "./tabs/timeline.js";
+import { initTab as initForensicsTab } from "./tabs/forensics.js";
+import { initTab as initRecommendationsTab } from "./tabs/recommendations.js";
+import { initTab as initThreatIntelTab } from "./tabs/threatIntel.js";
+import { initTab as initCaseManagementTab } from "./tabs/caseManagement.js";
+import { initTab as initSettingsTab } from "./tabs/settings.js";
+import { initTab as initHelpTab } from "./tabs/help.js";
 
 class SecuNikDashboard {
     constructor() {
@@ -260,20 +275,11 @@ class SecuNikDashboard {
      * Setup tab navigation
      */
     setupTabNavigation() {
-        // Tab navigation
-        this.elements.navTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = tab.getAttribute('data-tab');
-                if (tabName) {
-                    this.switchToTab(tabName);
-                }
-            });
-        });
-
-        // Tab links in widgets
+        this.router = new Router(this.elements.navTabs, this.elements.tabSections);
+        this.router.init();
         this.elements.tabLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                const tabName = link.getAttribute('data-tab-link');
+            link.addEventListener("click", () => {
+                const tabName = link.getAttribute("data-tab-link");
                 if (tabName) {
                     this.switchToTab(tabName);
                 }
@@ -281,41 +287,11 @@ class SecuNikDashboard {
         });
     }
 
-    /**
-     * Switch to specified tab
-     */
     switchToTab(tabName) {
-        // Update state
         this.state.activeTab = tabName;
-
-        // Update nav tabs
-        this.elements.navTabs.forEach(tab => {
-            const isActive = tab.getAttribute('data-tab') === tabName;
-            tab.classList.toggle('active', isActive);
-            tab.setAttribute('aria-selected', isActive);
-        });
-
-        // Update tab sections
-        this.elements.tabSections.forEach(section => {
-            const isActive = section.id === `${tabName}Tab`;
-            section.classList.toggle('active', isActive);
-        });
-
-        // Update URL without navigation
-        if (history.replaceState) {
-            history.replaceState(null, '', `#${tabName}`);
+        if (this.router) {
+            this.router.switchTo(tabName);
         }
-
-        console.log(`Switched to tab: ${tabName}`);
-    }
-
-    /**
-     * Toggle sidebar
-     */
-    toggleSidebar() {
-        this.state.sidebarOpen = !this.state.sidebarOpen;
-        this.updateSidebarState();
-        this.saveSettings();
     }
 
     /**
@@ -460,19 +436,12 @@ class SecuNikDashboard {
             }));
 
             // Make API call
-            const response = await fetch(this.config.apiEndpoints.upload, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
-            }
-
-            const result = await response.json();
+            const result = await api.uploadFile(file, {
+                aiMode: this.settings.aiMode,
+                analysisDepth: this.settings.analysisDepth,
+                includeTimeline: this.settings.includeTimeline,
+                confidenceThreshold: this.settings.confidenceThreshold
+            }, this.config.apiEndpoints);
             const processingTime = Date.now() - this.metrics.startTime;
 
             // Clear progress interval
@@ -793,8 +762,18 @@ class SecuNikDashboard {
      * Update all tabs with analysis data
      */
     async updateAllTabs(analysis) {
-        // Placeholder for tab updates - implement as needed
-        console.log('Updating all tabs with analysis data');
+        initDashboardTab(analysis);
+        initFileDetailsTab(analysis);
+        initExecutiveTab(analysis);
+        initEventsTab(analysis);
+        initIocsTab(analysis);
+        initTimelineTab(analysis);
+        initForensicsTab(analysis);
+        initRecommendationsTab(analysis);
+        initThreatIntelTab(analysis);
+        initCaseManagementTab(analysis);
+        initSettingsTab(analysis);
+        initHelpTab(analysis);
     }
 
     /**
@@ -952,22 +931,18 @@ class SecuNikDashboard {
      */
     async checkSystemHealth() {
         try {
-            const response = await fetch(this.config.apiEndpoints.health, {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' }
-            });
-
-            if (response.ok) {
-                this.state.systemStatus = 'online';
-                this.updateSystemStatus('System Online', 'online');
+            const ok = await api.checkHealth(this.config.apiEndpoints);
+            if (ok) {
+                this.state.systemStatus = "online";
+                this.updateSystemStatus("System Online", "online");
             } else {
-                this.state.systemStatus = 'degraded';
-                this.updateSystemStatus('System Degraded', 'degraded');
+                this.state.systemStatus = "degraded";
+                this.updateSystemStatus("System Degraded", "degraded");
             }
         } catch (error) {
-            this.state.systemStatus = 'offline';
-            this.updateSystemStatus('System Offline', 'offline');
-            console.warn('Health check failed:', error);
+            this.state.systemStatus = "offline";
+            this.updateSystemStatus("System Offline", "offline");
+            console.warn("Health check failed:", error);
         }
     }
 
@@ -1136,9 +1111,11 @@ class SecuNikDashboard {
      */
     loadSettings() {
         try {
-            const saved = localStorage.getItem('secunik_dashboard_settings');
-            if (saved) {
-                this.settings = { ...this.settings, ...JSON.parse(saved) };
+            Object.assign(this.settings, storage.loadSettings());
+        } catch (error) {
+            console.warn("Failed to load settings:", error);
+        }
+    };
             }
         } catch (error) {
             console.warn('Failed to load settings:', error);
@@ -1147,18 +1124,22 @@ class SecuNikDashboard {
 
     saveSettings() {
         try {
-            localStorage.setItem('secunik_dashboard_settings', JSON.stringify(this.settings));
+            storage.saveSettings(this.settings);
         } catch (error) {
+            console.warn("Failed to save settings:", error);
+        }
+    } catch (error) {
             console.warn('Failed to save settings:', error);
         }
     }
 
     loadAnalysisHistory() {
         try {
-            const saved = localStorage.getItem('secunik_analysis_history');
-            if (saved) {
-                this.state.analysisHistory = JSON.parse(saved);
-            }
+            this.state.analysisHistory = storage.loadHistory();
+        } catch (error) {
+            console.warn("Failed to load analysis history:", error);
+        }
+    }
         } catch (error) {
             console.warn('Failed to load analysis history:', error);
         }
@@ -1166,18 +1147,22 @@ class SecuNikDashboard {
 
     saveAnalysisHistory() {
         try {
-            localStorage.setItem('secunik_analysis_history', JSON.stringify(this.state.analysisHistory));
+            storage.saveHistory(this.state.analysisHistory);
         } catch (error) {
+            console.warn("Failed to save analysis history:", error);
+        }
+    } catch (error) {
             console.warn('Failed to save analysis history:', error);
         }
     }
 
     loadCases() {
         try {
-            const saved = localStorage.getItem('secunik_cases');
-            if (saved) {
-                this.state.cases = JSON.parse(saved);
-            }
+            this.state.cases = storage.loadCases();
+        } catch (error) {
+            console.warn("Failed to load cases:", error);
+        }
+    }
         } catch (error) {
             console.warn('Failed to load cases:', error);
         }
@@ -1185,8 +1170,11 @@ class SecuNikDashboard {
 
     saveCases() {
         try {
-            localStorage.setItem('secunik_cases', JSON.stringify(this.state.cases));
+            storage.saveCases(this.state.cases);
         } catch (error) {
+            console.warn("Failed to save cases:", error);
+        }
+    } catch (error) {
             console.warn('Failed to save cases:', error);
         }
     }
