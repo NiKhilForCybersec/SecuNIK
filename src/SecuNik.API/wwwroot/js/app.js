@@ -495,9 +495,9 @@ class SecuNikDashboard {
         });
 
         // Forensics tabs
-        document.querySelectorAll('.forensic-tab').forEach(btn => {
+        document.querySelectorAll('.tab-btn[data-forensics-tab]').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const tabName = e.target.dataset.tab;
+                const tabName = e.target.dataset.forensicsTab;
                 if (tabName) {
                     this.switchForensicsTab(tabName);
                 }
@@ -520,12 +520,12 @@ class SecuNikDashboard {
      */
     switchForensicsTab(tabName) {
         // Remove active class from all forensic tabs
-        document.querySelectorAll('.forensic-tab').forEach(tab => {
+        document.querySelectorAll('.tab-btn[data-forensics-tab]').forEach(tab => {
             tab.classList.remove('active');
         });
 
         // Add active class to clicked tab
-        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+        const activeTab = document.querySelector(`.tab-btn[data-forensics-tab="${tabName}"]`);
         if (activeTab) {
             activeTab.classList.add('active');
         }
