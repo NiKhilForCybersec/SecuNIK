@@ -721,7 +721,7 @@ class SecuNikDashboard {
                         break;
                     case '2':
                         e.preventDefault();
-                        this.switchToTab('details');
+                        this.switchToTab('fileDetails');
                         break;
                     case '3':
                         e.preventDefault();
