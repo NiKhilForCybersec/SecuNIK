@@ -1284,8 +1284,9 @@ class SecuNikDashboard {
 
             if (!response.ok) {
                 let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                let errorData;
                 try {
-                    const errorData = await response.text();
+                    errorData = await response.text();
                     const jsonError = JSON.parse(errorData);
                     errorMessage = jsonError.error || jsonError.message || errorMessage;
                 } catch (e) {
