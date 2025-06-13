@@ -2,9 +2,11 @@
  * SecuNik Professional Dashboard - JavaScript Application
  * Advanced AI-powered cybersecurity analysis platform
  * 
- * @version 2.1.0
- * @author SecuNik Team
- */
+* @version 2.1.0
+* @author SecuNik Team
+*/
+
+import { initDashboardTab, updateTimelineChart } from './tabs/dashboard.js';
 
 class SecuNikDashboard {
     constructor() {
@@ -577,7 +579,7 @@ class SecuNikDashboard {
         this.switchToTab('dashboard');
 
         // Update all dashboard components
-        await this.updateDashboard(this.state.currentAnalysis);
+        initDashboardTab(this.state.currentAnalysis);
         await this.updateAllTabs(this.state.currentAnalysis);
 
         // Store in history
@@ -594,308 +596,6 @@ class SecuNikDashboard {
         // Show export button
         if (this.elements.exportBtn) {
             this.elements.exportBtn.style.display = 'flex';
-        }
-    }
-
-    /**
-     * Update dashboard with analysis data
-     */
-    async updateDashboard(analysis) {
-        const data = analysis.result;
-        const events = data.technical?.securityEvents || [];
-        const iocs = data.technical?.detectedIOCs || [];
-
-        // Update quick stats
-        this.updateQuickStats(events, iocs, data);
-
-        // Update risk gauge
-        this.updateRiskGauge(data);
-
-        // Update AI summary
-        this.updateAISummary(data);
-
-        // Update top threats
-        this.updateTopThreats(events);
-
-        // Update timeline
-        this.updateTimelineChart(events);
-
-        // Update IOC categories
-        this.updateIOCCategories(iocs);
-
-        // Update performance metrics
-        this.updateAnalysisPerformanceMetrics(analysis.processingTime);
-    }
-
-    /**
-     * Update quick stats
-     */
-    updateQuickStats(events, iocs, data) {
-        const criticalEvents = events.filter(e =>
-            (e.severity || '').toLowerCase() === 'critical'
-        ).length;
-
-        const analysisScore = this.calculateAnalysisScore(data);
-
-        if (this.elements.criticalEvents) {
-            this.elements.criticalEvents.textContent = criticalEvents.toString();
-        }
-
-        if (this.elements.totalEvents) {
-            this.elements.totalEvents.textContent = events.length.toString();
-        }
-
-        if (this.elements.totalIOCs) {
-            this.elements.totalIOCs.textContent = iocs.length.toString();
-        }
-
-        if (this.elements.analysisScore) {
-            this.elements.analysisScore.textContent = analysisScore.toString();
-        }
-    }
-
-    /**
-     * Update risk gauge
-     */
-    updateRiskGauge(data) {
-        const riskScore = this.calculateRiskScore(data);
-        const riskLevel = this.getRiskLevel(riskScore);
-
-        if (this.elements.gaugeValue) {
-            this.elements.gaugeValue.textContent = riskScore;
-        }
-
-        if (this.elements.gaugeFill) {
-            this.elements.gaugeFill.style.width = `${riskScore}%`;
-        }
-
-        if (this.elements.riskLevelText) {
-            this.elements.riskLevelText.textContent = riskLevel;
-            this.elements.riskLevelText.className = `risk-level-value ${riskLevel.toLowerCase()}`;
-        }
-    }
-
-    /**
-     * Update AI summary
-     */
-    updateAISummary(data) {
-        const summary = data.executiveSummary?.summary || data.aiInsights?.summary || 'No AI summary available';
-        const confidence = data.aiInsights?.confidence || 0;
-
-        if (this.elements.aiSummary) {
-            this.elements.aiSummary.innerHTML = `<p>${this.sanitizeHTML(summary)}</p>`;
-        }
-
-        if (this.elements.aiConfidence) {
-            this.elements.aiConfidence.textContent = `${Math.round(confidence * 100)}% confidence`;
-        }
-    }
-
-    /**
-     * Update top threats
-     */
-    updateTopThreats(events) {
-        const threats = events
-            .filter(e => e.severity && ['critical', 'high'].includes(e.severity.toLowerCase()))
-            .slice(0, 5);
-
-        if (this.elements.topThreats) {
-            if (threats.length === 0) {
-                this.elements.topThreats.innerHTML = `
-                    <div class="placeholder-content">
-                        <i data-feather="shield" width="32" height="32"></i>
-                        <p>No critical threats detected</p>
-                    </div>
-                `;
-            } else {
-                this.elements.topThreats.innerHTML = threats.map(threat => `
-                    <div class="threat-item">
-                        <div class="threat-severity ${threat.severity?.toLowerCase() || 'info'}"></div>
-                        <div class="threat-content">
-                            <div class="threat-title">${this.sanitizeHTML(threat.eventType || threat.description || 'Unknown Threat')}</div>
-                            <div class="threat-time">${this.formatTimestamp(threat.timestamp)}</div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            // Replace feather icons
-            feather.replace();
-        }
-
-        if (this.elements.threatCount) {
-            this.elements.threatCount.textContent = threats.length.toString();
-        }
-    }
-
-    /**
-     * Update timeline chart
-     */
-    updateTimelineChart(events) {
-        if (!this.elements.timelineChart) return;
-
-        if (events.length === 0) {
-            this.elements.timelineChart.innerHTML = `
-                <div class="placeholder-content">
-                    <i data-feather="activity" width="32" height="32"></i>
-                    <p>No events to display</p>
-                </div>
-            `;
-            feather.replace();
-            return;
-        }
-
-        // Simple timeline visualization
-        const timelineData = this.processTimelineData(events);
-        this.renderSimpleTimeline(timelineData);
-    }
-
-    /**
-     * Process timeline data
-     */
-    processTimelineData(events) {
-        const now = new Date();
-        const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-        return events
-            .filter(e => e.timestamp && new Date(e.timestamp) >= last24h)
-            .map(e => ({
-                timestamp: new Date(e.timestamp),
-                severity: e.severity || 'info',
-                type: e.eventType || 'Unknown',
-                description: e.description || ''
-            }))
-            .sort((a, b) => a.timestamp - b.timestamp);
-    }
-
-    /**
-     * Render simple timeline
-     */
-    renderSimpleTimeline(data) {
-        if (!this.elements.timelineChart) return;
-
-        const hours = Array.from({ length: 24 }, (_, i) => {
-            const hour = new Date();
-            hour.setHours(hour.getHours() - (23 - i), 0, 0, 0);
-            return hour;
-        });
-
-        const timeline = hours.map(hour => {
-            const hourEvents = data.filter(e =>
-                e.timestamp.getHours() === hour.getHours() &&
-                e.timestamp.getDate() === hour.getDate()
-            );
-
-            const critical = hourEvents.filter(e => e.severity === 'critical').length;
-            const high = hourEvents.filter(e => e.severity === 'high').length;
-            const total = hourEvents.length;
-
-            return {
-                hour: hour.getHours(),
-                total,
-                critical,
-                high,
-                height: Math.min((total / Math.max(...hours.map(h => data.filter(e => e.timestamp.getHours() === h.getHours()).length), 1)) * 100, 100)
-            };
-        });
-
-        this.elements.timelineChart.innerHTML = `
-            <div class="timeline-bars">
-                ${timeline.map(bar => `
-                    <div class="timeline-bar" style="height: ${bar.height}%" title="${bar.total} events at ${bar.hour}:00">
-                        <div class="bar-segment critical" style="height: ${bar.critical ? (bar.critical / bar.total) * 100 : 0}%"></div>
-                        <div class="bar-segment high" style="height: ${bar.high ? (bar.high / bar.total) * 100 : 0}%"></div>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="timeline-labels">
-                ${timeline.filter((_, i) => i % 4 === 0).map(bar => `
-                    <span>${bar.hour}:00</span>
-                `).join('')}
-            </div>
-        `;
-    }
-
-    /**
-     * Update IOC categories
-     */
-    updateIOCCategories(iocs) {
-        if (!this.elements.iocCategories) return;
-
-        if (iocs.length === 0) {
-            this.elements.iocCategories.innerHTML = `
-                <div class="placeholder-content">
-                    <i data-feather="search" width="32" height="32"></i>
-                    <p>No IOCs detected</p>
-                </div>
-            `;
-            feather.replace();
-            return;
-        }
-
-        const categories = {};
-        iocs.forEach(ioc => {
-            const category = ioc.category || ioc.type || 'Unknown';
-            if (!categories[category]) {
-                categories[category] = 0;
-            }
-            categories[category]++;
-        });
-
-        const sortedCategories = Object.entries(categories)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5);
-
-        this.elements.iocCategories.innerHTML = `
-            <div class="ioc-category-list">
-                ${sortedCategories.map(([category, count]) => `
-                    <div class="ioc-category-item">
-                        <div class="category-name">${this.sanitizeHTML(category)}</div>
-                        <div class="category-count">${count}</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
-    /**
-     * Update analysis performance metrics
-     */
-    updateAnalysisPerformanceMetrics(processingTime) {
-        const speed = this.state.currentFile ? (this.state.currentFile.size / processingTime) * 1000 : 0;
-
-        // Simulate performance metrics
-        this.metrics.cpu = Math.min(30 + Math.random() * 40, 100);
-        this.metrics.memory = Math.min(40 + Math.random() * 30, 100);
-        this.metrics.analysisSpeed = Math.min((speed / 1024) / 10, 100); // Normalize to percentage
-
-        if (this.elements.cpuFill) {
-            this.elements.cpuFill.style.width = `${this.metrics.cpu}%`;
-        }
-        if (this.elements.cpuValue) {
-            this.elements.cpuValue.textContent = `${Math.round(this.metrics.cpu)}%`;
-        }
-
-        if (this.elements.memoryFill) {
-            this.elements.memoryFill.style.width = `${this.metrics.memory}%`;
-        }
-        if (this.elements.memoryValue) {
-            this.elements.memoryValue.textContent = `${Math.round(this.metrics.memory)}%`;
-        }
-
-        if (this.elements.speedFill) {
-            this.elements.speedFill.style.width = `${this.metrics.analysisSpeed}%`;
-        }
-        if (this.elements.speedValue) {
-            this.elements.speedValue.textContent = this.formatSpeed(speed);
-        }
-
-        const status = this.metrics.cpu < 60 && this.metrics.memory < 70 ? 'Optimal' :
-            this.metrics.cpu < 80 && this.metrics.memory < 85 ? 'Good' : 'High Load';
-
-        if (this.elements.performanceStatus) {
-            this.elements.performanceStatus.textContent = status;
-            this.elements.performanceStatus.className = `performance-status ${status.toLowerCase().replace(' ', '-')}`;
         }
     }
 
@@ -1064,7 +764,7 @@ class SecuNikDashboard {
         if (this.state.currentAnalysis) {
             const events = this.state.currentAnalysis.result.technical?.securityEvents || [];
             const filteredEvents = this.filterEventsByPeriod(events, period);
-            this.updateTimelineChart(filteredEvents);
+            updateTimelineChart(filteredEvents);
         }
     }
 
