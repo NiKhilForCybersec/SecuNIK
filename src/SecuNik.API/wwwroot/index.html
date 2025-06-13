@@ -8,13 +8,24 @@
     <meta name="description"
         content="Advanced AI-powered cybersecurity platform with comprehensive threat analysis and forensic capabilities">
     <meta name="keywords" content="cybersecurity, AI analysis, threat detection, forensics, SIEM, digital forensics">
+
+    <!-- Favicon -->
     <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
-    <link rel="stylesheet" href="css/styles.css">
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' stroke='currentColor' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'></path></svg>">
+
+    <!-- Preconnects for external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
+
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
@@ -23,7 +34,7 @@
         <div class="header-container">
             <div class="logo-section">
                 <div class="logo-icon">
-                    <span>🛡️</span>
+                    <i data-feather="shield"></i>
                 </div>
                 <div class="logo-text">
                     <h1>SecuNik</h1>
@@ -33,7 +44,7 @@
 
             <div class="header-center">
                 <div class="upload-zone-header" id="headerUploadZone">
-                    <div class="upload-icon">📤</div>
+                    <i data-feather="upload-cloud" class="upload-icon"></i>
                     <div class="upload-text">
                         <span>Drop Evidence Files Here</span>
                         <small>or click to browse</small>
@@ -57,13 +68,13 @@
 
                 <div class="action-buttons">
                     <button class="btn-icon" id="settingsBtn" title="Settings">
-                        <span>⚙️</span>
+                        <i data-feather="settings"></i>
                     </button>
                     <button class="btn-icon" id="helpBtn" title="Help">
-                        <span>❓</span>
+                        <i data-feather="help-circle"></i>
                     </button>
                     <button class="btn-icon" id="exportBtn" title="Export Report" style="display: none;">
-                        <span>📄</span>
+                        <i data-feather="download"></i>
                     </button>
                 </div>
             </div>
@@ -82,281 +93,134 @@
     </header>
 
     <!-- Main Content Container -->
-    <div class="main-container">
-        <!-- Detailed Sidebar - FIXED: Removed style="display: none;" -->
-        <aside class="details-sidebar" id="detailsSidebar">
+    <div class="app-container">
+        <!-- Navigation Sidebar -->
+        <nav class="nav-sidebar" id="navSidebar">
             <div class="sidebar-header">
-                <h2>Analysis Details</h2>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <span>📊</span>
+                <h2>SecuNik Analysis</h2>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i data-feather="menu"></i>
                 </button>
             </div>
 
-            <div class="sidebar-content">
-                <!-- File Information Section -->
-                <section class="details-section" id="fileInfoSection">
-                    <div class="section-header">
-                        <h3>📁 File Information</h3>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>File Name:</label>
-                                <span id="fileName">--</span>
-                            </div>
-                            <div class="info-item">
-                                <label>File Size:</label>
-                                <span id="fileSize">--</span>
-                            </div>
-                            <div class="info-item">
-                                <label>File Type:</label>
-                                <span id="fileType">--</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Processing Time:</label>
-                                <span id="processingTime">--</span>
-                            </div>
-                            <div class="info-item">
-                                <label>File Hash:</label>
-                                <span id="fileHash">--</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Analysis ID:</label>
-                                <span id="analysisId">--</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Executive Summary Section -->
-                <section class="details-section" id="executiveSummarySection">
-                    <div class="section-header">
-                        <h3>👔 Executive Summary</h3>
-                        <div class="ai-badge" id="aiIndicator" style="display: none;">AI</div>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="executive-content" id="executiveContent">
-                            <div class="placeholder-content">
-                                <span>📝</span>
-                                <p>Upload a file to generate comprehensive executive summary</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Risk Assessment Section -->
-                <section class="details-section" id="riskAssessmentSection">
-                    <div class="section-header">
-                        <h3>⚠️ Risk Assessment</h3>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="risk-overview">
-                            <div class="risk-score-display">
-                                <div class="risk-value" id="detailedRiskScore">--</div>
-                                <div class="risk-level" id="detailedRiskLevel">--</div>
-                            </div>
-                            <div class="risk-breakdown" id="riskBreakdown">
-                                <div class="placeholder-content">
-                                    <span>📊</span>
-                                    <p>Risk assessment will appear here after analysis</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- IOCs (Indicators of Compromise) Section -->
-                <section class="details-section" id="iocsSection">
-                    <div class="section-header">
-                        <h3>🎯 Indicators of Compromise</h3>
-                        <div class="ioc-count" id="iocCount">0</div>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="ioc-filters">
-                            <button class="filter-btn active" data-filter="all">All</button>
-                            <button class="filter-btn" data-filter="ip">IPs</button>
-                            <button class="filter-btn" data-filter="domain">Domains</button>
-                            <button class="filter-btn" data-filter="hash">Hashes</button>
-                            <button class="filter-btn" data-filter="email">Emails</button>
-                        </div>
-                        <div class="ioc-list" id="iocList">
-                            <div class="placeholder-content">
-                                <span>🔍</span>
-                                <p>IOCs will be displayed here after analysis</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Security Events Section -->
-                <section class="details-section" id="securityEventsSection">
-                    <div class="section-header">
-                        <h3>🚨 Security Events</h3>
-                        <div class="event-count" id="eventCount">0</div>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="event-filters">
-                            <select id="severityFilter">
-                                <option value="all">All Severities</option>
-                                <option value="critical">Critical</option>
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
-                            </select>
-                            <select id="eventTypeFilter">
-                                <option value="all">All Types</option>
-                            </select>
-                        </div>
-                        <div class="events-list" id="eventsList">
-                            <div class="placeholder-content">
-                                <span>📋</span>
-                                <p>Security events will be listed here after analysis</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Timeline Section -->
-                <section class="details-section" id="timelineSection">
-                    <div class="section-header">
-                        <h3>⏰ Event Timeline</h3>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="timeline-container" id="timelineContainer">
-                            <div class="placeholder-content">
-                                <span>📅</span>
-                                <p>Event timeline will be constructed after analysis</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- File Forensics Section -->
-                <section class="details-section" id="forensicsSection">
-                    <div class="section-header">
-                        <h3>🔬 File Forensics</h3>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="forensics-tabs">
-                            <button class="tab-btn active" data-tab="metadata">Metadata</button>
-                            <button class="tab-btn" data-tab="structure">Structure</button>
-                            <button class="tab-btn" data-tab="entropy">Entropy</button>
-                            <button class="tab-btn" data-tab="signatures">Signatures</button>
-                        </div>
-
-                        <div class="forensics-content">
-                            <div class="tab-content active" id="metadataTab">
-                                <div class="forensics-grid" id="metadataGrid">
-                                    <div class="placeholder-content">
-                                        <span>🔍</span>
-                                        <p>File metadata analysis will appear here</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="structureTab">
-                                <div class="structure-analysis" id="structureAnalysis">
-                                    <div class="placeholder-content">
-                                        <span>🏗️</span>
-                                        <p>File structure analysis will appear here</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="entropyTab">
-                                <div class="entropy-analysis" id="entropyAnalysis">
-                                    <div class="placeholder-content">
-                                        <span>📊</span>
-                                        <p>Entropy analysis will appear here</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="signaturesTab">
-                                <div class="signatures-analysis" id="signaturesAnalysis">
-                                    <div class="placeholder-content">
-                                        <span>🔐</span>
-                                        <p>Digital signatures analysis will appear here</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Recommendations Section -->
-                <section class="details-section" id="recommendationsSection">
-                    <div class="section-header">
-                        <h3>💡 Recommendations</h3>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="recommendations-content" id="recommendationsContent">
-                            <div class="placeholder-content">
-                                <span>💡</span>
-                                <p>AI-powered recommendations will appear here after analysis</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Threat Intelligence Section -->
-                <section class="details-section" id="threatIntelSection">
-                    <div class="section-header">
-                        <h3>🌐 Threat Intelligence</h3>
-                        <button class="section-collapse">▼</button>
-                    </div>
-                    <div class="section-content">
-                        <div class="threat-intel-content" id="threatIntelContent">
-                            <div class="placeholder-content">
-                                <span>🌐</span>
-                                <p>Threat intelligence correlations will appear here</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+            <div class="nav-content">
+                <ul class="nav-tabs">
+                    <li>
+                        <button class="nav-tab active" data-tab="dashboard">
+                            <i data-feather="grid"></i>
+                            <span>Dashboard</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="file-details">
+                            <i data-feather="file-text"></i>
+                            <span>File Details</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="executive">
+                            <i data-feather="briefcase"></i>
+                            <span>Executive Summary</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="risk">
+                            <i data-feather="alert-triangle"></i>
+                            <span>Risk Assessment</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="iocs">
+                            <i data-feather="target"></i>
+                            <span>IOCs</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="events">
+                            <i data-feather="alert-circle"></i>
+                            <span>Security Events</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="timeline">
+                            <i data-feather="clock"></i>
+                            <span>Timeline</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="forensics">
+                            <i data-feather="search"></i>
+                            <span>Forensics</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="recommendations">
+                            <i data-feather="zap"></i>
+                            <span>Recommendations</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="threat-intel">
+                            <i data-feather="globe"></i>
+                            <span>Threat Intelligence</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="case">
+                            <i data-feather="folder"></i>
+                            <span>Case Management</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="settings">
+                            <i data-feather="settings"></i>
+                            <span>Settings</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-tab" data-tab="help">
+                            <i data-feather="help-circle"></i>
+                            <span>Help</span>
+                        </button>
+                    </li>
+                </ul>
             </div>
-        </aside>
+        </nav>
 
-        <!-- Main Dashboard Area -->
-        <main class="dashboard-main" id="dashboardMain">
-            <!-- Welcome/Empty State -->
-            <div class="welcome-state" id="welcomeState">
+        <!-- Main Content Area -->
+        <main class="main-content" id="mainContent">
+            <!-- Welcome Screen -->
+            <div class="welcome-screen" id="welcomeScreen">
                 <div class="welcome-content">
-                    <div class="welcome-icon">🛡️</div>
+                    <div class="welcome-icon">
+                        <i data-feather="shield" width="80" height="80"></i>
+                    </div>
                     <h2>Welcome to SecuNik Professional</h2>
                     <p>Advanced AI-powered cybersecurity analysis platform</p>
                     <div class="welcome-features">
                         <div class="feature-item">
-                            <span>🤖</span>
+                            <i data-feather="cpu"></i>
                             <div>
                                 <h4>AI-Powered Analysis</h4>
                                 <p>Advanced machine learning for threat detection</p>
                             </div>
                         </div>
                         <div class="feature-item">
-                            <span>🔬</span>
+                            <i data-feather="search"></i>
                             <div>
                                 <h4>Digital Forensics</h4>
                                 <p>Comprehensive file and evidence analysis</p>
                             </div>
                         </div>
                         <div class="feature-item">
-                            <span>📊</span>
+                            <i data-feather="bar-chart-2"></i>
                             <div>
                                 <h4>Executive Reporting</h4>
                                 <p>Professional reports for stakeholders</p>
                             </div>
                         </div>
                         <div class="feature-item">
-                            <span>⚡</span>
+                            <i data-feather="zap"></i>
                             <div>
                                 <h4>Real-time Analysis</h4>
                                 <p>Fast processing with detailed insights</p>
@@ -383,198 +247,741 @@
                 </div>
             </div>
 
-            <!-- Analysis Results Dashboard -->
-            <div class="analysis-dashboard" id="analysisDashboard" style="display: none;">
-                <!-- Quick Stats Header -->
-                <div class="quick-stats">
-                    <div class="stat-card critical">
-                        <div class="stat-icon">🚨</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="criticalEvents">0</div>
-                            <div class="stat-label">Critical Events</div>
-                        </div>
+            <!-- Tab Content Sections -->
+            <div class="tab-content" id="tabContent">
+                <!-- Dashboard Tab (Default) -->
+                <section class="tab-section active" id="dashboardTab" aria-labelledby="dashboardTab">
+                    <div class="section-header">
+                        <h2><i data-feather="grid"></i> Dashboard</h2>
                     </div>
-                    <div class="stat-card warning">
-                        <div class="stat-icon">⚠️</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="totalEvents">0</div>
-                            <div class="stat-label">Total Events</div>
+                    <div class="section-content">
+                        <!-- Quick Stats -->
+                        <div class="quick-stats">
+                            <div class="stat-card critical">
+                                <div class="stat-icon">
+                                    <i data-feather="alert-octagon"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="criticalEvents">0</div>
+                                    <div class="stat-label">Critical Events</div>
+                                </div>
+                            </div>
+                            <div class="stat-card warning">
+                                <div class="stat-icon">
+                                    <i data-feather="alert-triangle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="totalEvents">0</div>
+                                    <div class="stat-label">Total Events</div>
+                                </div>
+                            </div>
+                            <div class="stat-card info">
+                                <div class="stat-icon">
+                                    <i data-feather="target"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="totalIOCs">0</div>
+                                    <div class="stat-label">IOCs Found</div>
+                                </div>
+                            </div>
+                            <div class="stat-card success">
+                                <div class="stat-icon">
+                                    <i data-feather="zap"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="analysisScore">0</div>
+                                    <div class="stat-label">Analysis Score</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-card info">
-                        <div class="stat-icon">🎯</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="totalIOCs">0</div>
-                            <div class="stat-label">IOCs Found</div>
-                        </div>
-                    </div>
-                    <div class="stat-card success">
-                        <div class="stat-icon">⚡</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="analysisScore">0</div>
-                            <div class="stat-label">Analysis Score</div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Main Highlights Grid -->
-                <div class="highlights-grid">
-                    <!-- Risk Overview Widget -->
-                    <div class="highlight-widget">
-                        <div class="widget-header">
-                            <h3>🎯 Risk Score</h3>
-                            <div class="widget-controls">
-                                <button class="widget-action" title="Details">📊</button>
-                            </div>
-                        </div>
-                        <div class="widget-content">
-                            <div class="compact-risk-score" id="riskGauge">
-                                <div class="compact-score-value" id="gaugeValue">0</div>
-                                <div class="compact-score-bar">
-                                    <div class="compact-score-fill" id="gaugeFill"></div>
-                                </div>
-                                <div class="risk-level-indicator">
-                                    <span class="risk-level-label">Risk Level:</span>
-                                    <span class="risk-level-value" id="riskLevelText">Low</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- AI Insights Widget -->
-                    <div class="highlight-widget">
-                        <div class="widget-header">
-                            <h3>🤖 AI Insights</h3>
-                            <div class="ai-confidence" id="aiConfidence">--</div>
-                        </div>
-                        <div class="widget-content">
-                            <div class="ai-summary" id="aiSummary">
-                                <div class="placeholder-content">
-                                    <span>🤖</span>
-                                    <p>AI analysis results will appear here</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Top Threats Widget -->
-                    <div class="highlight-widget">
-                        <div class="widget-header">
-                            <h3>⚡ Top Threats</h3>
-                            <div class="threat-count" id="threatCount">0</div>
-                        </div>
-                        <div class="widget-content">
-                            <div class="threats-list" id="topThreats">
-                                <div class="placeholder-content">
-                                    <span>⚡</span>
-                                    <p>Top threats will be listed here</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Event Timeline Widget -->
-                    <div class="highlight-widget large">
-                        <div class="widget-header">
-                            <h3>📈 Event Timeline</h3>
-                            <div class="timeline-controls">
-                                <button class="timeline-btn active" data-period="1h">1H</button>
-                                <button class="timeline-btn" data-period="6h">6H</button>
-                                <button class="timeline-btn" data-period="24h">24H</button>
-                                <button class="timeline-btn" data-period="all">All</button>
-                            </div>
-                        </div>
-                        <div class="widget-content">
-                            <div class="timeline-chart" id="timelineChart">
-                                <div class="placeholder-content">
-                                    <span>📈</span>
-                                    <p>Event timeline chart will appear here</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- System Performance Widget -->
-                    <div class="highlight-widget">
-                        <div class="widget-header">
-                            <h3>⚙️ System Performance</h3>
-                            <div class="performance-status" id="performanceStatus">Optimal</div>
-                        </div>
-                        <div class="widget-content">
-                            <div class="performance-metrics">
-                                <div class="metric">
-                                    <div class="metric-label">CPU Usage</div>
-                                    <div class="metric-bar">
-                                        <div class="metric-fill" id="cpuFill"></div>
+                        <!-- Highlights Grid -->
+                        <div class="highlights-grid">
+                            <!-- Risk Overview Widget -->
+                            <div class="highlight-widget">
+                                <div class="widget-header">
+                                    <h3><i data-feather="target"></i> Risk Score</h3>
+                                    <div class="widget-controls">
+                                        <button class="widget-action" title="Details" data-tab-link="risk">
+                                            <i data-feather="bar-chart-2"></i>
+                                        </button>
                                     </div>
-                                    <div class="metric-value" id="cpuValue">--</div>
                                 </div>
-                                <div class="metric">
-                                    <div class="metric-label">Memory</div>
-                                    <div class="metric-bar">
-                                        <div class="metric-fill" id="memoryFill"></div>
+                                <div class="widget-content">
+                                    <div class="compact-risk-score" id="riskGauge">
+                                        <div class="compact-score-value" id="gaugeValue">0</div>
+                                        <div class="compact-score-bar">
+                                            <div class="compact-score-fill" id="gaugeFill"></div>
+                                        </div>
+                                        <div class="risk-level-indicator">
+                                            <span class="risk-level-label">Risk Level:</span>
+                                            <span class="risk-level-value" id="riskLevelText">Low</span>
+                                        </div>
                                     </div>
-                                    <div class="metric-value" id="memoryValue">--</div>
                                 </div>
-                                <div class="metric">
-                                    <div class="metric-label">Analysis Speed</div>
-                                    <div class="metric-bar">
-                                        <div class="metric-fill" id="speedFill"></div>
+                            </div>
+
+                            <!-- AI Insights Widget -->
+                            <div class="highlight-widget">
+                                <div class="widget-header">
+                                    <h3><i data-feather="cpu"></i> AI Insights</h3>
+                                    <div class="ai-confidence" id="aiConfidence">--</div>
+                                </div>
+                                <div class="widget-content">
+                                    <div class="ai-summary" id="aiSummary">
+                                        <div class="placeholder-content">
+                                            <i data-feather="cpu" width="32" height="32"></i>
+                                            <p>AI analysis results will appear here</p>
+                                        </div>
                                     </div>
-                                    <div class="metric-value" id="speedValue">--</div>
+                                </div>
+                            </div>
+
+                            <!-- Top Threats Widget -->
+                            <div class="highlight-widget">
+                                <div class="widget-header">
+                                    <h3><i data-feather="zap"></i> Top Threats</h3>
+                                    <div class="threat-count" id="threatCount">0</div>
+                                </div>
+                                <div class="widget-content">
+                                    <div class="threats-list" id="topThreats">
+                                        <div class="placeholder-content">
+                                            <i data-feather="zap" width="32" height="32"></i>
+                                            <p>Top threats will be listed here</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Event Timeline Widget -->
+                            <div class="highlight-widget large">
+                                <div class="widget-header">
+                                    <h3><i data-feather="activity"></i> Event Timeline</h3>
+                                    <div class="timeline-controls">
+                                        <button class="timeline-btn active" data-period="1h">1H</button>
+                                        <button class="timeline-btn" data-period="6h">6H</button>
+                                        <button class="timeline-btn" data-period="24h">24H</button>
+                                        <button class="timeline-btn" data-period="all">All</button>
+                                    </div>
+                                </div>
+                                <div class="widget-content">
+                                    <div class="timeline-chart" id="timelineChart">
+                                        <div class="placeholder-content">
+                                            <i data-feather="activity" width="32" height="32"></i>
+                                            <p>Event timeline chart will appear here</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- System Performance Widget -->
+                            <div class="highlight-widget">
+                                <div class="widget-header">
+                                    <h3><i data-feather="cpu"></i> System Performance</h3>
+                                    <div class="performance-status" id="performanceStatus">Optimal</div>
+                                </div>
+                                <div class="widget-content">
+                                    <div class="performance-metrics">
+                                        <div class="metric">
+                                            <div class="metric-label">CPU Usage</div>
+                                            <div class="metric-bar">
+                                                <div class="metric-fill" id="cpuFill"></div>
+                                            </div>
+                                            <div class="metric-value" id="cpuValue">--</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Memory</div>
+                                            <div class="metric-bar">
+                                                <div class="metric-fill" id="memoryFill"></div>
+                                            </div>
+                                            <div class="metric-value" id="memoryValue">--</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Analysis Speed</div>
+                                            <div class="metric-bar">
+                                                <div class="metric-fill" id="speedFill"></div>
+                                            </div>
+                                            <div class="metric-value" id="speedValue">--</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- IOC Categories Widget -->
+                            <div class="highlight-widget">
+                                <div class="widget-header">
+                                    <h3><i data-feather="search"></i> IOC Categories</h3>
+                                    <button class="widget-action" title="View All" data-tab-link="iocs">
+                                        <i data-feather="eye"></i>
+                                    </button>
+                                </div>
+                                <div class="widget-content">
+                                    <div class="ioc-categories" id="iocCategories">
+                                        <div class="placeholder-content">
+                                            <i data-feather="search" width="32" height="32"></i>
+                                            <p>IOC categories will be shown here</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions Panel -->
+                        <div class="quick-actions" id="quickActions">
+                            <h3>Quick Actions</h3>
+                            <div class="action-buttons-grid">
+                                <button class="action-btn" id="generateReportBtn">
+                                    <i data-feather="file-text"></i>
+                                    Generate Report
+                                </button>
+                                <button class="action-btn" id="exportIOCsBtn">
+                                    <i data-feather="clipboard"></i>
+                                    Export IOCs
+                                </button>
+                                <button class="action-btn" id="shareAnalysisBtn">
+                                    <i data-feather="share-2"></i>
+                                    Share Analysis
+                                </button>
+                                <button class="action-btn" id="newAnalysisBtn">
+                                    <i data-feather="plus"></i>
+                                    New Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- File Details Tab -->
+                <section class="tab-section" id="fileDetailsTab">
+                    <div class="section-header">
+                        <h2><i data-feather="file-text"></i> File Details</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>File Information</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <label>File Name:</label>
+                                        <span id="fileNameDetail">--</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>File Size:</label>
+                                        <span id="fileSizeDetail">--</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>File Type:</label>
+                                        <span id="fileTypeDetail">--</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Processing Time:</label>
+                                        <span id="processingTimeDetail">--</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>File Hash:</label>
+                                        <span id="fileHashDetail">--</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Analysis ID:</label>
+                                        <span id="analysisIdDetail">--</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Timestamp:</label>
+                                        <span id="fileTimestampDetail">--</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Owner:</label>
+                                        <span id="fileOwnerDetail">--</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <!-- IOC Categories Widget -->
-                    <div class="highlight-widget">
-                        <div class="widget-header">
-                            <h3>🔍 IOC Categories</h3>
-                            <button class="widget-action" title="View All">👁️</button>
-                        </div>
-                        <div class="widget-content">
-                            <div class="ioc-categories" id="iocCategories">
-                                <div class="placeholder-content">
-                                    <span>🔍</span>
-                                    <p>IOC categories will be shown here</p>
+                <!-- Executive Summary Tab -->
+                <section class="tab-section" id="executiveTab">
+                    <div class="section-header">
+                        <h2><i data-feather="briefcase"></i> Executive Summary</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>Executive Overview</h3>
+                                <div class="ai-badge" id="executiveAiBadge" style="display: none;">AI Generated</div>
+                            </div>
+                            <div class="card-content">
+                                <div class="executive-content" id="executiveContentDetail">
+                                    <div class="placeholder-content">
+                                        <i data-feather="file-text" width="32" height="32"></i>
+                                        <p>Upload a file to generate comprehensive executive summary</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- Quick Actions Panel -->
-                <div class="quick-actions" id="quickActions">
-                    <h3>Quick Actions</h3>
-                    <div class="action-buttons-grid">
-                        <button class="action-btn" id="generateReportBtn">
-                            <span>📄</span>
-                            Generate Report
-                        </button>
-                        <button class="action-btn" id="exportIOCsBtn">
-                            <span>📋</span>
-                            Export IOCs
-                        </button>
-                        <button class="action-btn" id="shareAnalysisBtn">
-                            <span>🔗</span>
-                            Share Analysis
-                        </button>
-                        <button class="action-btn" id="newAnalysisBtn">
-                            <span>➕</span>
-                            New Analysis
-                        </button>
+                <!-- Risk Assessment Tab -->
+                <section class="tab-section" id="riskTab">
+                    <div class="section-header">
+                        <h2><i data-feather="alert-triangle"></i> Risk Assessment</h2>
                     </div>
-                </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>Risk Overview</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="risk-overview">
+                                    <div class="risk-score-display">
+                                        <div class="risk-value" id="detailedRiskScore">--</div>
+                                        <div class="risk-level" id="detailedRiskLevel">--</div>
+                                    </div>
+                                    <div class="risk-breakdown" id="riskBreakdown">
+                                        <div class="placeholder-content">
+                                            <i data-feather="bar-chart-2" width="32" height="32"></i>
+                                            <p>Risk assessment will appear here after analysis</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- IOCs Tab -->
+                <section class="tab-section" id="iocsTab">
+                    <div class="section-header">
+                        <h2><i data-feather="target"></i> Indicators of Compromise</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>IOCs</h3>
+                                <div class="ioc-count-badge" id="iocCountBadge">0</div>
+                            </div>
+                            <div class="card-content">
+                                <div class="ioc-filters">
+                                    <button class="filter-btn active" data-filter="all">All</button>
+                                    <button class="filter-btn" data-filter="ip">IPs</button>
+                                    <button class="filter-btn" data-filter="domain">Domains</button>
+                                    <button class="filter-btn" data-filter="hash">Hashes</button>
+                                    <button class="filter-btn" data-filter="email">Emails</button>
+                                </div>
+                                <div class="ioc-list" id="iocListDetail">
+                                    <div class="placeholder-content">
+                                        <i data-feather="search" width="32" height="32"></i>
+                                        <p>IOCs will be displayed here after analysis</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Security Events Tab -->
+                <section class="tab-section" id="eventsTab">
+                    <div class="section-header">
+                        <h2><i data-feather="alert-circle"></i> Security Events</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>Security Events</h3>
+                                <div class="event-count-badge" id="eventCountBadge">0</div>
+                            </div>
+                            <div class="card-content">
+                                <div class="event-filters">
+                                    <select id="severityFilterDetail">
+                                        <option value="all">All Severities</option>
+                                        <option value="critical">Critical</option>
+                                        <option value="high">High</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="low">Low</option>
+                                    </select>
+                                    <select id="eventTypeFilterDetail">
+                                        <option value="all">All Types</option>
+                                    </select>
+                                </div>
+                                <div class="events-list" id="eventsListDetail">
+                                    <div class="placeholder-content">
+                                        <i data-feather="clipboard" width="32" height="32"></i>
+                                        <p>Security events will be listed here after analysis</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Timeline Tab -->
+                <section class="tab-section" id="timelineTab">
+                    <div class="section-header">
+                        <h2><i data-feather="clock"></i> Event Timeline</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>Chronological Timeline</h3>
+                                <div class="timeline-filters">
+                                    <button class="filter-btn active" data-timeline-filter="all">All</button>
+                                    <button class="filter-btn" data-timeline-filter="critical">Critical</button>
+                                    <button class="filter-btn" data-timeline-filter="network">Network</button>
+                                    <button class="filter-btn" data-timeline-filter="auth">Authentication</button>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="timeline-container" id="timelineContainerDetail">
+                                    <div class="placeholder-content">
+                                        <i data-feather="calendar" width="32" height="32"></i>
+                                        <p>Event timeline will be constructed after analysis</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Forensics Tab -->
+                <section class="tab-section" id="forensicsTab">
+                    <div class="section-header">
+                        <h2><i data-feather="search"></i> File Forensics</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>Forensic Analysis</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="forensics-tabs">
+                                    <button class="tab-btn active" data-forensics-tab="metadata">Metadata</button>
+                                    <button class="tab-btn" data-forensics-tab="structure">Structure</button>
+                                    <button class="tab-btn" data-forensics-tab="entropy">Entropy</button>
+                                    <button class="tab-btn" data-forensics-tab="signatures">Signatures</button>
+                                </div>
+
+                                <div class="forensics-content">
+                                    <div class="forensics-panel active" id="metadataPanel">
+                                        <div class="forensics-grid" id="metadataGridDetail">
+                                            <div class="placeholder-content">
+                                                <i data-feather="search" width="32" height="32"></i>
+                                                <p>File metadata analysis will appear here</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="forensics-panel" id="structurePanel">
+                                        <div class="structure-analysis" id="structureAnalysisDetail">
+                                            <div class="placeholder-content">
+                                                <i data-feather="layers" width="32" height="32"></i>
+                                                <p>File structure analysis will appear here</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="forensics-panel" id="entropyPanel">
+                                        <div class="entropy-analysis" id="entropyAnalysisDetail">
+                                            <div class="placeholder-content">
+                                                <i data-feather="bar-chart-2" width="32" height="32"></i>
+                                                <p>Entropy analysis will appear here</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="forensics-panel" id="signaturesPanel">
+                                        <div class="signatures-analysis" id="signaturesAnalysisDetail">
+                                            <div class="placeholder-content">
+                                                <i data-feather="key" width="32" height="32"></i>
+                                                <p>Digital signatures analysis will appear here</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recommendations Tab -->
+                <section class="tab-section" id="recommendationsTab">
+                    <div class="section-header">
+                        <h2><i data-feather="zap"></i> Recommendations</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>Security Recommendations</h3>
+                                <div class="ai-badge" id="recommendationsAiBadge" style="display: none;">AI Generated
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="recommendations-content" id="recommendationsContentDetail">
+                                    <div class="placeholder-content">
+                                        <i data-feather="zap" width="32" height="32"></i>
+                                        <p>AI-powered recommendations will appear here after analysis</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Threat Intelligence Tab -->
+                <section class="tab-section" id="threatIntelTab">
+                    <div class="section-header">
+                        <h2><i data-feather="globe"></i> Threat Intelligence</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>Threat Intelligence</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="threat-intel-content" id="threatIntelContentDetail">
+                                    <div class="placeholder-content">
+                                        <i data-feather="globe" width="32" height="32"></i>
+                                        <p>Threat intelligence correlations will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Case Management Tab -->
+                <section class="tab-section" id="caseTab">
+                    <div class="section-header">
+                        <h2><i data-feather="folder"></i> Case Management</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="details-card">
+                            <div class="card-header">
+                                <h3>Incident Management</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="case-management">
+                                    <div class="case-form">
+                                        <div class="form-group">
+                                            <label for="caseTitle">Incident Title</label>
+                                            <input type="text" id="caseTitle" placeholder="Enter incident title">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="caseSeverity">Severity</label>
+                                            <select id="caseSeverity">
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                                <option value="critical">Critical</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="caseAssignee">Assignee</label>
+                                            <input type="text" id="caseAssignee" placeholder="Enter assignee name">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="caseDescription">Description</label>
+                                            <textarea id="caseDescription" rows="4"
+                                                placeholder="Enter incident details"></textarea>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button class="btn btn-primary" id="createCaseBtn">Create Incident</button>
+                                            <button class="btn btn-secondary" id="exportCaseBtn">Export Case</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="case-history">
+                                        <h4>Recent Incidents</h4>
+                                        <div id="caseHistoryList" class="case-history-list">
+                                            <div class="placeholder-content">
+                                                <i data-feather="folder" width="32" height="32"></i>
+                                                <p>No recent incidents found</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Tab -->
+                <section class="tab-section" id="settingsTab">
+                    <div class="section-header">
+                        <h2><i data-feather="settings"></i> Settings</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="settings-container">
+                            <div class="settings-tabs">
+                                <button class="settings-tab active" data-settings-tab="analysis">Analysis</button>
+                                <button class="settings-tab" data-settings-tab="display">Display</button>
+                                <button class="settings-tab" data-settings-tab="export">Export</button>
+                                <button class="settings-tab" data-settings-tab="ai">AI Config</button>
+                            </div>
+
+                            <div class="settings-panels">
+                                <div class="settings-panel active" id="analysisSettings">
+                                    <div class="setting-group">
+                                        <label>AI Analysis Mode</label>
+                                        <select id="aiModeSelect">
+                                            <option value="auto">Auto (AI + Fallback)</option>
+                                            <option value="ai-only">AI Only</option>
+                                            <option value="rules-only">Rules Only</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-group">
+                                        <label>Analysis Depth</label>
+                                        <select id="analysisDepthSelect">
+                                            <option value="quick">Quick Scan</option>
+                                            <option value="standard">Standard Analysis</option>
+                                            <option value="deep">Deep Analysis</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-group">
+                                        <label>Include Timeline</label>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="includeTimelineToggle" checked>
+                                            <label for="includeTimelineToggle"></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-panel" id="displaySettings">
+                                    <div class="setting-group">
+                                        <label>Dashboard Theme</label>
+                                        <select id="themeSelect">
+                                            <option value="professional">Professional Dark</option>
+                                            <option value="light">Light Mode</option>
+                                            <option value="high-contrast">High Contrast</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-group">
+                                        <label>Sidebar Auto-collapse</label>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="autoCollapseToggle">
+                                            <label for="autoCollapseToggle"></label>
+                                        </div>
+                                    </div>
+                                    <div class="setting-group">
+                                        <label>Show Animations</label>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="animationsToggle" checked>
+                                            <label for="animationsToggle"></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-panel" id="exportSettings">
+                                    <div class="setting-group">
+                                        <label>Default Export Format</label>
+                                        <select id="exportFormatSelect">
+                                            <option value="pdf">PDF Report</option>
+                                            <option value="json">JSON Data</option>
+                                            <option value="csv">CSV Export</option>
+                                            <option value="html">HTML Report</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-group">
+                                        <label>Include Raw Data</label>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="includeRawDataToggle">
+                                            <label for="includeRawDataToggle"></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-panel" id="aiSettings">
+                                    <div class="setting-group">
+                                        <label>AI Confidence Threshold</label>
+                                        <input type="range" id="confidenceThreshold" min="0.5" max="1.0" step="0.1"
+                                            value="0.8">
+                                        <span id="confidenceValue">80%</span>
+                                    </div>
+                                    <div class="setting-group">
+                                        <label>Enable Executive Summary</label>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="executiveSummaryToggle" checked>
+                                            <label for="executiveSummaryToggle"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Help Tab -->
+                <section class="tab-section" id="helpTab">
+                    <div class="section-header">
+                        <h2><i data-feather="help-circle"></i> Help & Documentation</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="help-container">
+                            <div class="help-section">
+                                <h4><i data-feather="zap"></i> Getting Started</h4>
+                                <p>Upload your digital evidence files using the header drop zone or browse button.
+                                    SecuNik supports
+                                    a wide range of cybersecurity file formats for comprehensive analysis.</p>
+                            </div>
+
+                            <div class="help-section">
+                                <h4><i data-feather="bar-chart-2"></i> Understanding the Dashboard</h4>
+                                <ul>
+                                    <li><strong>Main Dashboard:</strong> Shows key highlights and metrics</li>
+                                    <li><strong>Navigation Sidebar:</strong> Access all analysis tools and features</li>
+                                    <li><strong>Risk Gauge:</strong> Overall security risk assessment</li>
+                                    <li><strong>IOCs:</strong> Indicators of Compromise found</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-section">
+                                <h4><i data-feather="cpu"></i> AI Features</h4>
+                                <ul>
+                                    <li>Advanced threat detection using machine learning</li>
+                                    <li>Automated executive summary generation</li>
+                                    <li>Business impact assessment</li>
+                                    <li>Intelligent IOC correlation</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-section">
+                                <h4><i data-feather="file"></i> Supported File Types</h4>
+                                <div class="file-types-grid">
+                                    <div><strong>Windows:</strong> EVTX, EVT</div>
+                                    <div><strong>Network:</strong> PCAP, PCAPNG</div>
+                                    <div><strong>Logs:</strong> LOG, SYSLOG, TXT</div>
+                                    <div><strong>Data:</strong> CSV, JSON</div>
+                                    <div><strong>Unix:</strong> WTMP, UTMP, BTMP</div>
+                                    <div><strong>Security:</strong> FWLOG, MAILLOG, DNSLOG</div>
+                                </div>
+                            </div>
+
+                            <div class="help-section">
+                                <h4><i data-feather="key"></i> Keyboard Shortcuts</h4>
+                                <div class="shortcuts-grid">
+                                    <div><strong>Ctrl+U:</strong> Upload Files</div>
+                                    <div><strong>Ctrl+D:</strong> Dashboard</div>
+                                    <div><strong>Alt+Tab:</strong> Toggle Sidebar</div>
+                                    <div><strong>Ctrl+S:</strong> Settings</div>
+                                    <div><strong>Ctrl+E:</strong> Export</div>
+                                    <div><strong>Ctrl+H:</strong> Help</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
 
     <!-- Modals -->
-    <!-- Settings Modal -->
+    <!-- Settings Modal (for backward compatibility - now integrated in the Settings tab) -->
     <div class="modal" id="settingsModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>⚙️ Settings & Configuration</h3>
+                <h3><i data-feather="settings"></i> Settings & Configuration</h3>
                 <button class="modal-close" id="settingsModalClose">&times;</button>
             </div>
             <div class="modal-body">
@@ -586,10 +993,10 @@
                 </div>
 
                 <div class="settings-content">
-                    <div class="settings-panel active" id="analysisSettings">
+                    <div class="settings-panel active" id="analysisSettingsModal">
                         <div class="setting-group">
                             <label>AI Analysis Mode</label>
-                            <select id="aiModeSelect">
+                            <select id="aiModeSelectModal">
                                 <option value="auto">Auto (AI + Fallback)</option>
                                 <option value="ai-only">AI Only</option>
                                 <option value="rules-only">Rules Only</option>
@@ -597,7 +1004,7 @@
                         </div>
                         <div class="setting-group">
                             <label>Analysis Depth</label>
-                            <select id="analysisDepthSelect">
+                            <select id="analysisDepthSelectModal">
                                 <option value="quick">Quick Scan</option>
                                 <option value="standard">Standard Analysis</option>
                                 <option value="deep">Deep Analysis</option>
@@ -605,14 +1012,17 @@
                         </div>
                         <div class="setting-group">
                             <label>Include Timeline</label>
-                            <input type="checkbox" id="includeTimelineToggle" checked>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="includeTimelineToggleModal" checked>
+                                <label for="includeTimelineToggleModal"></label>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="settings-panel" id="displaySettings">
+                    <div class="settings-panel" id="displaySettingsModal">
                         <div class="setting-group">
                             <label>Dashboard Theme</label>
-                            <select id="themeSelect">
+                            <select id="themeSelectModal">
                                 <option value="professional">Professional Dark</option>
                                 <option value="light">Light Mode</option>
                                 <option value="high-contrast">High Contrast</option>
@@ -620,18 +1030,24 @@
                         </div>
                         <div class="setting-group">
                             <label>Sidebar Auto-collapse</label>
-                            <input type="checkbox" id="autoCollapseToggle">
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="autoCollapseToggleModal">
+                                <label for="autoCollapseToggleModal"></label>
+                            </div>
                         </div>
                         <div class="setting-group">
                             <label>Show Animations</label>
-                            <input type="checkbox" id="animationsToggle" checked>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="animationsToggleModal" checked>
+                                <label for="animationsToggleModal"></label>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="settings-panel" id="exportSettings">
+                    <div class="settings-panel" id="exportSettingsModal">
                         <div class="setting-group">
                             <label>Default Export Format</label>
-                            <select id="exportFormatSelect">
+                            <select id="exportFormatSelectModal">
                                 <option value="pdf">PDF Report</option>
                                 <option value="json">JSON Data</option>
                                 <option value="csv">CSV Export</option>
@@ -640,19 +1056,26 @@
                         </div>
                         <div class="setting-group">
                             <label>Include Raw Data</label>
-                            <input type="checkbox" id="includeRawDataToggle">
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="includeRawDataToggleModal">
+                                <label for="includeRawDataToggleModal"></label>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="settings-panel" id="aiSettings">
+                    <div class="settings-panel" id="aiSettingsModal">
                         <div class="setting-group">
                             <label>AI Confidence Threshold</label>
-                            <input type="range" id="confidenceThreshold" min="0.5" max="1.0" step="0.1" value="0.8">
-                            <span id="confidenceValue">80%</span>
+                            <input type="range" id="confidenceThresholdModal" min="0.5" max="1.0" step="0.1"
+                                value="0.8">
+                            <span id="confidenceValueModal">80%</span>
                         </div>
                         <div class="setting-group">
                             <label>Enable Executive Summary</label>
-                            <input type="checkbox" id="executiveSummaryToggle" checked>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="executiveSummaryToggleModal" checked>
+                                <label for="executiveSummaryToggleModal"></label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -660,32 +1083,32 @@
         </div>
     </div>
 
-    <!-- Help Modal -->
+    <!-- Help Modal (for backward compatibility - now integrated in the Help tab) -->
     <div class="modal" id="helpModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>❓ Help & Documentation</h3>
+                <h3><i data-feather="help-circle"></i> Help & Documentation</h3>
                 <button class="modal-close" id="helpModalClose">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="help-section">
-                    <h4>🚀 Getting Started</h4>
+                    <h4><i data-feather="zap"></i> Getting Started</h4>
                     <p>Upload your digital evidence files using the header drop zone or browse button. SecuNik supports
                         a wide range of cybersecurity file formats for comprehensive analysis.</p>
                 </div>
 
                 <div class="help-section">
-                    <h4>📊 Understanding the Dashboard</h4>
+                    <h4><i data-feather="bar-chart-2"></i> Understanding the Dashboard</h4>
                     <ul>
                         <li><strong>Main Dashboard:</strong> Shows key highlights and metrics</li>
-                        <li><strong>Details Sidebar:</strong> Comprehensive analysis results</li>
+                        <li><strong>Navigation Sidebar:</strong> Access all analysis tools and features</li>
                         <li><strong>Risk Gauge:</strong> Overall security risk assessment</li>
                         <li><strong>IOCs:</strong> Indicators of Compromise found</li>
                     </ul>
                 </div>
 
                 <div class="help-section">
-                    <h4>🤖 AI Features</h4>
+                    <h4><i data-feather="cpu"></i> AI Features</h4>
                     <ul>
                         <li>Advanced threat detection using machine learning</li>
                         <li>Automated executive summary generation</li>
@@ -695,7 +1118,7 @@
                 </div>
 
                 <div class="help-section">
-                    <h4>📁 Supported File Types</h4>
+                    <h4><i data-feather="file"></i> Supported File Types</h4>
                     <div class="file-types-grid">
                         <div><strong>Windows:</strong> EVTX, EVT</div>
                         <div><strong>Network:</strong> PCAP, PCAPNG</div>
@@ -718,8 +1141,15 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="js/app.js"></script>
+    <!-- Initialize Feather Icons -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+        });
+    </script>
+
+    <!-- App Scripts -->
+    <script src="js/app.js" type="module"></script>
 </body>
 
 </html>
