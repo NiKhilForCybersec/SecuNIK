@@ -1,6 +1,4 @@
-// File: src\SecuNik.Core\Exceptions\SecuNikException.cs
 using System;
-
 namespace SecuNik.Core.Exceptions
 {
     /// <summary>

@@ -1,6 +1,3 @@
-// Replace your CsvLogParser.cs with this updated version
-// File: src/SecuNik.Core/Services/CsvLogParser.cs
-
 using SecuNik.Core.Interfaces;
 using SecuNik.Core.Models;
 using SecuNik.Core.Exceptions;

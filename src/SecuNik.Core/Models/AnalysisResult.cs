@@ -1,7 +1,5 @@
-// File: src\SecuNik.Core\Models\AnalysisResult.cs
 using System;
 using System.Collections.Generic;
-
 namespace SecuNik.Core.Models
 {
     /// <summary>

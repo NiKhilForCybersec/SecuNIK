@@ -1,6 +1,4 @@
-// File: src\SecuNik.Core\Models\ParsingModels.cs
 using System.Collections.Generic;
-
 namespace SecuNik.Core.Models
 {
     /// <summary>
