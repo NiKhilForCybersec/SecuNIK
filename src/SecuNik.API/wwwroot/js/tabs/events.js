@@ -1,4 +1,8 @@
-export function initTab(analysis) {
-    // initialize events tab
+export function init(data) {
+    // placeholder for events tab initialization
+}
+
+export function render(data) {
+    // placeholder for rendering events data
 }
 

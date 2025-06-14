@@ -12,14 +12,14 @@ import * as storage from "./services/storage.js";
 import * as fmt from "./utils/formatters.js";
 import { initTab as initDashboardTab, updateTimelineChart } from "./tabs/dashboard.js";
 import { initTab as initFileDetailsTab } from "./tabs/fileDetails.js";
-import { initTab as initExecutiveTab } from "./tabs/executive.js";
-import { initTab as initEventsTab } from "./tabs/events.js";
-import { initTab as initIocsTab } from "./tabs/iocs.js";
-import { initTab as initTimelineTab } from "./tabs/timeline.js";
+import { init as initExecutiveTab, render as renderExecutiveTab } from "./tabs/executive.js";
+import { init as initEventsTab, render as renderEventsTab } from "./tabs/events.js";
+import { init as initIocsTab, exportIOCs } from "./tabs/iocs.js";
+import { init as initTimelineTab, render as renderTimelineTab } from "./tabs/timeline.js";
 import { initTab as initForensicsTab } from "./tabs/forensics.js";
 import { initTab as initRecommendationsTab } from "./tabs/recommendations.js";
 import { initTab as initThreatIntelTab } from "./tabs/threatIntel.js";
-import { initTab as initCaseManagementTab } from "./tabs/caseManagement.js";
+import { init as initCaseManagementTab, render as renderCaseManagementTab } from "./tabs/caseManagement.js";
 import { initTab as initSettingsTab } from "./tabs/settings.js";
 import { initTab as initHelpTab } from "./tabs/help.js";
 
@@ -230,8 +230,9 @@ class SecuNikDashboard {
         }
 
         if (this.elements.exportIOCsBtn) {
-            this.elements.exportIOCsBtn.addEventListener('click', () => this.exportIOCs());
+            this.elements.exportIOCsBtn.addEventListener('click', () => exportIOCs());
         }
+        initIocsTab(this);
 
         if (this.elements.shareAnalysisBtn) {
             this.elements.shareAnalysisBtn.addEventListener('click', () => this.shareAnalysis());
@@ -241,28 +242,10 @@ class SecuNikDashboard {
             this.elements.newAnalysisBtn.addEventListener('click', () => this.startNewAnalysis());
         }
 
-        // Case management events
-        if (this.elements.caseForm) {
-            this.elements.caseForm.addEventListener('submit', (e) => this.handleCaseSubmit(e));
-        }
+        // Initialize tab-specific listeners
+        initCaseManagementTab(this);
 
-        if (this.elements.exportCaseBtn) {
-            this.elements.exportCaseBtn.addEventListener('click', () => this.exportCase());
-        }
-
-        if (this.elements.refreshCasesBtn) {
-            this.elements.refreshCasesBtn.addEventListener('click', () => this.refreshCases());
-        }
-
-        if (this.elements.caseDescription) {
-            this.elements.caseDescription.addEventListener('input', (e) => this.updateCharCounter(e));
-        }
-
-        // Timeline controls
-        const timelineBtns = document.querySelectorAll('.timeline-btn');
-        timelineBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => this.handleTimelineFilter(e));
-        });
+        initTimelineTab(this);
 
         // Global keyboard shortcuts
         this.setupKeyboardShortcuts();
@@ -568,195 +551,6 @@ class SecuNikDashboard {
         }
     }
 
-    /**
-     * Case Management Functions
-     */
-    handleCaseSubmit(event) {
-        event.preventDefault();
-
-        const formData = new FormData(event.target);
-        const caseData = {
-            id: this.generateCaseId(),
-            title: formData.get('caseTitle'),
-            severity: formData.get('caseSeverity'),
-            assignee: formData.get('caseAssignee') || 'Unassigned',
-            description: formData.get('caseDescription'),
-            status: 'open',
-            createdAt: new Date().toISOString(),
-            analysisId: this.state.currentAnalysis?.analysisId || null
-        };
-
-        if (this.validateCase(caseData)) {
-            this.createCase(caseData);
-        }
-    }
-
-    validateCase(caseData) {
-        const errors = {};
-
-        if (!caseData.title || caseData.title.trim().length < 3) {
-            errors.title = 'Title must be at least 3 characters long';
-        }
-
-        if (!caseData.severity) {
-            errors.severity = 'Severity is required';
-        }
-
-        if (!caseData.description || caseData.description.trim().length < 10) {
-            errors.description = 'Description must be at least 10 characters long';
-        }
-
-        this.displayValidationErrors(errors);
-        return Object.keys(errors).length === 0;
-    }
-
-    displayValidationErrors(errors) {
-        // Clear previous errors
-        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-
-        // Display new errors
-        Object.entries(errors).forEach(([field, message]) => {
-            const errorElement = document.getElementById(`case${field.charAt(0).toUpperCase() + field.slice(1)}Error`);
-            if (errorElement) {
-                errorElement.textContent = message;
-            }
-        });
-    }
-
-    createCase(caseData) {
-        this.state.cases.push(caseData);
-        this.saveCases();
-        this.refreshCaseHistory();
-        this.clearCaseForm();
-        this.showNotification(`Case "${caseData.title}" created successfully`, 'success');
-    }
-
-    clearCaseForm() {
-        if (this.elements.caseForm) {
-            this.elements.caseForm.reset();
-        }
-        this.updateCharCounter({ target: { value: '' } });
-    }
-
-    refreshCases() {
-        this.loadCases();
-        this.refreshCaseHistory();
-        this.showNotification('Cases refreshed', 'info');
-    }
-
-    refreshCaseHistory() {
-        if (!this.elements.caseHistoryList) return;
-
-        if (this.state.cases.length === 0) {
-            this.elements.caseHistoryList.innerHTML = `
-                <div class="placeholder-content">
-                    <i data-feather="folder" width="32" height="32"></i>
-                    <p>No cases found</p>
-                </div>
-            `;
-        } else {
-            const recentCases = this.state.cases
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                .slice(0, 10);
-
-            this.elements.caseHistoryList.innerHTML = recentCases.map(case_ => `
-                <div class="case-item" data-case-id="${case_.id}">
-                    <div class="case-header">
-                        <div class="case-title">${this.sanitizeHTML(case_.title)}</div>
-                        <div class="case-severity ${case_.severity}">${case_.severity.toUpperCase()}</div>
-                    </div>
-                    <div class="case-meta">
-                        <span>Assignee: ${this.sanitizeHTML(case_.assignee)}</span>
-                        <span>Created: ${this.formatTimestamp(case_.createdAt)}</span>
-                    </div>
-                    <div class="case-status">Status: ${case_.status}</div>
-                </div>
-            `).join('');
-        }
-
-        feather.replace();
-    }
-
-    updateCharCounter(event) {
-        const value = event.target.value;
-        const maxLength = 1000;
-        const counter = document.getElementById('descriptionCounter');
-
-        if (counter) {
-            counter.textContent = `${value.length}/${maxLength}`;
-            counter.className = value.length > maxLength * 0.9 ? 'char-counter warning' : 'char-counter';
-        }
-    }
-
-    exportCase() {
-        if (this.state.cases.length === 0) {
-            this.showNotification('No cases to export', 'warning');
-            return;
-        }
-
-        try {
-            const data = JSON.stringify(this.state.cases, null, 2);
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `secunik-cases-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            this.showNotification('Cases exported successfully', 'success');
-        } catch (error) {
-            console.error('Export failed:', error);
-            this.showNotification('Failed to export cases', 'error');
-        }
-    }
-
-    /**
-     * Timeline filter handler
-     */
-    handleTimelineFilter(event) {
-        const period = event.target.getAttribute('data-period');
-
-        // Update active state
-        document.querySelectorAll('.timeline-btn').forEach(btn => {
-            btn.classList.remove('active');
-            btn.setAttribute('aria-checked', 'false');
-        });
-
-        event.target.classList.add('active');
-        event.target.setAttribute('aria-checked', 'true');
-
-        // Filter timeline data if analysis exists
-        if (this.state.currentAnalysis) {
-            const events = this.state.currentAnalysis.result.technical?.securityEvents || [];
-            const filteredEvents = this.filterEventsByPeriod(events, period);
-            updateTimelineChart(filteredEvents);
-        }
-    }
-
-    filterEventsByPeriod(events, period) {
-        const now = new Date();
-        let cutoff;
-
-        switch (period) {
-            case '1h':
-                cutoff = new Date(now.getTime() - 60 * 60 * 1000);
-                break;
-            case '6h':
-                cutoff = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-                break;
-            case '24h':
-                cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-                break;
-            default:
-                return events;
-        }
-
-        return events.filter(e => e.timestamp && new Date(e.timestamp) >= cutoff);
-    }
 
     /**
      * Update all tabs with analysis data
@@ -766,14 +560,19 @@ class SecuNikDashboard {
         initFileDetailsTab(analysis);
         initExecutiveTab(analysis);
         initEventsTab(analysis);
-        initIocsTab(analysis);
-        initTimelineTab(analysis);
+        initIocsTab(this);
+        initTimelineTab(this);
         initForensicsTab(analysis);
         initRecommendationsTab(analysis);
         initThreatIntelTab(analysis);
-        initCaseManagementTab(analysis);
+        initCaseManagementTab(this);
         initSettingsTab(analysis);
         initHelpTab(analysis);
+
+        renderExecutiveTab(analysis);
+        renderEventsTab(analysis);
+        renderTimelineTab(analysis);
+        renderCaseManagementTab();
     }
 
     /**
@@ -815,54 +614,6 @@ class SecuNikDashboard {
         }
     }
 
-    async exportIOCs() {
-        if (!this.state.currentAnalysis) {
-            this.showNotification('No analysis data available', 'warning');
-            return;
-        }
-
-        const iocs = this.state.currentAnalysis.result.technical?.detectedIOCs || [];
-
-        if (iocs.length === 0) {
-            this.showNotification('No IOCs found to export', 'warning');
-            return;
-        }
-
-        try {
-            const csvData = this.convertIOCsToCSV(iocs);
-            const blob = new Blob([csvData], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `secunik-iocs-${this.state.currentAnalysis.analysisId}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            this.showNotification('IOCs exported successfully', 'success');
-        } catch (error) {
-            console.error('IOC export failed:', error);
-            this.showNotification('Failed to export IOCs', 'error');
-        }
-    }
-
-    convertIOCsToCSV(iocs) {
-        const headers = ['Type', 'Value', 'Category', 'Confidence', 'Description', 'First Seen'];
-        const rows = iocs.map(ioc => [
-            ioc.type || '',
-            ioc.value || '',
-            ioc.category || '',
-            ioc.confidence || '',
-            ioc.description || '',
-            ioc.firstSeen || ''
-        ]);
-
-        return [headers, ...rows].map(row =>
-            row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
-        ).join('\n');
-    }
 
     async shareAnalysis() {
         if (!this.state.currentAnalysis) {
@@ -1058,7 +809,7 @@ class SecuNikDashboard {
                     case 'e':
                         e.preventDefault();
                         if (this.state.currentAnalysis) {
-                            this.exportIOCs();
+                            exportIOCs();
                         }
                         break;
                 }
