@@ -1,21 +1,79 @@
-<div class="metric-value">${recommendations.riskReduction}%</div>
+export function initTab(analysis) {
+    if (!analysis) return;
+
+    renderRecommendationsOverview(analysis);
+    renderImmediateActions(analysis);
+    renderLongTermStrategy(analysis);
+    renderComplianceGuidance(analysis);
+    setupRecommendationsControls();
+}
+
+function renderRecommendationsOverview(analysis) {
+    const container = document.getElementById('recommendationsOverviewContainer') ||
+        document.querySelector('.recommendations-overview-container');
+
+    if (!container) return;
+
+    const recommendations = extractRecommendations(analysis);
+
+    container.innerHTML = `
+        <div class="recommendations-header-card">
+            <div class="card-header">
+                <h3><i data-feather="zap"></i> Security Recommendations</h3>
+                <div class="recommendations-summary">
+                    <span class="rec-count critical">${recommendations.immediate.length} Immediate</span>
+                    <span class="rec-count warning">${recommendations.shortTerm.length} Short-term</span>
+                    <span class="rec-count info">${recommendations.longTerm.length} Long-term</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="recommendation-metrics">
+                    <div class="metric-row">
+                        <div class="metric-card priority-critical">
+                            <div class="metric-icon">
+                                <i data-feather="alert-octagon"></i>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value">${recommendations.criticalIssues}</div>
+                                <div class="metric-label">Critical Issues</div>
+                                <div class="metric-sublabel">Require immediate attention</div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card priority-high">
+                            <div class="metric-icon">
+                                <i data-feather="clock"></i>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value">${recommendations.estimatedTime}</div>
+                                <div class="metric-label">Est. Implementation</div>
+                                <div class="metric-sublabel">Total time required</div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card priority-medium">
+                            <div class="metric-icon">
+                                <i data-feather="shield"></i>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value">${recommendations.riskReduction}%</div>
                                 <div class="metric-label">Risk Reduction</div>
                                 <div class="metric-sublabel">Expected improvement</div>
-                            </div >
-                        </div >
+                            </div>
+                        </div>
 
-    <div class="metric-card priority-low">
-        <div class="metric-icon">
-            <i data-feather="trending-up"></i>
-        </div>
-        <div class="metric-content">
-            <div class="metric-value">${recommendations.complianceScore}%</div>
-            <div class="metric-label">Compliance Score</div>
-            <div class="metric-sublabel">Current security posture</div>
-        </div>
-    </div>
-                    </div >
-                </div >
+                        <div class="metric-card priority-low">
+                            <div class="metric-icon">
+                                <i data-feather="trending-up"></i>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value">${recommendations.complianceScore}%</div>
+                                <div class="metric-label">Compliance Score</div>
+                                <div class="metric-sublabel">Current security posture</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="recommendations-summary-text">
                     <h4>Assessment Summary</h4>
@@ -39,8 +97,8 @@
                         </button>
                     </div>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     `;
 
     if (typeof feather !== 'undefined') {
@@ -49,15 +107,15 @@
 }
 
 function renderImmediateActions(analysis) {
-    const container = document.getElementById('immediateActionsContainer') || 
-                     document.querySelector('.immediate-actions-container');
-    
+    const container = document.getElementById('immediateActionsContainer') ||
+        document.querySelector('.immediate-actions-container');
+
     if (!container) return;
 
     const recommendations = extractRecommendations(analysis);
 
     container.innerHTML = `
-    < div class="immediate-actions-card" >
+        <div class="immediate-actions-card">
             <div class="card-header">
                 <h3><i data-feather="alert-triangle"></i> Immediate Actions Required</h3>
                 <div class="urgency-indicator high">
@@ -92,114 +150,7 @@ function renderImmediateActions(analysis) {
                             </div>
                             <div class="action-content">
                                 <div class="action-description">
-                                    ${sanitizeHTML(action.description)}
-                                </div>
-                                <div class="action-steps">
-                                    <h5>Implementation Steps:</h5>
-                                    <ol class="steps-list">
-                                        ${action.steps.map(step => `
-                                            <li class="step-item">
-                                                <span class="step-text">${sanitizeHTML(step)}</span>
-                                            </li>
-                                        `).join('')}
-                                    </ol>
-                                </div>
-                                <div class="action-resources">
-                                    <h5>Required Resources:</h5>
-                                    <div class="resource-tags">
-                                        ${action.resources.map(resource => `
-                                            <span class="resource-tag">${sanitizeHTML(resource)}</span>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                ${recommendations.immediate.length === 0 ? `
-                    <div class="no-immediate-actions">
-                        <i data-feather="check-circle" width="48" height="48"></i>
-                        <h4>No Immediate Actions Required</h4>
-                        <p>Current analysis indicates no critical security issues requiring immediate attention.</p>
-                    </div>
-                ` : ''}
-            </div>
-        </div >
-    `;
-
-    if (typeof feather !== 'undefined') {
-        feather.replace();
-    }
-}
-
-function renderLongTermStrategy(analysis) {
-    const container = document.getElementById('longTermStrategyContainer') || 
-                     document.querySelector('.long-term-strategy-container');
-    
-    if (!container) return;
-
-    const recommendations = extractRecommendations(analysis);
-
-    container.innerHTML = `
-    < div class="long-term-strategy-card" >
-            <div class="card-header">
-                <h3><i data-feather="target"></i> Long-term Security Strategy</h3>
-                <div class="timeline-indicator">
-                    <i data-feather="calendar"></i>
-                    <span>3-12 month implementation plan</span>
-                </div>
-            </div>
-            <div class="card-content">
-                <div class="strategy-roadmap">
-                    <div class="roadmap-timeline">
-                        <div class="timeline-period" data-period="short">
-                            <div class="period-header">
-                                <h4>Next 30 Days</h4>
-                                <span class="period-count">${recommendations.shortTerm.length} items</span>
-                            </div>
-                            <div class="period-actions">
-                                ${recommendations.shortTerm.slice(0, 3).map(action => `
-                                    <div class="roadmap-action short-term">
-                                        <div class="action-icon">
-                                            <i data-feather="${action.icon}"></i>
-                                        </div>
-                                        <div class="action-info">
-                                            <div class="action-name">${sanitizeHTML(action.title)}</div>
-                                            <div class="action-benefit">${sanitizeHTML(action.benefit)}</div>
-                                        </div>
-                                        <div class="action-effort">${action.effort}</div>
-                                    </div>
-                                `).join('')}
-                                ${recommendations.shortTerm.length > 3 ? `
-                                    <div class="show-more-actions">
-                                        <button class="btn btn-link" onclick="showMoreActions('short')">
-                                            +${recommendations.shortTerm.length - 3} more actions
-                                        </button>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-
-                        <div class="timeline-period" data-period="medium">
-                            <div class="period-header">
-                                <h4>Next 90 Days</h4>
-                                <span class="period-count">${recommendations.mediumTerm.length} items</span>
-                            </div>
-                            <div class="period-actions">
-                                ${recommendations.mediumTerm.slice(0, 3).map(action => `
-                                    <div class="roadmap-action medium-term">
-                                        <div class="action-icon">
-                                            <i data-feather="${action.icon}"></i>
-                                        </div>
-                                        <div class="action-info">
-                                            <div class="action-name">${sanitizeHTML(action.title)}</div>
-                                            <div class="action-benefit">${sanitizeHTML(action.benefit)}</div>
-                                        </div>
-                                        <div class="action-effort">${action.effort}</div>
-                                    </div>
-                                `).join('')}
-                                ${recommendations.mediumTerm.length > 3 ? `
+                                    ${recommendations.mediumTerm.length > 3 ? `
                                     <div class="show-more-actions">
                                         <button class="btn btn-link" onclick="showMoreActions('medium')">
                                             +${recommendations.mediumTerm.length - 3} more actions
@@ -246,7 +197,7 @@ function renderLongTermStrategy(analysis) {
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     `;
 
     if (typeof feather !== 'undefined') {
@@ -255,15 +206,15 @@ function renderLongTermStrategy(analysis) {
 }
 
 function renderComplianceGuidance(analysis) {
-    const container = document.getElementById('complianceGuidanceContainer') || 
-                     document.querySelector('.compliance-guidance-container');
-    
+    const container = document.getElementById('complianceGuidanceContainer') ||
+        document.querySelector('.compliance-guidance-container');
+
     if (!container) return;
 
     const complianceData = generateComplianceGuidance(analysis);
 
     container.innerHTML = `
-    < div class="compliance-guidance-card" >
+        <div class="compliance-guidance-card">
             <div class="card-header">
                 <h3><i data-feather="shield-check"></i> Compliance & Standards</h3>
                 <div class="compliance-score">
@@ -339,7 +290,7 @@ function renderComplianceGuidance(analysis) {
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     `;
 
     if (typeof feather !== 'undefined') {
@@ -352,15 +303,15 @@ function setupRecommendationsControls() {
         if (e.target.id === 'generateActionPlanBtn' || e.target.closest('#generateActionPlanBtn')) {
             generateActionPlan();
         }
-        
+
         if (e.target.id === 'exportRecommendationsBtn' || e.target.closest('#exportRecommendationsBtn')) {
             exportRecommendations();
         }
-        
+
         if (e.target.id === 'scheduleReviewBtn' || e.target.closest('#scheduleReviewBtn')) {
             scheduleSecurityReview();
         }
-        
+
         if (e.target.id === 'shareRecommendationsBtn' || e.target.closest('#shareRecommendationsBtn')) {
             shareRecommendations();
         }
@@ -390,15 +341,15 @@ function extractRecommendations(analysis) {
 
 function generateImmediateRecommendations(events, iocs) {
     const immediate = [];
-    
+
     const criticalEvents = events.filter(e => (e.severity || e.Severity || '').toLowerCase() === 'critical');
-    
+
     if (criticalEvents.length > 0) {
         immediate.push({
             id: 'crit-events-response',
             title: 'Address Critical Security Events',
             category: 'Incident Response',
-            description: `${ criticalEvents.length } critical security events require immediate investigation and response.`,
+            description: `${criticalEvents.length} critical security events require immediate investigation and response.`,
             effort: 'High',
             impact: 'High',
             steps: [
@@ -410,13 +361,13 @@ function generateImmediateRecommendations(events, iocs) {
             resources: ['Security Team', 'System Administrators', 'Incident Response Plan']
         });
     }
-    
+
     if (iocs.length > 20) {
         immediate.push({
             id: 'ioc-blocking',
             title: 'Block Malicious Indicators',
             category: 'Network Security',
-            description: `${ iocs.length } indicators of compromise should be blocked to prevent further threats.`,
+            description: `${iocs.length} indicators of compromise should be blocked to prevent further threats.`,
             effort: 'Medium',
             impact: 'High',
             steps: [
@@ -428,12 +379,12 @@ function generateImmediateRecommendations(events, iocs) {
             resources: ['Network Team', 'Firewall Access', 'DNS Controls']
         });
     }
-    
-    const malwareEvents = events.filter(e => 
+
+    const malwareEvents = events.filter(e =>
         (e.description || e.Description || '').toLowerCase().includes('malware') ||
         (e.description || e.Description || '').toLowerCase().includes('virus')
     );
-    
+
     if (malwareEvents.length > 0) {
         immediate.push({
             id: 'malware-isolation',
@@ -451,7 +402,7 @@ function generateImmediateRecommendations(events, iocs) {
             resources: ['IT Team', 'Antimalware Tools', 'Network Isolation Capability']
         });
     }
-    
+
     return immediate;
 }
 
@@ -543,16 +494,16 @@ function generateLongTermRecommendations(events, iocs) {
 }
 
 function generateComplianceGuidance(analysis) {
-    const events = analysis.result?.technical?.securityEvents || 
-                  analysis.result?.Technical?.SecurityEvents || [];
-    const iocs = analysis.result?.technical?.detectedIOCs || 
-                analysis.result?.Technical?.DetectedIOCs || [];
+    const events = analysis.result?.technical?.securityEvents ||
+        analysis.result?.Technical?.SecurityEvents || [];
+    const iocs = analysis.result?.technical?.detectedIOCs ||
+        analysis.result?.Technical?.DetectedIOCs || [];
 
     // Calculate basic compliance metrics
     const hasIncidentResponse = events.length > 0;
     const hasThreatDetection = iocs.length > 0;
     const hasLogging = events.length > 10;
-    
+
     return {
         overallScore: calculateOverallComplianceScore(hasIncidentResponse, hasThreatDetection, hasLogging),
         frameworks: [
@@ -637,13 +588,13 @@ function generateComplianceGuidance(analysis) {
 function generateRecommendationSummary(recommendations) {
     const criticalCount = recommendations.criticalIssues;
     const immediateCount = recommendations.immediate.length;
-    
+
     if (criticalCount > 0) {
-        return `Analysis identified ${ criticalCount } critical security issues requiring immediate attention.${ immediateCount } immediate actions have been prioritized to address the most pressing vulnerabilities.Implementation of the recommended security measures could reduce overall risk by ${ recommendations.riskReduction }% and improve compliance posture to ${ recommendations.complianceScore }%.`;
+        return `Analysis identified ${criticalCount} critical security issues requiring immediate attention. ${immediateCount} immediate actions have been prioritized to address the most pressing vulnerabilities. Implementation of the recommended security measures could reduce overall risk by ${recommendations.riskReduction}% and improve compliance posture to ${recommendations.complianceScore}%.`;
     } else if (immediateCount > 0) {
-        return `Security analysis reveals ${ immediateCount } important actions that should be implemented within 24 - 48 hours.While no critical vulnerabilities were detected, addressing these recommendations will strengthen your security posture and improve compliance alignment.Expected risk reduction: ${ recommendations.riskReduction }%.`;
+        return `Security analysis reveals ${immediateCount} important actions that should be implemented within 24-48 hours. While no critical vulnerabilities were detected, addressing these recommendations will strengthen your security posture and improve compliance alignment. Expected risk reduction: ${recommendations.riskReduction}%.`;
     } else {
-        return `Current security analysis indicates a relatively stable security posture with no immediate critical actions required.Focus should be on long - term strategic improvements and maintaining current security controls.Consider implementing the strategic recommendations to further enhance security maturity.`;
+        return `Current security analysis indicates a relatively stable security posture with no immediate critical actions required. Focus should be on long-term strategic improvements and maintaining current security controls. Consider implementing the strategic recommendations to further enhance security maturity.`;
     }
 }
 
@@ -656,48 +607,48 @@ function generatePriorityMatrix(recommendations) {
     ];
 
     return `
-    < div class="matrix-grid" >
+        <div class="matrix-grid">
             <div class="matrix-quadrant high-impact low-effort">
                 <h5>High Impact, Low Effort</h5>
                 <div class="quadrant-items">
                     ${allRecommendations
-                        .filter(r => r.impact === 'High' && (r.effort === 'Low' || r.effort === 'Medium'))
-                        .slice(0, 3)
-                        .map(r => `<div class="matrix-item">${r.title || r.name}</div>`)
-                        .join('')}
+            .filter(r => r.impact === 'High' && (r.effort === 'Low' || r.effort === 'Medium'))
+            .slice(0, 3)
+            .map(r => `<div class="matrix-item">${r.title || r.name}</div>`)
+            .join('')}
                 </div>
             </div>
             <div class="matrix-quadrant high-impact high-effort">
                 <h5>High Impact, High Effort</h5>
                 <div class="quadrant-items">
                     ${allRecommendations
-                        .filter(r => r.impact === 'High' && (r.effort === 'High' || r.effort === 'Very High'))
-                        .slice(0, 3)
-                        .map(r => `<div class="matrix-item">${r.title || r.name}</div>`)
-                        .join('')}
+            .filter(r => r.impact === 'High' && (r.effort === 'High' || r.effort === 'Very High'))
+            .slice(0, 3)
+            .map(r => `<div class="matrix-item">${r.title || r.name}</div>`)
+            .join('')}
                 </div>
             </div>
             <div class="matrix-quadrant low-impact low-effort">
                 <h5>Low Impact, Low Effort</h5>
                 <div class="quadrant-items">
                     ${allRecommendations
-                        .filter(r => r.impact !== 'High' && (r.effort === 'Low' || r.effort === 'Medium'))
-                        .slice(0, 3)
-                        .map(r => `<div class="matrix-item">${r.title || r.name}</div>`)
-                        .join('')}
+            .filter(r => r.impact !== 'High' && (r.effort === 'Low' || r.effort === 'Medium'))
+            .slice(0, 3)
+            .map(r => `<div class="matrix-item">${r.title || r.name}</div>`)
+            .join('')}
                 </div>
             </div>
             <div class="matrix-quadrant low-impact high-effort">
                 <h5>Low Impact, High Effort</h5>
                 <div class="quadrant-items">
                     ${allRecommendations
-                        .filter(r => r.impact !== 'High' && (r.effort === 'High' || r.effort === 'Very High'))
-                        .slice(0, 3)
-                        .map(r => `<div class="matrix-item">${r.title || r.name}</div>`)
-                        .join('')}
+            .filter(r => r.impact !== 'High' && (r.effort === 'High' || r.effort === 'Very High'))
+            .slice(0, 3)
+            .map(r => `<div class="matrix-item">${r.title || r.name}</div>`)
+            .join('')}
                 </div>
             </div>
-        </div >
+        </div>
     `;
 }
 
@@ -706,28 +657,28 @@ function calculateEstimatedImplementationTime(events, iocs) {
     const baseTime = 40; // Base 40 hours
     const eventImpact = Math.min(events.length * 0.5, 20); // Max 20 hours from events
     const iocImpact = Math.min(iocs.length * 0.2, 10); // Max 10 hours from IOCs
-    
+
     const totalHours = baseTime + eventImpact + iocImpact;
-    
-    if (totalHours > 60) return `${ Math.round(totalHours / 8) } days`;
-    return `${ Math.round(totalHours) } hours`;
+
+    if (totalHours > 60) return `${Math.round(totalHours / 8)} days`;
+    return `${Math.round(totalHours)} hours`;
 }
 
 function calculateRiskReduction(events, iocs) {
     const baseReduction = 45; // Base 45% reduction
     const eventBonus = Math.min(events.length * 0.3, 25); // Max 25% bonus
     const iocBonus = Math.min(iocs.length * 0.2, 15); // Max 15% bonus
-    
+
     return Math.min(Math.round(baseReduction + eventBonus + iocBonus), 85);
 }
 
 function calculateComplianceScore(events, iocs) {
     let score = 60; // Base score
-    
+
     if (events.length > 10) score += 15; // Good logging
     if (iocs.length > 0) score += 10; // Threat detection
     if (events.length > 50) score += 10; // Comprehensive monitoring
-    
+
     return Math.min(score, 95);
 }
 
@@ -743,62 +694,211 @@ function calculateNISTScore(hasIncidentResponse, hasThreatDetection, hasLogging)
     return calculateOverallComplianceScore(hasIncidentResponse, hasThreatDetection, hasLogging) + 5;
 }
 
-function calculateISOScore(hasIncidentResponse, hasTexport function initTab(analysis) {
-    if (!analysis) return;
-    
-    renderRecommendationsOverview(analysis);
-    renderImmediateActions(analysis);
-    renderLongTermStrategy(analysis);
-    renderComplianceGuidance(analysis);
-    setupRecommendationsControls();
+function calculateISOScore(hasIncidentResponse, hasThreatDetection, hasLogging) {
+    return calculateOverallComplianceScore(hasIncidentResponse, hasThreatDetection, hasLogging) - 5;
 }
 
-function renderRecommendationsOverview(analysis) {
-    const container = document.getElementById('recommendationsOverviewContainer') || 
-                     document.querySelector('.recommendations-overview-container');
-    
+function generateComplianceSummary(hasIncidentResponse, hasThreatDetection, hasLogging) {
+    const score = calculateOverallComplianceScore(hasIncidentResponse, hasThreatDetection, hasLogging);
+
+    if (score >= 80) {
+        return "Strong compliance posture with most framework requirements met. Focus on continuous improvement and regular assessments.";
+    } else if (score >= 60) {
+        return "Good compliance foundation with some gaps identified. Implementing recommended actions will significantly improve security alignment.";
+    } else {
+        return "Compliance gaps identified that require attention. A structured approach to implementing security controls is recommended.";
+    }
+}
+
+function getScoreClass(score) {
+    if (score >= 80) return 'excellent';
+    if (score >= 60) return 'good';
+    if (score >= 40) return 'fair';
+    return 'poor';
+}
+
+// Action handlers
+function generateActionPlan() {
+    const dashboard = window.secuNikDashboard;
+    dashboard?.showNotification('Generating comprehensive action plan...', 'info');
+
+    setTimeout(() => {
+        dashboard?.showNotification('Action plan generated successfully', 'success');
+    }, 2000);
+}
+
+function exportRecommendations() {
+    const dashboard = window.secuNikDashboard;
+    if (!dashboard?.state.currentAnalysis) {
+        dashboard?.showNotification('No recommendations to export', 'warning');
+        return;
+    }
+
+    try {
+        const recommendations = extractRecommendations(dashboard.state.currentAnalysis);
+        const exportData = {
+            metadata: {
+                exportedAt: new Date().toISOString(),
+                analysisId: dashboard.state.currentAnalysis.analysisId,
+                exportType: 'Security Recommendations'
+            },
+            recommendations: recommendations
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `secunik-recommendations-${dashboard.state.currentAnalysis.analysisId}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        dashboard?.showNotification('Recommendations exported successfully', 'success');
+    } catch (error) {
+        console.error('Export failed:', error);
+        dashboard?.showNotification('Failed to export recommendations', 'error');
+    }
+}
+
+function scheduleSecurityReview() {
+    const dashboard = window.secuNikDashboard;
+    dashboard?.showNotification('Security review scheduling feature coming soon', 'info');
+}
+
+function shareRecommendations() {
+    const dashboard = window.secuNikDashboard;
+    dashboard?.showNotification('Sharing recommendations with team...', 'info');
+}
+
+// Global action handlers
+window.markActionComplete = function (actionId) {
+    const dashboard = window.secuNikDashboard;
+    dashboard?.showNotification(`Action ${actionId} marked as complete`, 'success');
+};
+
+window.viewActionDetails = function (actionId) {
+    const dashboard = window.secuNikDashboard;
+    dashboard?.showNotification(`Viewing details for action ${actionId}`, 'info');
+};
+
+window.showMoreActions = function (period) {
+    const dashboard = window.secuNikDashboard;
+    dashboard?.showNotification(`Showing all ${period}-term actions`, 'info');
+};
+
+// Utility functions
+function sanitizeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+} sanitizeHTML(action.description)}
+                                </div >
+                                <div class="action-steps">
+                                    <h5>Implementation Steps:</h5>
+                                    <ol class="steps-list">
+                                        ${action.steps.map(step => `
+                                            <li class="step-item">
+                                                <span class="step-text">${sanitizeHTML(step)}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ol>
+                                </div>
+                                <div class="action-resources">
+                                    <h5>Required Resources:</h5>
+                                    <div class="resource-tags">
+                                        ${action.resources.map(resource => `
+                                            <span class="resource-tag">${sanitizeHTML(resource)}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div >
+                        </div >
+    `).join('')}
+                </div>
+                
+                ${recommendations.immediate.length === 0 ? `
+                    <div class="no-immediate-actions">
+                        <i data-feather="check-circle" width="48" height="48"></i>
+                        <h4>No Immediate Actions Required</h4>
+                        <p>Current analysis indicates no critical security issues requiring immediate attention.</p>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+}
+
+function renderLongTermStrategy(analysis) {
+    const container = document.getElementById('longTermStrategyContainer') ||
+        document.querySelector('.long-term-strategy-container');
+
     if (!container) return;
 
     const recommendations = extractRecommendations(analysis);
 
     container.innerHTML = `
-    < div class="recommendations-header-card" >
+        <div class="long-term-strategy-card">
             <div class="card-header">
-                <h3><i data-feather="zap"></i> Security Recommendations</h3>
-                <div class="recommendations-summary">
-                    <span class="rec-count critical">${recommendations.immediate.length} Immediate</span>
-                    <span class="rec-count warning">${recommendations.shortTerm.length} Short-term</span>
-                    <span class="rec-count info">${recommendations.longTerm.length} Long-term</span>
+                <h3><i data-feather="target"></i> Long-term Security Strategy</h3>
+                <div class="timeline-indicator">
+                    <i data-feather="calendar"></i>
+                    <span>3-12 month implementation plan</span>
                 </div>
             </div>
             <div class="card-content">
-                <div class="recommendation-metrics">
-                    <div class="metric-row">
-                        <div class="metric-card priority-critical">
-                            <div class="metric-icon">
-                                <i data-feather="alert-octagon"></i>
+                <div class="strategy-roadmap">
+                    <div class="roadmap-timeline">
+                        <div class="timeline-period" data-period="short">
+                            <div class="period-header">
+                                <h4>Next 30 Days</h4>
+                                <span class="period-count">${recommendations.shortTerm.length} items</span>
                             </div>
-                            <div class="metric-content">
-                                <div class="metric-value">${recommendations.criticalIssues}</div>
-                                <div class="metric-label">Critical Issues</div>
-                                <div class="metric-sublabel">Require immediate attention</div>
+                            <div class="period-actions">
+                                ${recommendations.shortTerm.slice(0, 3).map(action => `
+                                    <div class="roadmap-action short-term">
+                                        <div class="action-icon">
+                                            <i data-feather="${action.icon}"></i>
+                                        </div>
+                                        <div class="action-info">
+                                            <div class="action-name">${sanitizeHTML(action.title)}</div>
+                                            <div class="action-benefit">${sanitizeHTML(action.benefit)}</div>
+                                        </div>
+                                        <div class="action-effort">${action.effort}</div>
+                                    </div>
+                                `).join('')}
+                                ${recommendations.shortTerm.length > 3 ? `
+                                    <div class="show-more-actions">
+                                        <button class="btn btn-link" onclick="showMoreActions('short')">
+                                            +${recommendations.shortTerm.length - 3} more actions
+                                        </button>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
-                        
-                        <div class="metric-card priority-high">
-                            <div class="metric-icon">
-                                <i data-feather="clock"></i>
+
+                        <div class="timeline-period" data-period="medium">
+                            <div class="period-header">
+                                <h4>Next 90 Days</h4>
+                                <span class="period-count">${recommendations.mediumTerm.length} items</span>
                             </div>
-                            <div class="metric-content">
-                                <div class="metric-value">${recommendations.estimatedTime}</div>
-                                <div class="metric-label">Est. Implementation</div>
-                                <div class="metric-sublabel">Total time required</div>
-                            </div>
-                        </div>
-                        
-                        <div class="metric-card priority-medium">
-                            <div class="metric-icon">
-                                <i data-feather="shield"></i>
-                            </div>
-                            <div class="metric-content">
-                                <div class="metric-value">${recommendations.riskReduction}%</div>
+                            <div class="period-actions">
+                                ${recommendations.mediumTerm.slice(0, 3).map(action => `
+                                    <div class="roadmap-action medium-term">
+                                        <div class="action-icon">
+                                            <i data-feather="${action.icon}"></i>
+                                        </div>
+                                        <div class="action-info">
+                                            <div class="action-name">${sanitizeHTML(action.title)}</div>
+                                            <div class="action-benefit">${sanitizeHTML(action.benefit)}</div>
+                                        </div>
+                                        <div class="action-effort">${action.effort}</div>
+                                    </div>
+                                `).join('')}
+                                // (If you intended to add more code here, complete the template literal and function. Otherwise, remove this dangling line.)
