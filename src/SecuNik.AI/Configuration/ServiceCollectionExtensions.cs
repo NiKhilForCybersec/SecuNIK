@@ -42,7 +42,7 @@ namespace SecuNik.AI.Configuration
                 }
 
                 // Fallback to rule-based service
-                return new SecurityAnalysisService(provider.GetRequiredService<ILogger<SecurityAnalysisService>>());
+                return new OpenAIAnalysisService(provider.GetRequiredService<ILogger<OpenAIAnalysisService>>());
             });
 
             return services;

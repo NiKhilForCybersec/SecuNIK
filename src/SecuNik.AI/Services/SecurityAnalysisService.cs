@@ -1,5 +1,3 @@
-// 1. Delete ALL existing OpenAIAnalysisService files, then create this single clean version:
-// src/SecuNik.AI/Services/SecurityAnalysisService.cs (NEW NAME to avoid conflicts)
 
 using System;
 using System.Collections.Generic;
