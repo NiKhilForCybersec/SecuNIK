@@ -1,4 +1,8 @@
-export function initTab(analysis) {
-    // initialize executive tab
+export function init(data) {
+    // placeholder for executive tab initialization
+}
+
+export function render(data) {
+    // placeholder for rendering executive summary
 }
 
