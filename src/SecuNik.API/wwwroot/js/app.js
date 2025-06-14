@@ -628,12 +628,15 @@ class SecuNikDashboard {
 
         try {
             // Create shareable summary
+            const result = this.state.currentAnalysis.result || {};
+            const executive = result.executive || result.Executive || {};
+
             const shareData = {
                 analysisId: this.state.currentAnalysis.analysisId,
                 fileName: this.state.currentFile.name,
                 timestamp: this.state.currentAnalysis.timestamp,
-                riskScore: this.calculateRiskScore(this.state.currentAnalysis.result),
-                summary: this.state.currentAnalysis.result.executiveSummary?.summary || 'Analysis completed'
+                riskScore: this.calculateRiskScore(result),
+                summary: executive.summary || 'Analysis completed'
             };
 
             if (navigator.share) {
