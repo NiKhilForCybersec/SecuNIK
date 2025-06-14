@@ -1,1 +1,323 @@
-/* Styles for dashboard tab */
+/* ===== DASHBOARD STYLES - UPDATED FOR CENTERED LAYOUT ===== */
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-tertiary);
+    transition: all var(--transition-normal);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--text-info);
+}
+
+.stat-card.critical::before {
+    background: var(--severity-critical);
+}
+
+.stat-card.warning::before {
+    background: var(--severity-high);
+}
+
+.stat-card.info::before {
+    background: var(--severity-medium);
+}
+
+.stat-card.success::before {
+    background: var(--severity-low);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-primary);
+}
+
+.stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: var(--space-xs);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* Dashboard Grid - NEW CENTERED LAYOUT */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.dashboard-widget {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-tertiary);
+    transition: all var(--transition-normal);
+    min-height: 250px;
+    position: relative;
+}
+
+.dashboard-widget::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-gradient);
+    opacity: 0.3;
+    transition: opacity var(--transition-normal);
+}
+
+.dashboard-widget:hover {
+    transform: translateY(-5px);
+    border-color: var(--border-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.dashboard-widget:hover::before {
+    opacity: 1;
+}
+
+.dashboard-widget.wide {
+    grid-column: span 2;
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-tertiary);
+    background: var(--bg-tertiary);
+}
+
+.widget-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.widget-controls {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.widget-action {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+}
+
+.widget-action:hover {
+    background: var(--bg-quaternary);
+    color: var(--text-primary);
+}
+
+.ai-confidence,
+.threat-count,
+.performance-status {
+    background: var(--bg-quaternary);
+    color: var(--text-secondary);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+
+.widget-content {
+    padding: var(--space-lg);
+    height: calc(100% - 60px);
+    overflow: auto;
+}
+
+/* Risk Score Widget */
+.compact-risk-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-lg);
+    gap: var(--space-md);
+}
+
+.compact-score-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.compact-score-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.compact-score-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, var(--text-success), var(--text-warning), var(--text-error));
+    transition: width 0.8s ease-out;
+}
+
+.risk-level-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 13px;
+}
+
+.risk-level-label {
+    color: var(--text-secondary);
+}
+
+.risk-level-value {
+    font-weight: 600;
+}
+
+/* AI Summary */
+.ai-summary {
+    line-height: 1.6;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/* Performance Metrics */
+.performance-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.metric {
+    display: grid;
+    grid-template-columns: 1fr 2fr 40px;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.metric-label {
+    color: var(--text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.metric-bar {
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.metric-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--primary-gradient);
+    transition: width 1.2s ease-out;
+}
+
+.metric-value {
+    font-weight: 600;
+    text-align: right;
+    font-size: 11px;
+}
+
+/* Quick Actions */
+.quick-actions {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: 1px solid var(--border-tertiary);
+}
+
+.quick-actions h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: var(--space-md);
+    color: var(--text-secondary);
+}
+
+.action-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--space-md);
+}
+
+.action-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-tertiary);
+    color: var(--text-primary);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    font-size: 13px;
+}
+
+.action-btn:hover {
+    background: var(--bg-quaternary);
+    border-color: var(--border-primary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.action-btn svg {
+    color: var(--text-accent);
+}
+
