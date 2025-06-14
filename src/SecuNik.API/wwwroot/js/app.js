@@ -1,27 +1,26 @@
 /**
- * SecuNik Professional Dashboard - JavaScript Application
+ * SecuNik Professional Dashboard - Fixed JavaScript Application
  * Advanced AI-powered cybersecurity analysis platform
  * 
-* @version 2.1.0
-* @author SecuNik Team
-*/
+ * @version 2.1.0
+ * @author SecuNik Team
+ */
 
 import Router from "./router.js";
 import * as api from "./services/api.js";
 import * as storage from "./services/storage.js";
-import * as fmt from "./utils/formatters.js";
-import { initTab as initDashboardTab, updateTimelineChart } from "./tabs/dashboard.js";
-import { initTab as initFileDetailsTab } from "./tabs/fileDetails.js";
-import { init as initExecutiveTab, render as renderExecutiveTab } from "./tabs/executive.js";
-import { init as initEventsTab, render as renderEventsTab } from "./tabs/events.js";
-import { init as initIocsTab, exportIOCs } from "./tabs/iocs.js";
-import { init as initTimelineTab, render as renderTimelineTab } from "./tabs/timeline.js";
-import { initTab as initForensicsTab } from "./tabs/forensics.js";
-import { initTab as initRecommendationsTab } from "./tabs/recommendations.js";
-import { initTab as initThreatIntelTab } from "./tabs/threatIntel.js";
 import { init as initCaseManagementTab, render as renderCaseManagementTab } from "./tabs/caseManagement.js";
-import { initTab as initSettingsTab } from "./tabs/settings.js";
+import { initTab as initDashboardTab } from "./tabs/dashboard.js";
+import { init as initEventsTab, render as renderEventsTab } from "./tabs/events.js";
+import { init as initExecutiveTab, render as renderExecutiveTab } from "./tabs/executive.js";
+import { initTab as initFileDetailsTab } from "./tabs/fileDetails.js";
+import { initTab as initForensicsTab } from "./tabs/forensics.js";
 import { initTab as initHelpTab } from "./tabs/help.js";
+import { exportIOCs, init as initIocsTab } from "./tabs/iocs.js";
+import { initTab as initRecommendationsTab } from "./tabs/recommendations.js";
+import { initTab as initSettingsTab } from "./tabs/settings.js";
+import { initTab as initThreatIntelTab } from "./tabs/threatIntel.js";
+import { init as initTimelineTab, render as renderTimelineTab } from "./tabs/timeline.js";
 
 class SecuNikDashboard {
     constructor() {
@@ -232,7 +231,6 @@ class SecuNikDashboard {
         if (this.elements.exportIOCsBtn) {
             this.elements.exportIOCsBtn.addEventListener('click', () => exportIOCs());
         }
-        initIocsTab(this);
 
         if (this.elements.shareAnalysisBtn) {
             this.elements.shareAnalysisBtn.addEventListener('click', () => this.shareAnalysis());
@@ -244,8 +242,8 @@ class SecuNikDashboard {
 
         // Initialize tab-specific listeners
         initCaseManagementTab(this);
-
         initTimelineTab(this);
+        initIocsTab(this);
 
         // Global keyboard shortcuts
         this.setupKeyboardShortcuts();
@@ -275,6 +273,11 @@ class SecuNikDashboard {
         if (this.router) {
             this.router.switchTo(tabName);
         }
+    }
+
+    toggleSidebar() {
+        this.state.sidebarOpen = !this.state.sidebarOpen;
+        this.updateSidebarState();
     }
 
     /**
@@ -425,6 +428,7 @@ class SecuNikDashboard {
                 includeTimeline: this.settings.includeTimeline,
                 confidenceThreshold: this.settings.confidenceThreshold
             }, this.config.apiEndpoints);
+
             const processingTime = Date.now() - this.metrics.startTime;
 
             // Clear progress interval
@@ -513,7 +517,7 @@ class SecuNikDashboard {
 
         // Store analysis data
         this.state.currentAnalysis = {
-            result: result,
+            result: result.result || result,
             fileInfo: this.state.currentFile,
             processingTime: processingTime,
             analysisId: this.generateAnalysisId(),
@@ -531,7 +535,6 @@ class SecuNikDashboard {
         this.switchToTab('dashboard');
 
         // Update all dashboard components
-        initDashboardTab(this.state.currentAnalysis);
         await this.updateAllTabs(this.state.currentAnalysis);
 
         // Store in history
@@ -539,7 +542,7 @@ class SecuNikDashboard {
             id: this.state.currentAnalysis.analysisId,
             timestamp: this.state.currentAnalysis.timestamp,
             fileName: this.state.currentFile.name,
-            riskScore: this.calculateRiskScore(result)
+            riskScore: this.calculateRiskScore(this.state.currentAnalysis.result)
         });
 
         // Save history to localStorage
@@ -551,28 +554,31 @@ class SecuNikDashboard {
         }
     }
 
-
     /**
      * Update all tabs with analysis data
      */
     async updateAllTabs(analysis) {
-        initDashboardTab(analysis);
-        initFileDetailsTab(analysis);
-        initExecutiveTab(analysis);
-        initEventsTab(analysis);
-        initIocsTab(this);
-        initTimelineTab(this);
-        initForensicsTab(analysis);
-        initRecommendationsTab(analysis);
-        initThreatIntelTab(analysis);
-        initCaseManagementTab(this);
-        initSettingsTab(analysis);
-        initHelpTab(analysis);
+        try {
+            initDashboardTab(analysis);
+            initFileDetailsTab(analysis);
+            initExecutiveTab(analysis);
+            initEventsTab(analysis);
+            initIocsTab(this);
+            initTimelineTab(this);
+            initForensicsTab(analysis);
+            initRecommendationsTab(analysis);
+            initThreatIntelTab(analysis);
+            initCaseManagementTab(this);
+            initSettingsTab(analysis);
+            initHelpTab(analysis);
 
-        renderExecutiveTab(analysis);
-        renderEventsTab(analysis);
-        renderTimelineTab(analysis);
-        renderCaseManagementTab();
+            renderExecutiveTab(analysis);
+            renderEventsTab(analysis);
+            renderTimelineTab(analysis);
+            renderCaseManagementTab();
+        } catch (error) {
+            console.error('Error updating tabs:', error);
+        }
     }
 
     /**
@@ -613,7 +619,6 @@ class SecuNikDashboard {
             this.showNotification('Failed to generate report', 'error');
         }
     }
-
 
     async shareAnalysis() {
         if (!this.state.currentAnalysis) {
@@ -699,15 +704,21 @@ class SecuNikDashboard {
 
     updateSystemStatus(text, status) {
         if (this.elements.systemStatus) {
-            this.elements.systemStatus.querySelector('span').textContent = text;
+            const span = this.elements.systemStatus.querySelector('span');
+            if (span) {
+                span.textContent = text;
+            }
             this.elements.systemStatus.className = `status-indicator ${status}`;
         }
     }
 
     updateAnalysisCounter() {
         if (this.elements.analysisCounter) {
-            const text = this.state.analysisCount === 1 ? '1 File Analyzed' : `${this.state.analysisCount} Files Analyzed`;
-            this.elements.analysisCounter.querySelector('span').textContent = text;
+            const span = this.elements.analysisCounter.querySelector('span');
+            if (span) {
+                const text = this.state.analysisCount === 1 ? '1 File Analyzed' : `${this.state.analysisCount} Files Analyzed`;
+                span.textContent = text;
+            }
         }
     }
 
@@ -864,11 +875,6 @@ class SecuNikDashboard {
         try {
             Object.assign(this.settings, storage.loadSettings());
         } catch (error) {
-            console.warn("Failed to load settings:", error);
-        }
-    };
-            }
-        } catch (error) {
             console.warn('Failed to load settings:', error);
         }
     }
@@ -877,9 +883,6 @@ class SecuNikDashboard {
         try {
             storage.saveSettings(this.settings);
         } catch (error) {
-            console.warn("Failed to save settings:", error);
-        }
-    } catch (error) {
             console.warn('Failed to save settings:', error);
         }
     }
@@ -887,10 +890,6 @@ class SecuNikDashboard {
     loadAnalysisHistory() {
         try {
             this.state.analysisHistory = storage.loadHistory();
-        } catch (error) {
-            console.warn("Failed to load analysis history:", error);
-        }
-    }
         } catch (error) {
             console.warn('Failed to load analysis history:', error);
         }
@@ -900,9 +899,6 @@ class SecuNikDashboard {
         try {
             storage.saveHistory(this.state.analysisHistory);
         } catch (error) {
-            console.warn("Failed to save analysis history:", error);
-        }
-    } catch (error) {
             console.warn('Failed to save analysis history:', error);
         }
     }
@@ -910,10 +906,6 @@ class SecuNikDashboard {
     loadCases() {
         try {
             this.state.cases = storage.loadCases();
-        } catch (error) {
-            console.warn("Failed to load cases:", error);
-        }
-    }
         } catch (error) {
             console.warn('Failed to load cases:', error);
         }
@@ -923,9 +915,6 @@ class SecuNikDashboard {
         try {
             storage.saveCases(this.state.cases);
         } catch (error) {
-            console.warn("Failed to save cases:", error);
-        }
-    } catch (error) {
             console.warn('Failed to save cases:', error);
         }
     }
@@ -981,14 +970,14 @@ class SecuNikDashboard {
      * Utility functions
      */
     calculateRiskScore(data) {
-        const events = data.technical?.securityEvents || [];
-        const iocs = data.technical?.detectedIOCs || [];
+        const events = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
+        const iocs = data.technical?.detectedIOCs || data.Technical?.DetectedIOCs || [];
 
         let score = 0;
 
         // Base score from events
         events.forEach(event => {
-            switch (event.severity?.toLowerCase()) {
+            switch ((event.severity || event.Severity || '').toLowerCase()) {
                 case 'critical': score += 25; break;
                 case 'high': score += 15; break;
                 case 'medium': score += 8; break;
@@ -1078,6 +1067,7 @@ class SecuNikDashboard {
     }
 
     sanitizeHTML(str) {
+        if (!str) return '';
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
