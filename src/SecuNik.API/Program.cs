@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SecuNik.Core.Interfaces;
 using SecuNik.Core.Services;
+using SecuNik.Core.Models;
 using SecuNik.AI.Configuration;
 using System;
 
@@ -409,13 +410,14 @@ namespace SecuNik.API
                         .Select(e => new TimelineEvent
                         {
                             Timestamp = e.Timestamp,
-                            EventType = e.EventType,
-                            Description = e.Message,
-                            Source = e.Source,
-                            Priority = e.Priority,
-                            Details = e.Properties,
-                            RelatedIOCs = e.AssociatedIOCs,
-                            Category = e.Category
+                            Event = e.Description,
+                            Source = e.EventType,
+                            Confidence = e.Priority switch
+                            {
+                                SecurityEventPriority.Critical or SecurityEventPriority.High => "High",
+                                SecurityEventPriority.Medium => "Medium",
+                                _ => "Low"
+                            }
                         })
                         .ToList();
         }
@@ -437,12 +439,12 @@ namespace SecuNik.API
                 ["Duration"] = timeline.Last().Timestamp - timeline.First().Timestamp,
                 ["EventsByHour"] = timeline.GroupBy(e => e.Timestamp.Hour)
                                          .ToDictionary(g => g.Key.ToString(), g => g.Count()),
-                ["EventsByPriority"] = timeline.GroupBy(e => e.Priority)
-                                              .ToDictionary(g => g.Key.ToString(), g => g.Count()),
-                ["TopEventTypes"] = timeline.GroupBy(e => e.EventType)
-                                           .OrderByDescending(g => g.Count())
-                                           .Take(5)
-                                           .ToDictionary(g => g.Key, g => g.Count())
+                ["TopSources"] = timeline.GroupBy(e => e.Source)
+                                        .OrderByDescending(g => g.Count())
+                                        .Take(5)
+                                        .ToDictionary(g => g.Key, g => g.Count()),
+                ["ConfidenceDistribution"] = timeline.GroupBy(e => e.Confidence)
+                                                 .ToDictionary(g => g.Key, g => g.Count())
             };
 
             return analysis;
