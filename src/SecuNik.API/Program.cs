@@ -265,6 +265,8 @@ namespace SecuNik.API
             services.AddScoped<IIOCDetectionService, IOCDetectionService>();
             services.AddScoped<ITimelineService, TimelineService>();
             services.AddScoped<IForensicService, ForensicService>();
+            services.AddSingleton<ICaseManagementService, CaseManagementService>();
+            services.AddSingleton<IThreatIntelService, ThreatIntelService>();
         }
     }
 
