@@ -60,161 +60,213 @@ namespace SecuNik.AI.Services
                 RiskLevel = insights.SeverityScore > 7 ? "HIGH" :
                           insights.SeverityScore > 4 ? "MEDIUM" : "LOW",
                 ImmediateActions = GenerateImmediateActions(insights),
-                LongTermRecommendations = GenerateLongTermRecommendations(insights)
+                LongTermRecommendations = GenerateLongTermRecommendations(findings, insights)
             };
         }
 
         private int CalculateSeverity(TechnicalFindings findings)
         {
-            int score = 1;
+            var score = 0;
 
-            // Base score on security events count
-            score += Math.Min(findings.SecurityEvents.Count / 5, 4);
+            // Base score from number of security events
+            score += Math.Min(findings.SecurityEvents.Count / 10, 3);
 
-            // Add points for IOCs
-            score += Math.Min(findings.DetectedIOCs.Count / 3, 3);
+            // IOC-based scoring
+            score += Math.Min(findings.DetectedIOCs.Count / 5, 2);
 
-            // High severity events get priority
-            var criticalEvents = findings.SecurityEvents.Count(e =>
-                e.Severity.ToLower() == "critical" || e.Severity.ToLower() == "high");
-            score += Math.Min(criticalEvents * 2, 5);
+            // High-priority event scoring
+            var criticalEvents = findings.SecurityEvents.Count(e => e.Priority == SecurityEventPriority.Critical);
+            var highEvents = findings.SecurityEvents.Count(e => e.Priority == SecurityEventPriority.High);
 
-            // Specific attack patterns
-            var malwareEvents = findings.SecurityEvents.Count(e =>
-                e.Description.ToLower().Contains("malware") ||
-                e.Description.ToLower().Contains("ransomware") ||
-                e.Description.ToLower().Contains("trojan"));
-            score += Math.Min(malwareEvents * 3, 6);
+            score += criticalEvents * 2;
+            score += highEvents;
 
+            // Malicious activity indicators
+            var maliciousEvents = findings.SecurityEvents.Count(e => e.IsMalicious);
+            score += maliciousEvents;
+
+            // Cap at 10
             return Math.Min(score, 10);
         }
 
         private string DetermineAttackVector(List<SecurityEvent> events)
         {
-            if (!events.Any())
-                return "No attack vectors identified - routine security monitoring";
+            var vectors = new Dictionary<string, int>();
 
-            // Check for malware
-            if (events.Any(e => e.Description.ToLower().Contains("malware") ||
-                               e.Description.ToLower().Contains("trojan") ||
-                               e.Description.ToLower().Contains("ransomware")))
-                return "Malware infection detected - endpoint compromise likely";
+            foreach (var evt in events)
+            {
+                var vector = ClassifyAttackVector(evt);
+                vectors[vector] = vectors.GetValueOrDefault(vector, 0) + 1;
+            }
 
-            // Check for authentication attacks
-            if (events.Any(e => e.Description.ToLower().Contains("failed") &&
-                               e.Description.ToLower().Contains("login")))
-                return "Brute force authentication attack - credential compromise attempt";
+            if (!vectors.Any()) return "Unknown";
 
-            // Check for network attacks
-            if (events.Any(e => e.Description.ToLower().Contains("scan") ||
-                               e.Description.ToLower().Contains("network")))
-                return "Network reconnaissance activity - potential lateral movement";
+            var primaryVector = vectors.OrderByDescending(v => v.Value).First().Key;
 
-            // Check for data exfiltration
-            if (events.Any(e => e.Description.ToLower().Contains("exfiltration") ||
-                               e.Description.ToLower().Contains("data transfer")))
-                return "Data exfiltration detected - information theft in progress";
+            if (vectors.Count > 1)
+            {
+                var secondaryVectors = vectors.Where(v => v.Key != primaryVector && v.Value > 0)
+                    .OrderByDescending(v => v.Value)
+                    .Take(2)
+                    .Select(v => v.Key);
 
-            // Check for privilege escalation
-            if (events.Any(e => e.Description.ToLower().Contains("privilege") ||
-                               e.Description.ToLower().Contains("escalation")))
-                return "Privilege escalation attempt - unauthorized access elevation";
+                if (secondaryVectors.Any())
+                {
+                    return $"{primaryVector} (with {string.Join(", ", secondaryVectors)})";
+                }
+            }
 
-            return "Multiple security events detected - comprehensive investigation required";
+            return primaryVector;
+        }
+
+        private string ClassifyAttackVector(SecurityEvent evt)
+        {
+            var message = evt.Message.ToLower();
+            var category = evt.Category.ToLower();
+
+            if (message.Contains("login") || message.Contains("authentication") || category.Contains("auth"))
+                return "Authentication Attack";
+
+            if (message.Contains("network") || message.Contains("connection") || category.Contains("network"))
+                return "Network Intrusion";
+
+            if (message.Contains("malware") || message.Contains("virus") || message.Contains("trojan"))
+                return "Malware";
+
+            if (message.Contains("privilege") || message.Contains("escalation") || message.Contains("admin"))
+                return "Privilege Escalation";
+
+            if (message.Contains("data") || message.Contains("exfiltration") || message.Contains("transfer"))
+                return "Data Exfiltration";
+
+            if (message.Contains("denial") || message.Contains("dos") || message.Contains("flood"))
+                return "Denial of Service";
+
+            if (message.Contains("injection") || message.Contains("sql") || message.Contains("xss"))
+                return "Code Injection";
+
+            return "General Security Event";
         }
 
         private string GenerateThreatAssessment(TechnicalFindings findings)
         {
-            var assessment = $"Analysis identified {findings.SecurityEvents.Count} security events and {findings.DetectedIOCs.Count} indicators of compromise. ";
+            var criticalCount = findings.SecurityEvents.Count(e => e.Priority == SecurityEventPriority.Critical);
+            var highCount = findings.SecurityEvents.Count(e => e.Priority == SecurityEventPriority.High);
+            var maliciousCount = findings.SecurityEvents.Count(e => e.IsMalicious);
+            var iocCount = findings.DetectedIOCs.Count;
 
-            var highSeverityCount = findings.SecurityEvents.Count(e =>
-                e.Severity.ToLower() == "high" || e.Severity.ToLower() == "critical");
+            if (criticalCount > 5 || maliciousCount > 3)
+            {
+                return "CRITICAL THREAT DETECTED: Multiple high-severity security events indicate an active threat. " +
+                       "Immediate containment and incident response procedures should be initiated.";
+            }
 
-            if (highSeverityCount > 0)
-                assessment += $"{highSeverityCount} high-severity events require immediate attention. ";
+            if (criticalCount > 0 || highCount > 10 || iocCount > 20)
+            {
+                return "HIGH THREAT LEVEL: Significant security concerns identified that require immediate attention. " +
+                       "Enhanced monitoring and security measures should be implemented.";
+            }
 
-            var confidence = findings.SecurityEvents.Count > 20 ? "High" :
-                           findings.SecurityEvents.Count > 5 ? "Medium" : "Low";
-            assessment += $"Confidence level: {confidence} based on evidence volume and correlation.";
+            if (highCount > 0 || iocCount > 5)
+            {
+                return "MODERATE THREAT LEVEL: Some security events detected that warrant investigation. " +
+                       "Review and validate findings to determine appropriate response.";
+            }
 
-            return assessment;
+            return "LOW THREAT LEVEL: Minimal security concerns detected. Continue standard monitoring procedures.";
         }
 
         private List<string> GenerateRecommendedActions(TechnicalFindings findings)
         {
             var actions = new List<string>();
 
-            // Always include basic actions
-            if (findings.SecurityEvents.Count > 0)
-                actions.Add("Review and validate all detected security events");
+            var criticalEvents = findings.SecurityEvents.Count(e => e.Priority == SecurityEventPriority.Critical);
+            var maliciousEvents = findings.SecurityEvents.Count(e => e.IsMalicious);
+            var iocCount = findings.DetectedIOCs.Count;
 
-            // Malware-specific actions
-            if (findings.SecurityEvents.Any(e => e.Description.ToLower().Contains("malware")))
+            if (criticalEvents > 0 || maliciousEvents > 0)
             {
-                actions.Add("Isolate affected systems immediately");
-                actions.Add("Run comprehensive antimalware scan");
+                actions.Add("Activate incident response team immediately");
+                actions.Add("Isolate affected systems from the network");
+                actions.Add("Preserve forensic evidence for investigation");
+                actions.Add("Notify relevant stakeholders and authorities");
             }
 
-            // IOC-specific actions
-            if (findings.DetectedIOCs.Count > 0)
+            if (iocCount > 10)
             {
-                actions.Add("Block identified malicious IPs and domains");
-                actions.Add("Cross-reference IOCs with threat intelligence");
+                actions.Add("Block identified IOCs in security systems");
+                actions.Add("Scan all systems for IOC presence");
+                actions.Add("Update threat intelligence feeds");
             }
 
-            // Authentication-specific actions
-            if (findings.SecurityEvents.Any(e => e.Description.ToLower().Contains("failed login")))
+            if (findings.SecurityEvents.Any(e => e.Category.ToLower().Contains("auth")))
             {
-                actions.Add("Reset credentials for affected accounts");
-                actions.Add("Enable additional authentication monitoring");
+                actions.Add("Review and strengthen authentication mechanisms");
+                actions.Add("Implement multi-factor authentication");
+                actions.Add("Audit user access permissions");
             }
 
-            // Network-specific actions
-            if (findings.SecurityEvents.Any(e => e.Description.ToLower().Contains("network")))
-                actions.Add("Review network access logs and firewall rules");
+            if (findings.SecurityEvents.Any(e => e.Category.ToLower().Contains("network")))
+            {
+                actions.Add("Review network segmentation controls");
+                actions.Add("Enhance network monitoring capabilities");
+                actions.Add("Update firewall rules and configurations");
+            }
 
-            // Default action if none specific
-            if (actions.Count == 1)
-                actions.Add("Implement enhanced monitoring for similar events");
+            // Default recommendations
+            if (!actions.Any())
+            {
+                actions.Add("Continue regular security monitoring");
+                actions.Add("Review and update security policies");
+                actions.Add("Conduct security awareness training");
+                actions.Add("Perform regular vulnerability assessments");
+            }
 
             return actions;
         }
 
         private string GenerateBusinessImpact(int severityScore)
         {
-            if (severityScore >= 8)
-                return "Critical business impact - potential for significant operational disruption, data loss, and regulatory consequences. Immediate executive attention required.";
-
-            if (severityScore >= 6)
-                return "High business impact - possible service interruption and data compromise. Business continuity measures should be evaluated.";
-
-            if (severityScore >= 4)
-                return "Moderate business impact - limited risk to operations but requires monitoring to prevent escalation.";
-
-            return "Low business impact - routine security events that should be monitored as part of normal operations.";
+            return severityScore switch
+            {
+                >= 8 => "SEVERE: Potential for significant business disruption, data loss, regulatory penalties, and reputational damage. Executive leadership should be notified immediately.",
+                >= 6 => "HIGH: Risk of operational disruption and potential data compromise. Business continuity plans should be reviewed and activated as needed.",
+                >= 4 => "MODERATE: Some business risk present with potential for service degradation. Monitor situation closely and prepare contingency plans.",
+                >= 2 => "LOW: Minimal immediate business impact, but continued vigilance required to prevent escalation.",
+                _ => "MINIMAL: Very low business risk. Maintain standard security posture and monitoring."
+            };
         }
 
         private string GenerateExecutiveSummary(TechnicalFindings findings, AIInsights insights)
         {
-            return $"Security analysis completed revealing {insights.SeverityScore}/10 risk level. " +
-                   $"{findings.SecurityEvents.Count} security events analyzed with primary concern being {insights.AttackVector.ToLower()}. " +
-                   $"Immediate {(insights.SeverityScore > 6 ? "response" : "review")} recommended.";
+            var totalEvents = findings.SecurityEvents.Count;
+            var criticalEvents = findings.SecurityEvents.Count(e => e.Priority == SecurityEventPriority.Critical);
+            var iocCount = findings.DetectedIOCs.Count;
+
+            return $"Security analysis of {findings.Metadata.FileName} identified {totalEvents} security events, " +
+                   $"including {criticalEvents} critical incidents. {iocCount} indicators of compromise were detected. " +
+                   $"Primary attack vector appears to be {insights.AttackVector}. " +
+                   $"Overall risk assessment: {insights.ThreatAssessment.Split(':')[0]}";
         }
 
         private string GenerateKeyFindings(TechnicalFindings findings, AIInsights insights)
         {
-            var findings_list = new List<string>
-            {
-                $"• {findings.SecurityEvents.Count} security events detected across analyzed timeframe",
-                $"• {findings.DetectedIOCs.Count} indicators of compromise identified",
-                $"• Primary attack vector: {insights.AttackVector}",
-                $"• Threat severity: {insights.SeverityScore}/10"
-            };
+            var findings_list = new List<string>();
 
-            var criticalEvents = findings.SecurityEvents.Count(e =>
-                e.Severity.ToLower() == "critical" || e.Severity.ToLower() == "high");
-            if (criticalEvents > 0)
-                findings_list.Add($"• {criticalEvents} high-priority events requiring immediate attention");
+            var eventsByType = findings.EventsByType.OrderByDescending(e => e.Value).Take(3);
+            foreach (var eventType in eventsByType)
+            {
+                findings_list.Add($"• {eventType.Value} {eventType.Key} events detected");
+            }
+
+            var iocsByCategory = findings.IOCsByCategory.OrderByDescending(i => i.Value).Take(3);
+            foreach (var iocCategory in iocsByCategory)
+            {
+                findings_list.Add($"• {iocCategory.Value} {iocCategory.Key} IOCs identified");
+            }
+
+            findings_list.Add($"• Primary attack vector: {insights.AttackVector}");
+            findings_list.Add($"• Severity score: {insights.SeverityScore}/10");
 
             return string.Join("\n", findings_list);
         }
@@ -224,16 +276,28 @@ namespace SecuNik.AI.Services
             return string.Join("; ", insights.RecommendedActions.Take(3));
         }
 
-        private string GenerateLongTermRecommendations(AIInsights insights)
+        private string GenerateLongTermRecommendations(TechnicalFindings findings, AIInsights insights)
         {
-            var recommendations = "Implement comprehensive security monitoring framework and establish regular threat assessment procedures. ";
+            var recommendations = new List<string>
+            {
+                "Implement comprehensive security monitoring and alerting",
+                "Establish regular security assessments and penetration testing",
+                "Develop and maintain incident response procedures",
+                "Enhance employee security awareness training programs",
+                "Review and update security policies and procedures regularly"
+            };
 
-            if (insights.SeverityScore > 6)
-                recommendations += "Consider upgrading incident response capabilities and security team training. ";
+            if (findings.SecurityEvents.Any(e => e.Category.ToLower().Contains("network")))
+            {
+                recommendations.Add("Strengthen network segmentation and access controls");
+            }
 
-            recommendations += "Schedule quarterly security assessments and penetration testing.";
+            if (findings.DetectedIOCs.Count > 20)
+            {
+                recommendations.Add("Implement advanced threat intelligence and hunting capabilities");
+            }
 
-            return recommendations;
+            return string.Join("; ", recommendations.Take(4));
         }
     }
 }

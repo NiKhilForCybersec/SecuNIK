@@ -5,6 +5,7 @@ using SecuNik.Core.Exceptions;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace SecuNik.API.Controllers
 {
@@ -36,142 +37,114 @@ namespace SecuNik.API.Controllers
         [ProducesResponseType(typeof(AnalysisResult), 200)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
         [ProducesResponseType(typeof(ErrorResponse), 500)]
-        public async Task<ActionResult<AnalysisResult>> UploadAndAnalyze(IFormFile file, [FromForm] AnalysisOptionsDto? options = null)
+        public async Task<ActionResult<AnalysisResult>> UploadAndAnalyze(IFormFile file, [FromForm] string? options = null)
         {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest(new ErrorResponse("No file uploaded or file is empty"));
-            }
-
-            // Validate file size (50MB limit for Phase 1)
-            const long maxFileSize = 50 * 1024 * 1024; // 50MB
-            if (file.Length > maxFileSize)
-            {
-                return BadRequest(new ErrorResponse($"File size exceeds maximum limit of {maxFileSize / (1024 * 1024)}MB"));
-            }
-
-            var analysisId = Guid.NewGuid().ToString();
-            string tempFilePath = null;
-
             try
             {
-                _logger.LogInformation("Starting analysis {AnalysisId} for file: {FileName} ({FileSize} bytes)",
-                    analysisId, file.FileName, file.Length);
+                // Validate file
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new ErrorResponse("No file provided or file is empty"));
+                }
 
-                // Create a proper temp file with the original extension
-                var originalExtension = Path.GetExtension(file.FileName);
-                var tempFileName = $"secunik_{analysisId}{originalExtension}";
-                tempFilePath = Path.Combine(_uploadPath, tempFileName);
+                // Check file size (50MB limit)
+                if (file.Length > 50 * 1024 * 1024)
+                {
+                    return BadRequest(new ErrorResponse("File size exceeds 50MB limit"));
+                }
 
-                // Save uploaded file with proper extension
-                using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                // Generate unique filename
+                var fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(_uploadPath, fileName);
+
+                // Save uploaded file
+                using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
 
-                _logger.LogInformation("File saved to: {TempFilePath}", tempFilePath);
+                _logger.LogInformation("File uploaded: {FileName} ({Size} bytes)", file.FileName, file.Length);
 
-                // Validate that we can process this file type
-                if (!await _analysisEngine.CanProcessFileAsync(tempFilePath))
-                {
-                    var supportedTypes = await _analysisEngine.GetSupportedFileTypesAsync();
-                    return BadRequest(new ErrorResponse($"Unsupported file type '{originalExtension}'. Supported types: {string.Join(", ", supportedTypes)}"));
-                }
-
-                // Create analysis request
-                var request = new AnalysisRequest
-                {
-                    FilePath = tempFilePath,
-                    OriginalFileName = file.FileName,
-                    Options = new AnalysisOptions
-                    {
-                        EnableAIAnalysis = options?.EnableAIAnalysis ?? true,
-                        GenerateExecutiveReport = options?.GenerateExecutiveReport ?? true,
-                        IncludeTimeline = options?.IncludeTimeline ?? true,
-                        MaxSecurityEvents = options?.MaxSecurityEvents ?? 10000,
-                        FocusKeywords = options?.FocusKeywords ?? new List<string>()
-                    }
-                };
-
-                // Perform analysis
-                var result = await _analysisEngine.AnalyzeFileAsync(request);
-
-                _logger.LogInformation("Analysis {AnalysisId} completed successfully. Found {SecurityEventCount} security events",
-                    analysisId, result.Technical.SecurityEvents.Count);
-
-                // Return successful result
-                return Ok(new
-                {
-                    success = true,
-                    analysisId = analysisId,
-                    fileName = file.FileName,
-                    timestamp = DateTime.UtcNow,
-                    result = result
-                });
-            }
-            catch (UnsupportedFileTypeException ex)
-            {
-                _logger.LogWarning("Unsupported file type for analysis {AnalysisId}: {FileName} - {Error}", 
-                    analysisId, file.FileName, ex.Message);
-                return BadRequest(new ErrorResponse($"Unsupported file type: {ex.FileType}"));
-            }
-            catch (FileParsingException ex)
-            {
-                _logger.LogError(ex, "File parsing failed for analysis {AnalysisId}: {FileName}", 
-                    analysisId, file.FileName);
-                return BadRequest(new ErrorResponse($"Failed to parse file: {ex.Message}"));
-            }
-            catch (AIAnalysisException ex)
-            {
-                _logger.LogError(ex, "AI analysis failed for analysis {AnalysisId}: {FileName}", 
-                    analysisId, file.FileName);
-                return StatusCode(500, new ErrorResponse("AI analysis failed - technical findings are available"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during analysis {AnalysisId}: {FileName}", 
-                    analysisId, file.FileName);
-                return StatusCode(500, new ErrorResponse($"An unexpected error occurred during analysis: {ex.Message}"));
-            }
-            finally
-            {
-                // Clean up temporary file
-                if (!string.IsNullOrEmpty(tempFilePath) && System.IO.File.Exists(tempFilePath))
+                // Parse analysis options
+                var analysisOptions = new AnalysisOptions();
+                if (!string.IsNullOrEmpty(options))
                 {
                     try
                     {
-                        System.IO.File.Delete(tempFilePath);
-                        _logger.LogDebug("Cleaned up temporary file: {TempFilePath}", tempFilePath);
+                        var optionsDto = System.Text.Json.JsonSerializer.Deserialize<AnalysisOptionsDto>(options);
+                        if (optionsDto != null)
+                        {
+                            analysisOptions.EnableAIAnalysis = optionsDto.EnableAIAnalysis;
+                            analysisOptions.GenerateExecutiveReport = optionsDto.GenerateExecutiveReport;
+                            analysisOptions.IncludeTimeline = optionsDto.IncludeTimeline;
+                            analysisOptions.MaxSecurityEvents = optionsDto.MaxSecurityEvents;
+                            analysisOptions.FocusKeywords = optionsDto.FocusKeywords;
+                        }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to delete temporary file: {TempFilePath}", tempFilePath);
+                        _logger.LogWarning("Failed to parse analysis options: {Error}", ex.Message);
                     }
                 }
+
+                // Create analysis request
+                var analysisRequest = new AnalysisRequest
+                {
+                    FilePath = filePath,
+                    OriginalFileName = file.FileName,
+                    Options = analysisOptions
+                };
+
+                // Perform analysis
+                var result = await _analysisEngine.AnalyzeFileAsync(analysisRequest);
+
+                // Clean up uploaded file
+                try
+                {
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Failed to delete temporary file: {Error}", ex.Message);
+                }
+
+                return Ok(result);
+            }
+            catch (UnsupportedFileTypeException ex)
+            {
+                return BadRequest(new ErrorResponse($"Unsupported file type: {ex.FileType}"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error analyzing file: {FileName}", file?.FileName);
+                return StatusCode(500, new ErrorResponse($"An error occurred during analysis: {ex.Message}"));
             }
         }
 
         /// <summary>
-        /// Analyze a file by local path (for development/testing)
+        /// Analyze file from path (for testing/admin use)
         /// </summary>
         [HttpPost("analyze-path")]
         [ProducesResponseType(typeof(AnalysisResult), 200)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
-        [ProducesResponseType(typeof(ErrorResponse), 404)]
-        public async Task<ActionResult<AnalysisResult>> AnalyzeFilePath([FromBody] AnalyzePathRequest request)
+        [ProducesResponseType(typeof(ErrorResponse), 500)]
+        public async Task<ActionResult<AnalysisResult>> AnalyzePath([FromBody] AnalyzePathRequest request)
         {
-            if (string.IsNullOrEmpty(request.FilePath))
-            {
-                return BadRequest(new ErrorResponse("File path is required"));
-            }
-
-            if (!System.IO.File.Exists(request.FilePath))
-            {
-                return NotFound(new ErrorResponse("File not found"));
-            }
-
             try
             {
+                if (string.IsNullOrEmpty(request.FilePath))
+                {
+                    return BadRequest(new ErrorResponse("File path is required"));
+                }
+
+                if (!System.IO.File.Exists(request.FilePath))
+                {
+                    return BadRequest(new ErrorResponse("File not found"));
+                }
+
                 var analysisRequest = new AnalysisRequest
                 {
                     FilePath = request.FilePath,
@@ -197,8 +170,8 @@ namespace SecuNik.API.Controllers
         /// Get supported file types
         /// </summary>
         [HttpGet("supported-types")]
-        [ProducesResponseType(typeof(List<string>), 200)]
-        public async Task<ActionResult<List<string>>> GetSupportedFileTypes()
+        [ProducesResponseType(typeof(object), 200)]
+        public async Task<ActionResult> GetSupportedFileTypes()
         {
             try
             {
@@ -207,7 +180,20 @@ namespace SecuNik.API.Controllers
                 {
                     supportedTypes = supportedTypes,
                     description = "File extensions supported by SecuNik analysis engine",
-                    maxFileSize = "50MB"
+                    maxFileSize = "50MB",
+                    supportedFormats = new[]
+                    {
+                        "Windows Event Logs (.evtx)",
+                        "CSV Log Files (.csv)",
+                        "Plain Text Logs (.log, .txt)",
+                        "Network Captures (.pcap)",
+                        "Firewall Logs",
+                        "Database Logs",
+                        "Web Server Logs",
+                        "DNS Logs",
+                        "Mail Server Logs",
+                        "Syslog Files"
+                    }
                 });
             }
             catch (Exception ex)
@@ -232,6 +218,35 @@ namespace SecuNik.API.Controllers
                 ServiceName = "SecuNik Analysis API"
             });
         }
+
+        /// <summary>
+        /// Check if a specific file can be processed
+        /// </summary>
+        [HttpPost("can-process")]
+        [ProducesResponseType(typeof(object), 200)]
+        public async Task<ActionResult> CanProcessFile([FromBody] CanProcessRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.FilePath))
+                {
+                    return BadRequest(new ErrorResponse("File path is required"));
+                }
+
+                var canProcess = await _analysisEngine.CanProcessFileAsync(request.FilePath);
+                return Ok(new
+                {
+                    canProcess = canProcess,
+                    filePath = request.FilePath,
+                    message = canProcess ? "File can be processed" : "File type not supported"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking file compatibility: {FilePath}", request.FilePath);
+                return StatusCode(500, new ErrorResponse("Failed to check file compatibility"));
+            }
+        }
     }
 
     // DTOs for API requests/responses
@@ -248,6 +263,11 @@ namespace SecuNik.API.Controllers
     {
         public string FilePath { get; set; } = string.Empty;
         public AnalysisOptions? Options { get; set; }
+    }
+
+    public class CanProcessRequest
+    {
+        public string FilePath { get; set; } = string.Empty;
     }
 
     public class ErrorResponse
