@@ -26,7 +26,16 @@ By default the API listens on <http://localhost:5043>. Swagger UI is available a
 
 OpenAI integration is configured via `appsettings.json` or environment variables. Set your OpenAI API key using one of the following approaches:
 
-1. Edit `src/SecuNik.API/appsettings.json` and set `OpenAI:ApiKey` to your key.
+1. Edit `src/SecuNik.API/appsettings.json` and add your key:
+
+```json
+{
+  "OpenAI": {
+    "ApiKey": "sk-..."
+  }
+}
+```
+
 2. Or set an environment variable before running:
 
 ```bash
