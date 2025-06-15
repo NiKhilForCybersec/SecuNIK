@@ -243,7 +243,11 @@ namespace SecuNik.AI.Services
             var criticalEvents = findings.SecurityEvents.Count(e => e.Priority == SecurityEventPriority.Critical);
             var iocCount = findings.DetectedIOCs.Count;
 
-            return $"Security analysis of {findings.Metadata.FileName} identified {totalEvents} security events, " +
+            // Use an existing property, e.g., 'Name', or fallback to "the provided file" if not available
+            var fileName = findings.Metadata.GetType().GetProperty("Name") != null
+                ? findings.Metadata.GetType().GetProperty("Name").GetValue(findings.Metadata)?.ToString()
+                : "the provided file";
+            return $"Security analysis of {fileName} identified {totalEvents} security events, " +
                    $"including {criticalEvents} critical incidents. {iocCount} indicators of compromise were detected. " +
                    $"Primary attack vector appears to be {insights.AttackVector}. " +
                    $"Overall risk assessment: {insights.ThreatAssessment.Split(':')[0]}";
