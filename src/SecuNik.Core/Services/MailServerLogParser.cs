@@ -46,12 +46,14 @@ namespace SecuNik.Core.Services
                 foreach (var line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
+                    var severity = line.Contains("error", StringComparison.OrdinalIgnoreCase) ? "Medium" : "Low";
                     findings.SecurityEvents.Add(new SecurityEvent
                     {
                         Timestamp = DateTime.Now,
                         EventType = "mail",
                         Description = line.Trim(),
-                        Severity = line.Contains("error", StringComparison.OrdinalIgnoreCase) ? "Medium" : "Low"
+                        Severity = severity,
+                        Priority = SecurityEvent.GetPriorityFromSeverity(severity)
                     });
                 }
             }

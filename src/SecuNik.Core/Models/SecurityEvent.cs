@@ -49,6 +49,21 @@ public class SecurityEvent
 
     /// <summary>Confidence score assigned by analysis engines.</summary>
     public double ConfidenceScore { get; set; }
+
+    /// <summary>
+    /// Helper to map textual severity values to a priority level.
+    /// </summary>
+    public static SecurityEventPriority GetPriorityFromSeverity(string? severity)
+    {
+        return severity?.Trim().ToLower() switch
+        {
+            "critical" or "4" => SecurityEventPriority.Critical,
+            "high" or "3" => SecurityEventPriority.High,
+            "medium" or "2" => SecurityEventPriority.Medium,
+            "low" or "info" or "informational" or "1" or "0" => SecurityEventPriority.Low,
+            _ => SecurityEventPriority.Medium
+        };
+    }
 }
 
 /// <summary>

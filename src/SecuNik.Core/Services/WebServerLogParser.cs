@@ -52,12 +52,14 @@ namespace SecuNik.Core.Services
                     if (!match.Success) continue;
                     DateTime.TryParse(match.Groups["time"].Value.Split(' ')[0], out var ts);
                     var ip = match.Groups["ip"].Value;
+                    const string severity = "Low";
                     findings.SecurityEvents.Add(new SecurityEvent
                     {
                         Timestamp = ts,
                         EventType = "http",
                         Description = line.Trim(),
-                        Severity = "Low",
+                        Severity = severity,
+                        Priority = SecurityEvent.GetPriorityFromSeverity(severity),
                         Attributes = new Dictionary<string, string>
                         {
                             ["ip"] = ip,

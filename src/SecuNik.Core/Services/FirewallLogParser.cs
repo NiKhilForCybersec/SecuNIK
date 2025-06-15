@@ -46,12 +46,14 @@ namespace SecuNik.Core.Services
                 foreach (var line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
+                    var severity = line.Contains("DROP", StringComparison.OrdinalIgnoreCase) || line.Contains("DENIED", StringComparison.OrdinalIgnoreCase) ? "Medium" : "Low";
                     findings.SecurityEvents.Add(new SecurityEvent
                     {
                         Timestamp = DateTime.Now,
                         EventType = "firewall",
                         Description = line.Trim(),
-                        Severity = line.Contains("DROP", StringComparison.OrdinalIgnoreCase) || line.Contains("DENIED", StringComparison.OrdinalIgnoreCase) ? "Medium" : "Low"
+                        Severity = severity,
+                        Priority = SecurityEvent.GetPriorityFromSeverity(severity)
                     });
                 }
             }

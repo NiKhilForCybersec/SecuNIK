@@ -1,8 +1,10 @@
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using SecuNik.Core.Services;
+using SecuNik.Core.Models;
 using Xunit;
 
 namespace SecuNik.Core.Tests;
@@ -19,6 +21,28 @@ public class ParserTests
         (await parser.CanParseAsync(path)).Should().BeTrue();
         var findings = await parser.ParseAsync(path);
         findings.SecurityEvents.Should().NotBeEmpty();
+        File.Delete(path);
+    }
+
+    [Fact]
+    public async Task WindowsEventLogParser_AssignsPriorityFromSeverity()
+    {
+        var path = Path.GetTempFileName() + ".evtx";
+        await File.WriteAllTextAsync(path,
+            "<Events>" +
+            "<Event><System><EventID>1</EventID><Level>1</Level><TimeCreated SystemTime=\"2024-01-01T00:00:00Z\"/></System><EventData><Data>Crit</Data></EventData></Event>" +
+            "<Event><System><EventID>2</EventID><Level>2</Level><TimeCreated SystemTime=\"2024-01-01T01:00:00Z\"/></System><EventData><Data>High</Data></EventData></Event>" +
+            "</Events>");
+
+        var parser = new WindowsEventLogParser(new NullLogger<WindowsEventLogParser>());
+        var findings = await parser.ParseAsync(path);
+
+        var crit = findings.SecurityEvents.First(e => e.EventType.Contains("1"));
+        crit.Priority.Should().Be(SecurityEventPriority.Critical);
+
+        var high = findings.SecurityEvents.First(e => e.EventType.Contains("2"));
+        high.Priority.Should().Be(SecurityEventPriority.High);
+
         File.Delete(path);
     }
 
