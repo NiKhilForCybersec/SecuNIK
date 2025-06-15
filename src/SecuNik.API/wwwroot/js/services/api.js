@@ -5,7 +5,15 @@
 
 class SecuNikAPI {
     constructor() {
-        this.baseURL = window.location.origin;
+        // Determine API base URL. If the dashboard is opened directly from the
+        // filesystem, window.location.origin will be "null" and API calls will
+        // fail. Default to the local development server in that case.
+        const origin = window.location.origin;
+        if (!origin || origin === 'null' || origin.startsWith('file://')) {
+            this.baseURL = 'http://localhost:5043';
+        } else {
+            this.baseURL = origin;
+        }
         this.endpoints = {
             upload: '/api/analysis/upload',
             analyzePath: '/api/analysis/analyze-path',
