@@ -812,6 +812,22 @@ class SecuNikDashboard {
     }
 
     /**
+     * Refresh dashboard content
+     */
+    async refreshDashboard() {
+        if (!this.state.currentAnalysis) return;
+
+        try {
+            const dashboardModule = await import('./tabs/dashboard.js');
+            if (dashboardModule.initTab) {
+                dashboardModule.initTab(this.state.currentAnalysis);
+            }
+        } catch (error) {
+            console.error('Failed to refresh dashboard:', error);
+        }
+    }
+
+    /**
      * Initialize animations
      */
     initializeAnimations() {
