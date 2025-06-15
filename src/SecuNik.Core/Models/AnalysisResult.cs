@@ -14,6 +14,7 @@ namespace SecuNik.Core.Models
         public AIInsights AI { get; set; } = new();
         public ExecutiveReport Executive { get; set; } = new();
         public Timeline Timeline { get; set; } = new();
+        public ForensicAnalysis? Forensics { get; set; }
     }
 
     /// <summary>

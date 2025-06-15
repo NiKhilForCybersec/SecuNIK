@@ -16,16 +16,19 @@ namespace SecuNik.Core.Services
     {
         private readonly UniversalParserService _parserService;
         private readonly IAIAnalysisService _aiService;
+        private readonly IForensicService _forensicService;
         private readonly ILogger<AnalysisEngine> _logger;
 
         // Now properly inject the AI service
         public AnalysisEngine(
             UniversalParserService parserService,
             IAIAnalysisService aiService,
+            IForensicService forensicService,
             ILogger<AnalysisEngine> logger)
         {
             _parserService = parserService;
             _aiService = aiService;
+            _forensicService = forensicService;
             _logger = logger;
         }
 
@@ -77,6 +80,13 @@ namespace SecuNik.Core.Services
                 {
                     _logger.LogInformation("Step 4: Building event timeline");
                     result.Timeline = BuildTimeline(result.Technical);
+                }
+
+                // Step 5: Perform forensic analysis
+                if (request.Options.PerformForensicAnalysis)
+                {
+                    _logger.LogInformation("Step 5: Performing forensic analysis");
+                    result.Forensics = await _forensicService.PerformForensicAnalysisAsync(result.Technical);
                 }
 
                 _logger.LogInformation("Analysis completed successfully for: {FilePath}", request.FilePath);
