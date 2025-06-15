@@ -9,18 +9,9 @@
 import Router from "./router.js";
 import * as api from "./services/api.js";
 import * as storage from "./services/storage.js";
-import { init as initCaseManagementTab, render as renderCaseManagementTab } from "./tabs/caseManagement.js";
-import { initTab as initDashboardTab } from "./tabs/dashboard.js";
-import { init as initEventsTab, render as renderEventsTab } from "./tabs/events.js";
-import { init as initExecutiveTab, render as renderExecutiveTab } from "./tabs/executive.js";
-import { initTab as initFileDetailsTab } from "./tabs/fileDetails.js";
-import { initTab as initForensicsTab } from "./tabs/forensics.js";
-import { initTab as initHelpTab } from "./tabs/help.js";
-import { exportIOCs, init as initIocsTab, render as renderIocsTab } from "./tabs/iocs.js";
-import { initTab as initRecommendationsTab } from "./tabs/recommendations.js";
-import { initTab as initSettingsTab } from "./tabs/settings.js";
-import { initTab as initThreatIntelTab, render as renderThreatIntelTab, fetchThreatIntel } from "./tabs/threatIntel.js";
-import { init as initTimelineTab, render as renderTimelineTab } from "./tabs/timeline.js";
+import { init as initCaseManagementTab } from "./tabs/caseManagement.js";
+import { exportIOCs, init as initIocsTab } from "./tabs/iocs.js";
+import { init as initTimelineTab } from "./tabs/timeline.js";
 
 class SecuNikDashboard {
     constructor() {
@@ -89,19 +80,32 @@ class SecuNikDashboard {
         console.log('🚀 Initializing SecuNik Professional Dashboard v2.1...');
 
         try {
+            // Initialize core components first
             this.initializeElements();
-            this.setupEventListeners();
+
+            // Load settings and data
             this.loadSettings();
             this.loadAnalysisHistory();
             this.loadCases();
+
+            // Setup event listeners
+            this.setupEventListeners();
+
+            // Check system health
             await this.checkSystemHealth();
+
+            // Initialize UI components
+            this.setupTabNavigation();
             this.initializeAnimations();
             this.setupResponsiveHandlers();
-            this.setupTabNavigation();
             this.setupPerformanceMonitoring();
+
+            // Show welcome state initially
+            this.showWelcomeState();
 
             console.log('✅ SecuNik Dashboard initialized successfully');
             this.showNotification('SecuNik Dashboard ready for analysis', 'success');
+
         } catch (error) {
             console.error('❌ Failed to initialize dashboard:', error);
             this.showNotification('Failed to initialize dashboard', 'error');
@@ -268,10 +272,178 @@ class SecuNikDashboard {
         });
     }
 
+    /**
+     * Enhanced tab switching with proper content rendering
+     */
     switchToTab(tabName) {
+        console.log(`🔄 Switching to tab: ${tabName}`);
+
         this.state.activeTab = tabName;
+
+        // Update navigation using router
         if (this.router) {
             this.router.switchTo(tabName);
+        } else {
+            // Fallback manual tab switching
+            this.manualTabSwitch(tabName);
+        }
+
+        // Render tab content if analysis is available
+        if (this.state.currentAnalysis) {
+            this.renderTabContent(tabName);
+        } else if (['settings', 'help'].includes(tabName)) {
+            // These tabs work without analysis data
+            this.renderTabContent(tabName);
+        }
+
+        // Update URL hash
+        if (history.replaceState) {
+            history.replaceState(null, '', `#${tabName}`);
+        }
+
+        // Track tab usage
+        this.trackTabUsage(tabName);
+    }
+
+    /**
+     * Manual tab switching fallback
+     */
+    manualTabSwitch(tabName) {
+        // Update navigation tabs
+        const navTabs = document.querySelectorAll('.nav-tab');
+        navTabs.forEach(tab => {
+            const isActive = tab.getAttribute('data-tab') === tabName;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', isActive);
+        });
+
+        // Update tab sections
+        const tabSections = document.querySelectorAll('.tab-section');
+        tabSections.forEach(section => {
+            const isActive = section.id === `${tabName}Tab`;
+            section.classList.toggle('active', isActive);
+        });
+    }
+
+    /**
+     * Render specific tab content
+     */
+    async renderTabContent(tabName) {
+        try {
+            const analysis = this.state.currentAnalysis;
+
+            console.log(`📄 Rendering content for ${tabName} tab`);
+
+            switch (tabName) {
+                case 'dashboard':
+                    const dashboardModule = await import('./tabs/dashboard.js');
+                    if (dashboardModule.initTab && analysis) {
+                        dashboardModule.initTab(analysis);
+                    }
+                    break;
+
+                case 'events':
+                    const eventsModule = await import('./tabs/events.js');
+                    if (eventsModule.render && analysis) {
+                        eventsModule.render(analysis);
+                    } else if (eventsModule.init) {
+                        eventsModule.init(this);
+                    }
+                    break;
+
+                case 'iocs':
+                    const iocsModule = await import('./tabs/iocs.js');
+                    if (iocsModule.render && analysis) {
+                        iocsModule.render(analysis);
+                    } else if (iocsModule.init) {
+                        iocsModule.init(this);
+                    }
+                    break;
+
+                case 'timeline':
+                    const timelineModule = await import('./tabs/timeline.js');
+                    if (timelineModule.render && analysis) {
+                        timelineModule.render(analysis);
+                    } else if (timelineModule.init) {
+                        timelineModule.init(this);
+                    }
+                    break;
+
+                case 'executive':
+                    const executiveModule = await import('./tabs/executive.js');
+                    if (executiveModule.render && analysis) {
+                        executiveModule.render(analysis);
+                    } else if (executiveModule.init) {
+                        executiveModule.init(this);
+                    }
+                    break;
+
+                case 'threatIntel':
+                    const threatIntelModule = await import('./tabs/threatIntel.js');
+                    if (threatIntelModule.render && analysis) {
+                        threatIntelModule.render(analysis);
+                    } else if (threatIntelModule.initTab) {
+                        threatIntelModule.initTab(analysis);
+                    }
+                    break;
+
+                case 'forensics':
+                    const forensicsModule = await import('./tabs/forensics.js');
+                    if (forensicsModule.initTab && analysis) {
+                        forensicsModule.initTab(analysis);
+                    }
+                    break;
+
+                case 'fileDetails':
+                    const fileDetailsModule = await import('./tabs/fileDetails.js');
+                    if (fileDetailsModule.initTab && analysis) {
+                        fileDetailsModule.initTab(analysis);
+                    }
+                    break;
+
+                case 'recommendations':
+                    const recommendationsModule = await import('./tabs/recommendations.js');
+                    if (recommendationsModule.initTab && analysis) {
+                        recommendationsModule.initTab(analysis);
+                    }
+                    break;
+
+                case 'case':
+                    const caseModule = await import('./tabs/caseManagement.js');
+                    if (caseModule.render) {
+                        caseModule.render();
+                    } else if (caseModule.init) {
+                        caseModule.init(this);
+                    }
+                    break;
+
+                case 'settings':
+                    const settingsModule = await import('./tabs/settings.js');
+                    if (settingsModule.render) {
+                        settingsModule.render();
+                    } else if (settingsModule.initTab) {
+                        settingsModule.initTab();
+                    }
+                    break;
+
+                case 'help':
+                    const helpModule = await import('./tabs/help.js');
+                    if (helpModule.render) {
+                        helpModule.render();
+                    } else if (helpModule.initTab) {
+                        helpModule.initTab();
+                    }
+                    break;
+
+                default:
+                    console.warn(`Unknown tab: ${tabName}`);
+            }
+
+            console.log(`✅ Content rendered for ${tabName} tab`);
+
+        } catch (error) {
+            console.error(`❌ Error rendering tab ${tabName}:`, error);
+            this.showNotification(`Failed to load ${tabName} tab`, 'error');
         }
     }
 
@@ -365,8 +537,7 @@ class SecuNikDashboard {
             await this.analyzeFile(file);
         } catch (error) {
             console.error('❌ File processing failed:', error);
-            this.showNotification('File analysis failed: ' + error.message, 'error');
-            this.showWelcomeState();
+            this.handleAnalysisError(error, file);
         } finally {
             this.state.isAnalyzing = false;
         }
@@ -399,189 +570,396 @@ class SecuNikDashboard {
     }
 
     /**
-     * Analyze file using API
+     * Enhanced file analysis method
      */
     async analyzeFile(file) {
-        console.log('🔍 Starting analysis for:', file.name);
-
-        this.showLoadingState();
-        this.showAnalysisProgress();
-
         try {
-            // Start progress simulation
-            this.simulateProgress();
+            console.log('🔍 Starting file analysis...');
 
-            // Create form data
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('options', JSON.stringify({
-                aiMode: this.settings.aiMode,
-                analysisDepth: this.settings.analysisDepth,
-                includeTimeline: this.settings.includeTimeline,
-                confidenceThreshold: this.settings.confidenceThreshold
-            }));
+            // Show loading state
+            this.showLoadingState(`Analyzing ${file.name}...`);
 
-            // Make API call
-            const result = await api.uploadFile(file, {
-                aiMode: this.settings.aiMode,
-                analysisDepth: this.settings.analysisDepth,
-                includeTimeline: this.settings.includeTimeline,
-                confidenceThreshold: this.settings.confidenceThreshold
-            }, this.config.apiEndpoints);
+            // Create analysis options based on settings
+            const options = {
+                enableAI: this.settings.aiMode !== 'disabled',
+                analysisDepth: this.settings.analysisDepth || 'standard',
+                includeTimeline: this.settings.includeTimeline !== false,
+                generateExecutiveReport: this.settings.executiveSummary !== false,
+                confidenceThreshold: this.settings.confidenceThreshold || 0.8,
+                enableForensics: this.settings.enableForensics !== false,
+                timeoutMinutes: this.settings.analysisTimeout || 15
+            };
 
-            const processingTime = Date.now() - this.metrics.startTime;
+            console.log('📋 Analysis options:', options);
 
-            // Clear progress interval
-            if (this.progressInterval) {
-                clearInterval(this.progressInterval);
-            }
+            // Upload and analyze file using API
+            const result = await api.uploadFile(file, options);
 
+            // Add processing metadata
+            result.processingTime = Date.now() - this.metrics.startTime;
+            result.fileSize = file.size;
+            result.analysisId = result.analysisId || `analysis_${Date.now()}`;
+
+            // Handle successful analysis
+            this.handleAnalysisComplete(result, file);
+
+            // Hide loading state
             this.hideLoadingState();
-            this.hideAnalysisProgress();
 
-            await this.processAnalysisResults(result, processingTime);
-
-            this.showNotification(`Analysis completed for ${file.name}`, 'success');
+            console.log('✅ File analysis completed successfully');
 
         } catch (error) {
-            console.error('❌ Analysis failed:', error);
-
-            // Clear progress interval
-            if (this.progressInterval) {
-                clearInterval(this.progressInterval);
-            }
-
+            console.error('❌ File analysis failed:', error);
+            this.handleAnalysisError(error, file);
             this.hideLoadingState();
-            this.hideAnalysisProgress();
-            this.showNotification('Analysis failed: ' + error.message, 'error');
             throw error;
         }
     }
 
     /**
-     * Simulate progress during analysis
+     * Enhanced analysis completion handler
      */
-    simulateProgress() {
-        let progress = 0;
-        const stages = [
-            'Initializing AI analysis engine...',
-            'Reading file structure...',
-            'Parsing data content...',
+    handleAnalysisComplete(result, file) {
+        console.log('📊 Analysis completed successfully');
+
+        // Update application state
+        this.state.currentAnalysis = result;
+        this.state.currentFile = {
+            name: file.name,
+            size: file.size,
+            type: file.type || this.detectFileType(file.name),
+            lastModified: file.lastModified
+        };
+        this.state.analysisCount++;
+        this.state.isAnalyzing = false;
+
+        // Add to analysis history
+        this.state.analysisHistory.unshift({
+            id: result.analysisId || Date.now(),
+            filename: file.name,
+            timestamp: new Date(),
+            result: result,
+            fileSize: file.size
+        });
+
+        // Limit history to 10 items
+        if (this.state.analysisHistory.length > 10) {
+            this.state.analysisHistory = this.state.analysisHistory.slice(0, 10);
+        }
+
+        // Hide welcome screen and show main interface
+        this.showMainInterface();
+
+        // Initialize all tabs with the analysis data
+        this.initializeAllTabs(result);
+
+        // Switch to dashboard tab by default
+        this.switchToTab('dashboard');
+
+        // Update performance metrics
+        this.updatePerformanceMetrics(result);
+
+        // Save analysis to localStorage
+        this.saveAnalysisHistory();
+
+        // Show success notification
+        this.showNotification(
+            `Analysis completed successfully for ${file.name}`,
+            'success'
+        );
+
+        console.log('✅ Analysis integration completed');
+    }
+
+    /**
+     * Initialize all tabs with analysis data
+     */
+    async initializeAllTabs(analysis) {
+        try {
+            console.log('🔄 Initializing all tabs with analysis data...');
+
+            // Dashboard tab
+            try {
+                const dashboardModule = await import('./tabs/dashboard.js');
+                if (dashboardModule.initTab) {
+                    dashboardModule.initTab(analysis);
+                    console.log('✅ Dashboard tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize dashboard tab:', error);
+            }
+
+            // Events tab
+            try {
+                const eventsModule = await import('./tabs/events.js');
+                if (eventsModule.init) {
+                    eventsModule.init(this);
+                    console.log('✅ Events tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize events tab:', error);
+            }
+
+            // IOCs tab
+            try {
+                const iocsModule = await import('./tabs/iocs.js');
+                if (iocsModule.init) {
+                    iocsModule.init(this);
+                    console.log('✅ IOCs tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize IOCs tab:', error);
+            }
+
+            // Timeline tab
+            try {
+                const timelineModule = await import('./tabs/timeline.js');
+                if (timelineModule.init) {
+                    timelineModule.init(this);
+                    console.log('✅ Timeline tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize timeline tab:', error);
+            }
+
+            // Forensics tab
+            try {
+                const forensicsModule = await import('./tabs/forensics.js');
+                if (forensicsModule.initTab) {
+                    forensicsModule.initTab(analysis);
+                    console.log('✅ Forensics tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize forensics tab:', error);
+            }
+
+            // Threat Intelligence tab
+            try {
+                const threatIntelModule = await import('./tabs/threatIntel.js');
+                if (threatIntelModule.initTab) {
+                    threatIntelModule.initTab(analysis);
+                    console.log('✅ Threat Intelligence tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize threat intel tab:', error);
+            }
+
+            // Executive tab
+            try {
+                const executiveModule = await import('./tabs/executive.js');
+                if (executiveModule.init) {
+                    executiveModule.init(this);
+                    console.log('✅ Executive tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize executive tab:', error);
+            }
+
+            // File Details tab
+            try {
+                const fileDetailsModule = await import('./tabs/fileDetails.js');
+                if (fileDetailsModule.initTab) {
+                    fileDetailsModule.initTab(analysis);
+                    console.log('✅ File Details tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize file details tab:', error);
+            }
+
+            // Recommendations tab
+            try {
+                const recommendationsModule = await import('./tabs/recommendations.js');
+                if (recommendationsModule.initTab) {
+                    recommendationsModule.initTab(analysis);
+                    console.log('✅ Recommendations tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize recommendations tab:', error);
+            }
+
+            // Case Management tab
+            try {
+                const caseModule = await import('./tabs/caseManagement.js');
+                if (caseModule.init) {
+                    caseModule.init(this);
+                    console.log('✅ Case Management tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize case management tab:', error);
+            }
+
+            // Settings tab (doesn't need analysis data)
+            try {
+                const settingsModule = await import('./tabs/settings.js');
+                if (settingsModule.initTab) {
+                    settingsModule.initTab();
+                    console.log('✅ Settings tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize settings tab:', error);
+            }
+
+            // Help tab (doesn't need analysis data)
+            try {
+                const helpModule = await import('./tabs/help.js');
+                if (helpModule.initTab) {
+                    helpModule.initTab();
+                    console.log('✅ Help tab initialized');
+                }
+            } catch (error) {
+                console.error('Failed to initialize help tab:', error);
+            }
+
+            console.log('✅ All tabs initialized successfully');
+
+        } catch (error) {
+            console.error('❌ Error initializing tabs:', error);
+            this.showNotification('Some tabs failed to initialize', 'warning');
+        }
+    }
+
+    /**
+     * Show main interface after analysis
+     */
+    showMainInterface() {
+        // Hide welcome screen
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        if (welcomeScreen) {
+            welcomeScreen.style.display = 'none';
+        }
+
+        // Show main navigation
+        const mainNav = document.getElementById('mainNavigation');
+        if (mainNav) {
+            mainNav.style.display = 'block';
+        }
+
+        // Show tab content
+        const tabContent = document.getElementById('tabContent');
+        if (tabContent) {
+            tabContent.style.display = 'block';
+        }
+
+        // Update analysis counter
+        const analysisCounter = document.getElementById('analysisCounter');
+        if (analysisCounter) {
+            analysisCounter.textContent = this.state.analysisCount;
+        }
+
+        // Update system status
+        const systemStatus = document.getElementById('systemStatus');
+        if (systemStatus) {
+            const span = systemStatus.querySelector('span');
+            if (span) {
+                span.textContent = 'Analysis Complete';
+            }
+            systemStatus.classList.add('analysis-complete');
+        }
+    }
+
+    /**
+     * Handle analysis errors properly
+     */
+    handleAnalysisError(error, file) {
+        console.error('❌ Analysis error:', error);
+
+        this.state.isAnalyzing = false;
+
+        // Show detailed error notification
+        const errorMessage = this.getErrorMessage(error);
+        this.showNotification(
+            `Analysis failed for ${file?.name || 'uploaded file'}: ${errorMessage}`,
+            'error'
+        );
+
+        // Keep welcome screen visible
+        this.showWelcomeState();
+    }
+
+    /**
+     * Get user-friendly error message
+     */
+    getErrorMessage(error) {
+        if (error.message) {
+            // Common error patterns
+            if (error.message.includes('File size')) {
+                return 'File too large (max 50MB)';
+            } else if (error.message.includes('format')) {
+                return 'Unsupported file format';
+            } else if (error.message.includes('network')) {
+                return 'Network connection error';
+            } else if (error.message.includes('timeout')) {
+                return 'Analysis timed out';
+            }
+            return error.message;
+        }
+        return 'Unknown error occurred';
+    }
+
+    /**
+     * Enhanced loading state methods
+     */
+    showLoadingState(message = 'Processing...') {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingStatus = document.getElementById('loadingStatus');
+
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.setAttribute('aria-hidden', 'false');
+        }
+
+        if (loadingStatus) {
+            loadingStatus.textContent = message;
+        }
+
+        // Start progress simulation
+        this.startLoadingProgress();
+    }
+
+    hideLoadingState() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+            loadingOverlay.setAttribute('aria-hidden', 'true');
+        }
+
+        // Stop progress simulation
+        this.stopLoadingProgress();
+    }
+
+    /**
+     * Loading progress simulation
+     */
+    startLoadingProgress() {
+        const loadingStatus = document.getElementById('loadingStatus');
+        if (!loadingStatus) return;
+
+        const steps = [
+            'Validating file format...',
+            'Parsing log data...',
             'Detecting security events...',
-            'Analyzing threat patterns...',
-            'Correlating indicators...',
-            'Generating risk assessment...',
-            'Creating executive summary...',
+            'Running AI analysis...',
+            'Identifying threats...',
+            'Generating report...',
             'Finalizing results...'
         ];
 
-        this.progressInterval = setInterval(() => {
-            if (progress < 95) {
-                progress += Math.random() * 10;
-                progress = Math.min(progress, 95);
-
-                const stageIndex = Math.floor((progress / 100) * stages.length);
-                const stage = stages[stageIndex] || stages[stages.length - 1];
-
-                this.updateProgress(progress, stage);
+        let currentStep = 0;
+        this.loadingInterval = setInterval(() => {
+            if (currentStep < steps.length) {
+                loadingStatus.textContent = steps[currentStep];
+                currentStep++;
+            } else {
+                loadingStatus.textContent = 'Almost complete...';
             }
-        }, 500);
+        }, 2000);
     }
 
-    /**
-     * Update progress bar
-     */
-    updateProgress(percentage, status) {
-        if (this.elements.progressFill) {
-            this.elements.progressFill.style.width = `${percentage}%`;
-        }
-
-        if (this.elements.progressPercentage) {
-            this.elements.progressPercentage.textContent = `${Math.round(percentage)}%`;
-        }
-
-        if (this.elements.progressText) {
-            this.elements.progressText.textContent = status;
-        }
-
-        if (this.elements.analysisProgress) {
-            this.elements.analysisProgress.setAttribute('aria-valuenow', Math.round(percentage));
-        }
-    }
-
-    /**
-     * Process analysis results and update dashboard
-     */
-    async processAnalysisResults(result, processingTime) {
-        console.log('📊 Processing analysis results...');
-
-        // Store analysis data
-        this.state.currentAnalysis = {
-            result: result.result || result,
-            fileInfo: this.state.currentFile,
-            processingTime: processingTime,
-            analysisId: this.generateAnalysisId(),
-            timestamp: new Date().toISOString()
-        };
-
-        // Update analysis counter
-        this.state.analysisCount++;
-        this.updateAnalysisCounter();
-
-        // Show analysis dashboard
-        this.showAnalysisState();
-
-        // Switch to dashboard tab first
-        this.switchToTab('dashboard');
-
-        // Update all dashboard components
-        await this.updateAllTabs(this.state.currentAnalysis);
-
-        // Store in history
-        this.state.analysisHistory.push({
-            id: this.state.currentAnalysis.analysisId,
-            timestamp: this.state.currentAnalysis.timestamp,
-            fileName: this.state.currentFile.name,
-            riskScore: this.calculateRiskScore(this.state.currentAnalysis.result)
-        });
-
-        // Save history to localStorage
-        this.saveAnalysisHistory();
-
-        // Show export button
-        if (this.elements.exportBtn) {
-            this.elements.exportBtn.style.display = 'flex';
-        }
-    }
-
-    /**
-     * Update all tabs with analysis data
-     */
-    async updateAllTabs(analysis) {
-        try {
-            initDashboardTab(analysis);
-            initFileDetailsTab(analysis);
-            initExecutiveTab(analysis);
-            initEventsTab(analysis);
-            initIocsTab(this);
-            initTimelineTab(this);
-            initForensicsTab(analysis);
-            initRecommendationsTab(analysis);
-            initThreatIntelTab(analysis);
-            initCaseManagementTab(this);
-            initSettingsTab(analysis);
-            initHelpTab(analysis);
-
-            renderExecutiveTab(analysis);
-            renderEventsTab(analysis);
-            renderIocsTab(analysis);
-            renderTimelineTab(analysis);
-            renderCaseManagementTab();
-
-            const threatData = await fetchThreatIntel();
-            renderThreatIntelTab(threatData);
-        } catch (error) {
-            console.error('Error updating tabs:', error);
+    stopLoadingProgress() {
+        if (this.loadingInterval) {
+            clearInterval(this.loadingInterval);
+            this.loadingInterval = null;
         }
     }
 
@@ -661,28 +1039,28 @@ class SecuNikDashboard {
         }
     }
 
+    /**
+     * Start new analysis (reset state)
+     */
     startNewAnalysis() {
         if (this.state.isAnalyzing) {
             this.showNotification('Please wait for current analysis to complete', 'warning');
             return;
         }
 
-        // Clear current analysis
+        // Reset current analysis state
         this.state.currentAnalysis = null;
         this.state.currentFile = null;
+        this.state.isAnalyzing = false;
 
-        // Hide export button
-        if (this.elements.exportBtn) {
-            this.elements.exportBtn.style.display = 'none';
-        }
-
-        // Show welcome state
+        // Show welcome screen
         this.showWelcomeState();
 
-        // Switch to dashboard tab
-        this.switchToTab('dashboard');
+        // Clear any cached data
+        this.clearTemporaryData();
 
         this.showNotification('Ready for new analysis', 'info');
+        console.log('🆕 Ready for new analysis');
     }
 
     async exportAnalysis() {
@@ -738,14 +1116,23 @@ class SecuNikDashboard {
         }, 5000);
     }
 
-    updatePerformanceMetrics() {
-        // Simulate realistic metrics
-        this.metrics.cpu = Math.max(0, this.metrics.cpu + (Math.random() - 0.5) * 10);
-        this.metrics.memory = Math.max(0, this.metrics.memory + (Math.random() - 0.5) * 5);
+    updatePerformanceMetrics(result) {
+        if (result && result.processingTime) {
+            this.metrics.analysisSpeed = result.processingTime;
+        }
 
-        this.metrics.cpu = Math.min(100, this.metrics.cpu);
-        this.metrics.memory = Math.min(100, this.metrics.memory);
+        // Update CPU and memory if available
+        if (performance.memory) {
+            this.metrics.memory = (performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100;
+        }
 
+        // Estimate CPU usage based on processing intensity
+        if (result && result.processingTime && result.fileSize) {
+            const intensity = Math.min(100, (result.processingTime / 1000) * 5);
+            this.metrics.cpu = Math.max(10, Math.min(90, intensity));
+        }
+
+        // Update UI elements
         if (this.elements.cpuFill) {
             this.elements.cpuFill.style.width = `${this.metrics.cpu}%`;
         }
@@ -894,19 +1281,40 @@ class SecuNikDashboard {
         }
     }
 
+    /**
+     * Load analysis history from localStorage
+     */
     loadAnalysisHistory() {
         try {
-            this.state.analysisHistory = storage.loadHistory();
+            const saved = localStorage.getItem('secuNikAnalysisHistory');
+            if (saved) {
+                this.state.analysisHistory = JSON.parse(saved);
+                console.log(`📚 Loaded ${this.state.analysisHistory.length} analysis records from history`);
+            }
         } catch (error) {
-            console.warn('Failed to load analysis history:', error);
+            console.error('Failed to load analysis history:', error);
+            this.state.analysisHistory = [];
         }
     }
 
+    /**
+     * Save analysis history to localStorage
+     */
     saveAnalysisHistory() {
         try {
-            storage.saveHistory(this.state.analysisHistory);
+            const historyToSave = this.state.analysisHistory.map(item => ({
+                id: item.id,
+                filename: item.filename,
+                timestamp: item.timestamp,
+                fileSize: item.fileSize,
+                // Don't save full result data to avoid localStorage size issues
+                hasData: !!item.result
+            }));
+
+            localStorage.setItem('secuNikAnalysisHistory', JSON.stringify(historyToSave));
+            console.log('✅ Analysis history saved');
         } catch (error) {
-            console.warn('Failed to save analysis history:', error);
+            console.error('Failed to save analysis history:', error);
         }
     }
 
@@ -944,20 +1352,6 @@ class SecuNikDashboard {
         }
         if (this.elements.analysisDashboard) {
             this.elements.analysisDashboard.style.display = 'block';
-        }
-    }
-
-    showLoadingState() {
-        if (this.elements.loadingOverlay) {
-            this.elements.loadingOverlay.style.display = 'flex';
-            this.elements.loadingOverlay.setAttribute('aria-hidden', 'false');
-        }
-    }
-
-    hideLoadingState() {
-        if (this.elements.loadingOverlay) {
-            this.elements.loadingOverlay.style.display = 'none';
-            this.elements.loadingOverlay.setAttribute('aria-hidden', 'true');
         }
     }
 
@@ -1000,9 +1394,72 @@ class SecuNikDashboard {
         return Math.min(Math.round(score), 100);
     }
 
+    /**
+     * Calculate analysis score (referenced in dashboard.js)
+     */
     calculateAnalysisScore(data) {
-        const riskScore = this.calculateRiskScore(data);
-        return Math.max(0, 100 - riskScore);
+        try {
+            let score = 50; // Base score
+
+            const events = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
+            const iocs = data.technical?.detectedIOCs || data.Technical?.DetectedIOCs || [];
+
+            // Adjust score based on critical events
+            const criticalEvents = events.filter(e =>
+                (e.severity || e.Severity || '').toLowerCase() === 'critical'
+            ).length;
+
+            const highEvents = events.filter(e =>
+                (e.severity || e.Severity || '').toLowerCase() === 'high'
+            ).length;
+
+            // Score increases with threat severity
+            score += criticalEvents * 20;
+            score += highEvents * 10;
+
+            // Adjust score based on IOCs
+            score += iocs.length * 5;
+
+            // Adjust based on AI confidence if available
+            const aiAnalysis = data.aiAnalysis || data.AIAnalysis || {};
+            const confidence = aiAnalysis.confidence || aiAnalysis.Confidence || 0.5;
+
+            // Higher confidence in threats increases score
+            score = score * (0.5 + confidence);
+
+            // Factor in event density (events per hour)
+            if (events.length > 0) {
+                const timeSpan = this.calculateTimeSpan(events);
+                const eventsPerHour = events.length / Math.max(1, timeSpan);
+                if (eventsPerHour > 10) {
+                    score += 15; // High activity bonus
+                }
+            }
+
+            return Math.min(100, Math.max(0, Math.round(score)));
+        } catch (error) {
+            console.error('Error calculating analysis score:', error);
+            return 50; // Default score
+        }
+    }
+
+    /**
+     * Calculate time span of events
+     */
+    calculateTimeSpan(events) {
+        try {
+            const timestamps = events
+                .map(e => new Date(e.timestamp || e.Timestamp))
+                .filter(date => !isNaN(date))
+                .sort((a, b) => a - b);
+
+            if (timestamps.length < 2) return 1;
+
+            const spanMs = timestamps[timestamps.length - 1] - timestamps[0];
+            return Math.max(1, spanMs / (1000 * 60 * 60)); // Convert to hours
+        } catch (error) {
+            return 1;
+        }
     }
 
     getRiskLevel(score) {
@@ -1078,6 +1535,42 @@ class SecuNikDashboard {
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    }
+
+    /**
+     * Track tab usage for analytics
+     */
+    trackTabUsage(tabName) {
+        try {
+            // Store tab usage statistics
+            const tabStats = JSON.parse(localStorage.getItem('secuNikTabStats') || '{}');
+            tabStats[tabName] = (tabStats[tabName] || 0) + 1;
+            localStorage.setItem('secuNikTabStats', JSON.stringify(tabStats));
+        } catch (error) {
+            // Ignore storage errors
+        }
+    }
+
+    /**
+     * Refresh dashboard data
+     */
+    refreshDashboard() {
+        if (this.state.currentAnalysis && this.state.activeTab === 'dashboard') {
+            console.log('🔄 Refreshing dashboard data...');
+            this.renderTabContent('dashboard');
+        }
+    }
+
+    /**
+     * Clear temporary data
+     */
+    clearTemporaryData() {
+        // Clear any temporary analysis data
+        try {
+            localStorage.removeItem('tempAnalysisData');
+        } catch (error) {
+            // Ignore storage errors
+        }
     }
 
     /**
