@@ -306,14 +306,6 @@ namespace SecuNik.API
         Task<Dictionary<string, object>> AnalyzeTimelineAsync(List<TimelineEvent> timeline);
     }
 
-    /// <summary>
-    /// Interface for forensic service
-    /// </summary>
-    public interface IForensicService
-    {
-        Task<ForensicAnalysis> PerformForensicAnalysisAsync(TechnicalFindings findings);
-        Task<List<DigitalArtifact>> ExtractDigitalArtifactsAsync(TechnicalFindings findings);
-    }
 
     /// <summary>
     /// Basic IOC detection service implementation
@@ -545,30 +537,4 @@ namespace SecuNik.API
         }
     }
 
-    /// <summary>
-    /// Forensic analysis result
-    /// </summary>
-    public class ForensicAnalysis
-    {
-        public string CaseId { get; set; } = string.Empty;
-        public DateTime AnalysisTimestamp { get; set; }
-        public string EvidenceIntegrity { get; set; } = string.Empty;
-        public List<string> ChainOfCustody { get; set; } = new();
-        public List<string> KeyFindings { get; set; } = new();
-        public int ArtifactCount { get; set; }
-        public List<string> RecommendedActions { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Digital artifact model
-    /// </summary>
-    public class DigitalArtifact
-    {
-        public string Type { get; set; } = string.Empty;
-        public string Value { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
-        public string Source { get; set; } = string.Empty;
-        public string Hash { get; set; } = string.Empty;
-        public Dictionary<string, object> Metadata { get; set; } = new();
-    }
 }

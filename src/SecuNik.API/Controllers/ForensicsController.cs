@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SecuNik.Core.Models;
-using SecuNik.API;
+using SecuNik.Core.Interfaces;
 
 namespace SecuNik.API.Controllers;
 
