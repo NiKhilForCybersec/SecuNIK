@@ -467,10 +467,17 @@ namespace SecuNik.API
                 AnalysisTimestamp = DateTime.UtcNow,
                 EvidenceIntegrity = "Verified",
                 ChainOfCustody = new List<string> { "SecuNik Analysis Engine" },
-                KeyFindings = findings.SecurityEvents.Where(e => e.Priority >= SecurityEventPriority.High)
-                                                   .Select(e => e.Message)
-                                                   .Take(10)
-                                                   .ToList(),
+                // Select key findings based on either numerical priority or textual severity.
+                // Events labeled as "High" or "Critical" severity are included
+                // even when their Priority field remains lower.
+                KeyFindings = findings.SecurityEvents
+                                       .Where(e =>
+                                           e.Priority >= SecurityEventPriority.High ||
+                                           string.Equals(e.Severity, "High", StringComparison.OrdinalIgnoreCase) ||
+                                           string.Equals(e.Severity, "Critical", StringComparison.OrdinalIgnoreCase))
+                                       .Select(e => e.Message)
+                                       .Take(10)
+                                       .ToList(),
                 ArtifactCount = findings.DetectedIOCs.Count + findings.SecurityEvents.Count,
                 RecommendedActions = new List<string>
                 {
