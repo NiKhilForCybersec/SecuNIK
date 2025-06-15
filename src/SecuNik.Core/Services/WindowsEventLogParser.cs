@@ -166,13 +166,15 @@ namespace SecuNik.Core.Services
 
                 foreach (var eventElement in events)
                 {
+                    var severity = MapSeverityLevel(eventElement.GetProperty("LevelDisplayName").GetString() ?? "");
                     var securityEvent = new SecurityEvent
                     {
                         Timestamp = DateTime.TryParse(eventElement.GetProperty("TimeCreated").GetString(), out var dt)
                             ? dt : DateTime.UtcNow,
                         EventType = $"WinEvent-{eventElement.GetProperty("Id").GetInt32()}",
                         Description = TruncateText(eventElement.GetProperty("Message").GetString() ?? ""),
-                        Severity = MapSeverityLevel(eventElement.GetProperty("LevelDisplayName").GetString() ?? ""),
+                        Severity = severity,
+                        Priority = SecurityEvent.GetPriorityFromSeverity(severity),
                         Source = eventElement.GetProperty("ProviderName").GetString() ?? "Unknown"
                     };
 
@@ -275,12 +277,14 @@ namespace SecuNik.Core.Services
                         var eventDataElement = evt.Element("EventData");
                         var message = ExtractEventMessage(eventDataElement) ?? $"Event ID {eventId}";
 
+                        var severity = MapEventLevel(level);
                         findings.SecurityEvents.Add(new SecurityEvent
                         {
                             Timestamp = timestamp != default ? timestamp : DateTime.UtcNow,
                             EventType = $"WinEvent-{eventId}",
                             Description = TruncateText(message),
-                            Severity = MapEventLevel(level),
+                            Severity = severity,
+                            Priority = SecurityEvent.GetPriorityFromSeverity(severity),
                             Source = provider
                         });
                     }
@@ -317,12 +321,14 @@ namespace SecuNik.Core.Services
             // File size analysis
             if (fileInfo.Length > 100 * 1024 * 1024) // > 100MB
             {
+                const string sevLarge = "High";
                 findings.SecurityEvents.Add(new SecurityEvent
                 {
                     Timestamp = fileInfo.LastWriteTime,
                     EventType = "LargeEventLog",
                     Description = $"Very large event log detected ({FormatFileSize(fileInfo.Length)}) - indicates extensive system activity or potential log manipulation",
-                    Severity = "High",
+                    Severity = sevLarge,
+                    Priority = SecurityEvent.GetPriorityFromSeverity(sevLarge),
                     Source = "HeuristicAnalysis"
                 });
             }
@@ -331,12 +337,14 @@ namespace SecuNik.Core.Services
             var daysSinceModified = (DateTime.Now - fileInfo.LastWriteTime).TotalDays;
             if (daysSinceModified < 1)
             {
+                const string sevRecent = "Medium";
                 findings.SecurityEvents.Add(new SecurityEvent
                 {
                     Timestamp = fileInfo.LastWriteTime,
                     EventType = "RecentLogActivity",
                     Description = $"Event log shows very recent activity (modified {fileInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss}) - system was active within last 24 hours",
-                    Severity = "Medium",
+                    Severity = sevRecent,
+                    Priority = SecurityEvent.GetPriorityFromSeverity(sevRecent),
                     Source = "HeuristicAnalysis"
                 });
             }
@@ -360,12 +368,14 @@ namespace SecuNik.Core.Services
                     var signature = System.Text.Encoding.ASCII.GetString(buffer, 0, 8);
                     if (signature.StartsWith("ELF"))
                     {
+                        const string sevValid = "Info";
                         findings.SecurityEvents.Add(new SecurityEvent
                         {
                             Timestamp = DateTime.UtcNow,
                             EventType = "ValidEVTXSignature",
                             Description = "Valid Windows Event Log signature detected - file appears to be genuine EVTX format",
-                            Severity = "Info",
+                            Severity = sevValid,
+                            Priority = SecurityEvent.GetPriorityFromSeverity(sevValid),
                             Source = "HeaderAnalysis"
                         });
                     }
@@ -374,12 +384,14 @@ namespace SecuNik.Core.Services
                 // Look for suspicious patterns
                 if (IsHeaderSuspicious(buffer))
                 {
+                    const string sevSuspicious = "Medium";
                     findings.SecurityEvents.Add(new SecurityEvent
                     {
                         Timestamp = DateTime.UtcNow,
                         EventType = "SuspiciousHeader",
                         Description = "Unusual patterns detected in file header - file may be corrupted or modified",
-                        Severity = "Medium",
+                        Severity = sevSuspicious,
+                        Priority = SecurityEvent.GetPriorityFromSeverity(sevSuspicious),
                         Source = "HeaderAnalysis"
                     });
                 }
@@ -418,6 +430,7 @@ namespace SecuNik.Core.Services
                     EventType = $"WinEvent-{pattern.Id}",
                     Description = $"{pattern.Description} (Estimated from file analysis)",
                     Severity = pattern.Severity,
+                    Priority = SecurityEvent.GetPriorityFromSeverity(pattern.Severity),
                     Source = "HeuristicAnalysis"
                 });
             }
@@ -453,6 +466,7 @@ namespace SecuNik.Core.Services
                         EventType = $"SecurityPattern-{category.Key}",
                         Description = $"Security pattern detected: {category.Key} - Found {matchingEvents.Count} related events indicating potential {category.Key.ToLower()} activity",
                         Severity = severity,
+                        Priority = SecurityEvent.GetPriorityFromSeverity(severity),
                         Source = "SecurityAnalysis"
                     });
                 }
@@ -519,12 +533,14 @@ namespace SecuNik.Core.Services
 
             if (criticalEvents > 0 || highEvents > 5)
             {
+                const string sevHighRisk = "Critical";
                 findings.SecurityEvents.Add(new SecurityEvent
                 {
                     Timestamp = DateTime.UtcNow,
                     EventType = "HighRiskActivity",
                     Description = $"High-risk activity detected: {criticalEvents} critical and {highEvents} high severity security events found in log analysis",
-                    Severity = "Critical",
+                    Severity = sevHighRisk,
+                    Priority = SecurityEvent.GetPriorityFromSeverity(sevHighRisk),
                     Source = "SecurityInsights"
                 });
             }
@@ -567,12 +583,14 @@ namespace SecuNik.Core.Services
                 var eventDataElement = evt.Element("EventData");
                 var message = ExtractEventMessage(eventDataElement) ?? $"Event ID {eventId}";
 
+                var severity = MapEventLevel(level);
                 findings.SecurityEvents.Add(new SecurityEvent
                 {
                     Timestamp = timestamp != default ? timestamp : DateTime.UtcNow,
                     EventType = $"WinEvent-{eventId}",
                     Description = TruncateText(message),
-                    Severity = MapEventLevel(level),
+                    Severity = severity,
+                    Priority = SecurityEvent.GetPriorityFromSeverity(severity),
                     Source = provider
                 });
             }
@@ -583,12 +601,14 @@ namespace SecuNik.Core.Services
         private async Task CreateBasicFileAnalysis(string filePath, TechnicalFindings findings)
         {
             var fileInfo = new FileInfo(filePath);
+            const string sevInfo = "Info";
             findings.SecurityEvents.Add(new SecurityEvent
             {
                 Timestamp = fileInfo.LastWriteTime,
                 EventType = "FileDetected",
                 Description = $"Windows Event Log file detected but could not be fully parsed: {fileInfo.Name} ({FormatFileSize(fileInfo.Length)})",
-                Severity = "Info",
+                Severity = sevInfo,
+                Priority = SecurityEvent.GetPriorityFromSeverity(sevInfo),
                 Source = "BasicAnalysis"
             });
 

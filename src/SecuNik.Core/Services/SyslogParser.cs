@@ -50,12 +50,14 @@ namespace SecuNik.Core.Services
                     var m = SyslogRegex.Match(line);
                     if (!m.Success) continue;
                     DateTime.TryParse($"{m.Groups["month"].Value} {m.Groups["day"].Value} {DateTime.Now.Year} {m.Groups["time"].Value}", out var ts);
+                    const string severity = "Low";
                     findings.SecurityEvents.Add(new SecurityEvent
                     {
                         Timestamp = ts,
                         EventType = m.Groups["service"].Value,
                         Description = m.Groups["msg"].Value,
-                        Severity = "Low"
+                        Severity = severity,
+                        Priority = SecurityEvent.GetPriorityFromSeverity(severity)
                     });
                 }
             }

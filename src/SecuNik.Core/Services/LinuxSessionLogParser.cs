@@ -46,12 +46,14 @@ namespace SecuNik.Core.Services
                 foreach (var line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
+                    const string severity = "Low";
                     findings.SecurityEvents.Add(new SecurityEvent
                     {
                         Timestamp = DateTime.Now,
                         EventType = "session",
                         Description = line.Trim(),
-                        Severity = "Low"
+                        Severity = severity,
+                        Priority = SecurityEvent.GetPriorityFromSeverity(severity)
                     });
                 }
             }

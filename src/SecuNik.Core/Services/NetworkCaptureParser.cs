@@ -43,12 +43,14 @@ namespace SecuNik.Core.Services
             try
             {
                 // Placeholder: just report that a capture file was processed
+                const string severity = "Low";
                 findings.SecurityEvents.Add(new SecurityEvent
                 {
                     Timestamp = DateTime.Now,
                     EventType = "pcap",
                     Description = "Network capture processed",
-                    Severity = "Low"
+                    Severity = severity,
+                    Priority = SecurityEvent.GetPriorityFromSeverity(severity)
                 });
             }
             catch (Exception ex)

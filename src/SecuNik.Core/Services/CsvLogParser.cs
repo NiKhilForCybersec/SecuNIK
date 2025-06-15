@@ -189,12 +189,14 @@ namespace SecuNik.Core.Services
 
         private SecurityEvent CreateSecurityEventFromRecord(IDictionary<string, object> record)
         {
+            var severity = ExtractSeverity(record);
             var secEvent = new SecurityEvent
             {
                 Timestamp = ExtractTimestamp(record),
                 EventType = ExtractEventType(record),
                 Description = ExtractDescription(record),
-                Severity = ExtractSeverity(record),
+                Severity = severity,
+                Priority = SecurityEvent.GetPriorityFromSeverity(severity),
                 Attributes = record.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.ToString() ?? "")
             };
 
@@ -203,12 +205,14 @@ namespace SecuNik.Core.Services
 
         private SecurityEvent CreateSecurityEventFromLine(string line, int lineNumber)
         {
+            var severity = ExtractSeverityFromLine(line);
             var secEvent = new SecurityEvent
             {
                 Timestamp = ExtractTimestampFromLine(line),
                 EventType = "Log Entry",
                 Description = line.Length > 200 ? line.Substring(0, 200) + "..." : line,
-                Severity = ExtractSeverityFromLine(line),
+                Severity = severity,
+                Priority = SecurityEvent.GetPriorityFromSeverity(severity),
                 Attributes = new Dictionary<string, string>
                 {
                     ["LineNumber"] = lineNumber.ToString(),
