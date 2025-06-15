@@ -66,18 +66,6 @@ namespace SecuNik.Core.Models
         public DateTime LastActivity { get; set; }
     }
 
-    /// <summary>
-    /// Individual security event detected in logs
-    /// </summary>
-    public class SecurityEvent
-    {
-        public DateTime Timestamp { get; set; }
-        public string EventType { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string Severity { get; set; } = string.Empty;
-        public string Source { get; set; } = string.Empty; // Add this line
-        public Dictionary<string, string> Attributes { get; set; } = new();
-    }
 
     /// <summary>
     /// Timeline event for chronological reconstruction
