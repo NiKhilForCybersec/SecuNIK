@@ -1,4 +1,4 @@
-export function initTab(analysis) {
+export function init(analysis) {
     setupSettingsForm();
     loadUserSettings();
     setupEventListeners();
@@ -446,7 +446,7 @@ export function render() {
     `;
 
     // Re-initialize after rendering
-    initTab();
+    init();
     feather.replace();
 }
 
