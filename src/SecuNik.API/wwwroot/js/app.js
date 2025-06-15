@@ -19,7 +19,7 @@ import { initTab as initHelpTab } from "./tabs/help.js";
 import { exportIOCs, init as initIocsTab, render as renderIocsTab } from "./tabs/iocs.js";
 import { initTab as initRecommendationsTab } from "./tabs/recommendations.js";
 import { initTab as initSettingsTab } from "./tabs/settings.js";
-import { initTab as initThreatIntelTab } from "./tabs/threatIntel.js";
+import { initTab as initThreatIntelTab, render as renderThreatIntelTab, fetchThreatIntel } from "./tabs/threatIntel.js";
 import { init as initTimelineTab, render as renderTimelineTab } from "./tabs/timeline.js";
 
 class SecuNikDashboard {
@@ -577,6 +577,9 @@ class SecuNikDashboard {
             renderIocsTab(analysis);
             renderTimelineTab(analysis);
             renderCaseManagementTab();
+
+            const threatData = await fetchThreatIntel();
+            renderThreatIntelTab(threatData);
         } catch (error) {
             console.error('Error updating tabs:', error);
         }

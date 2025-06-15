@@ -7,7 +7,8 @@ class SecuNikAPI {
             analyzePath: '/api/analysis/analyze-path',
             supportedTypes: '/api/analysis/supported-types',
             health: '/api/analysis/health',
-            canProcess: '/api/analysis/can-process'
+            canProcess: '/api/analysis/can-process',
+            threatIntelLatest: '/api/threatintel/latest'
         };
         this.defaultHeaders = {
             'Accept': 'application/json'
@@ -143,6 +144,25 @@ class SecuNikAPI {
         } catch (error) {
             console.error('Can process file error:', error);
             return false;
+        }
+    }
+
+    // Retrieve latest threat intelligence
+    async getLatestThreatIntel() {
+        try {
+            const response = await fetch(this.baseURL + this.endpoints.threatIntelLatest, {
+                method: 'GET',
+                headers: this.defaultHeaders
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to get threat intel: ${response.status} ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Threat intel fetch error:', error);
+            throw error;
         }
     }
 
@@ -590,4 +610,9 @@ export async function checkHealth(endpoints) {
     const api = new SecuNikAPI();
     const health = await api.checkHealth();
     return health.isHealthy;
+}
+
+export async function getLatestThreatIntel() {
+    const api = new SecuNikAPI();
+    return await api.getLatestThreatIntel();
 }
