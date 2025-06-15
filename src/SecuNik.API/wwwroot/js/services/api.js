@@ -1,4 +1,8 @@
-// Enhanced API Service for SecuNik Frontend
+/**
+ * SecuNik API Service
+ * Handles all API communication with the .NET backend
+ */
+
 class SecuNikAPI {
     constructor() {
         this.baseURL = window.location.origin;
@@ -110,12 +114,14 @@ class SecuNikAPI {
 
             return {
                 isHealthy: response.ok,
+                status: response.status,
                 data: response.ok ? await response.json() : null
             };
         } catch (error) {
             console.error('Health check error:', error);
             return {
                 isHealthy: false,
+                status: 0,
                 data: null
             };
         }
@@ -166,6 +172,57 @@ class SecuNikAPI {
         }
     }
 
+    // Upload with progress tracking
+    async uploadAndAnalyze(file, options = {}) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+
+            formData.append('file', file);
+            if (options.settings) {
+                formData.append('options', JSON.stringify(options.settings));
+            }
+
+            // Track upload progress
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable && options.onProgress) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    options.onProgress(percentComplete);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response);
+                    } catch (e) {
+                        reject(new Error('Invalid JSON response'));
+                    }
+                } else {
+                    try {
+                        const errorData = JSON.parse(xhr.responseText);
+                        reject(new Error(errorData.error || `Upload failed: ${xhr.status}`));
+                    } catch (e) {
+                        reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+                    }
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                reject(new Error('Network error during upload'));
+            });
+
+            xhr.addEventListener('timeout', () => {
+                reject(new Error('Upload timeout'));
+            });
+
+            xhr.open('POST', this.baseURL + this.endpoints.upload);
+            xhr.timeout = 300000; // 5 minutes
+            xhr.send(formData);
+        });
+    }
+
     // Utility: Format file size
     formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
@@ -180,7 +237,7 @@ class SecuNikAPI {
         if (!file || !file.name) return false;
 
         const extension = file.name.split('.').pop().toLowerCase();
-        const commonSupportedTypes = ['csv', 'log', 'txt', 'evtx', 'pcap'];
+        const commonSupportedTypes = ['csv', 'log', 'txt', 'evtx', 'evt', 'pcap', 'pcapng', 'json'];
 
         const typesToCheck = supportedTypes.length > 0 ? supportedTypes : commonSupportedTypes;
         return typesToCheck.includes(extension);
@@ -191,114 +248,31 @@ class SecuNikAPI {
         return filename.split('.').pop().toLowerCase();
     }
 
-    // Utility: Generate analysis options
-    createAnalysisOptions({
-        enableAI = true,
-        generateExecutiveReport = true,
-        includeTimeline = true,
-        performForensicAnalysis = true,
-        generateIOCList = true,
-        maxSecurityEvents = 10000,
-        maxIOCs = 1000,
-        focusKeywords = [],
-        excludePatterns = [],
-        minimumEventPriority = 'Low',
-        deepInspection = false
-    } = {}) {
+    // Create analysis options
+    createAnalysisOptions(settings = {}) {
         return {
-            enableAIAnalysis: enableAI,
-            generateExecutiveReport,
-            includeTimeline,
-            performForensicAnalysis,
-            generateIOCList,
-            maxSecurityEvents,
-            maxIOCs,
-            focusKeywords,
-            excludePatterns,
-            minimumEventPriority,
-            deepInspection
+            enableAI: settings.enableAI !== false,
+            analysisDepth: settings.analysisDepth || 'standard',
+            includeTimeline: settings.includeTimeline !== false,
+            generateExecutiveReport: settings.generateExecutiveReport !== false,
+            confidenceThreshold: settings.confidenceThreshold || 0.8,
+            enableForensics: settings.enableForensics !== false,
+            timeoutMinutes: settings.timeoutMinutes || 15,
+            ...settings
         };
     }
 }
 
-// Enhanced File Upload Handler
+// File Upload Handler
 class FileUploadHandler {
-    constructor(api) {
-        this.api = api;
-        this.uploadZones = [];
-        this.activeUploads = new Map();
-        this.supportedTypes = [];
+    constructor(apiInstance) {
+        this.api = apiInstance || new SecuNikAPI();
         this.maxFileSize = 50 * 1024 * 1024; // 50MB
-
-        this.init();
+        this.supportedTypes = ['csv', 'log', 'txt', 'evtx', 'evt', 'pcap', 'pcapng', 'json'];
+        this.isUploading = false;
     }
 
-    async init() {
-        // Get supported file types
-        try {
-            const typesData = await this.api.getSupportedFileTypes();
-            this.supportedTypes = typesData.supportedTypes || [];
-        } catch (error) {
-            console.warn('Could not fetch supported file types:', error);
-        }
-
-        // Initialize upload zones
-        this.initializeUploadZones();
-    }
-
-    initializeUploadZones() {
-        // Find all upload zones
-        const zones = document.querySelectorAll('.upload-zone, .upload-zone-header');
-
-        zones.forEach(zone => {
-            this.setupUploadZone(zone);
-        });
-    }
-
-    setupUploadZone(zone) {
-        // File input handling
-        const fileInput = zone.querySelector('input[type="file"]') ||
-            document.querySelector('#fileInput');
-
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => {
-                this.handleFileSelect(e.target.files);
-            });
-        }
-
-        // Drag and drop
-        zone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            zone.classList.add('dragover');
-        });
-
-        zone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            if (!zone.contains(e.relatedTarget)) {
-                zone.classList.remove('dragover');
-            }
-        });
-
-        zone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            zone.classList.remove('dragover');
-
-            const files = Array.from(e.dataTransfer.files);
-            this.handleFileSelect(files);
-        });
-
-        // Click to upload
-        zone.addEventListener('click', (e) => {
-            if (e.target.closest('button')) return; // Don't trigger on buttons
-
-            if (fileInput) {
-                fileInput.click();
-            }
-        });
-
-        this.uploadZones.push(zone);
-    }
-
+    // Handle file selection
     async handleFileSelect(files) {
         if (!files || files.length === 0) return;
 
@@ -350,69 +324,23 @@ class FileUploadHandler {
     }
 
     showUploadProgress(file) {
-        // Create or show loading overlay
-        let overlay = document.getElementById('loadingOverlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'loadingOverlay';
-            overlay.className = 'loading-overlay';
-            overlay.innerHTML = `
-                <div class="loading-content">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Analyzing ${file.name}...</div>
-                    <div class="loading-progress">
-                        <div class="loading-progress-bar" style="width: 0%"></div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
+        this.isUploading = true;
+        console.log(`Starting upload: ${file.name}`);
+
+        // Show progress UI if it exists
+        const progressElement = document.getElementById('analysisProgress');
+        if (progressElement) {
+            progressElement.style.display = 'block';
         }
-
-        overlay.style.display = 'flex';
-
-        // Simulate progress
-        this.simulateProgress();
-    }
-
-    simulateProgress() {
-        const progressBar = document.querySelector('.loading-progress-bar');
-        if (!progressBar) return;
-
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 15;
-            if (progress > 90) progress = 90;
-
-            progressBar.style.width = `${progress}%`;
-
-            if (progress >= 90) {
-                clearInterval(interval);
-            }
-        }, 200);
-
-        // Store interval to clear later
-        this.progressInterval = interval;
     }
 
     hideUploadProgress() {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            // Complete progress bar
-            const progressBar = overlay.querySelector('.loading-progress-bar');
-            if (progressBar) {
-                progressBar.style.width = '100%';
-            }
+        this.isUploading = false;
 
-            // Hide after brief delay
-            setTimeout(() => {
-                overlay.style.display = 'none';
-            }, 500);
-        }
-
-        // Clear progress interval
-        if (this.progressInterval) {
-            clearInterval(this.progressInterval);
-            this.progressInterval = null;
+        // Hide progress UI if it exists
+        const progressElement = document.getElementById('analysisProgress');
+        if (progressElement) {
+            progressElement.style.display = 'none';
         }
     }
 
@@ -459,160 +387,49 @@ class FileUploadHandler {
     }
 
     showNotification(title, message, type = 'info') {
-        // Create notification container if it doesn't exist
-        let container = document.getElementById('notificationContainer');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'notificationContainer';
-            container.className = 'notification-container';
-            document.body.appendChild(container);
+        // Use existing notification system if available
+        if (window.secuNikDashboard && window.secuNikDashboard.showNotification) {
+            window.secuNikDashboard.showNotification(`${title}: ${message}`, type);
+            return;
         }
 
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-
-        const iconMap = {
-            success: 'check-circle',
-            error: 'x-circle',
-            warning: 'alert-triangle',
-            info: 'info'
-        };
-
-        notification.innerHTML = `
-            <div class="notification-icon">
-                <svg width="20" height="20" data-feather="${iconMap[type] || 'info'}"></svg>
-            </div>
-            <div class="notification-content">
-                <h4>${title}</h4>
-                <p>${message}</p>
-            </div>
-            <button class="notification-close">
-                <svg width="16" height="16" data-feather="x"></svg>
-            </button>
-        `;
-
-        // Add close functionality
-        const closeBtn = notification.querySelector('.notification-close');
-        closeBtn.addEventListener('click', () => {
-            notification.remove();
-        });
-
-        // Add to container
-        container.appendChild(notification);
-
-        // Replace feather icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 5000);
+        // Fallback notification
+        console.log(`${type.toUpperCase()}: ${title} - ${message}`);
     }
 }
 
-// Enhanced Application Initialization
-class SecuNikApp {
-    constructor() {
-        this.api = new SecuNikAPI();
-        this.uploadHandler = null;
-        this.isInitialized = false;
-    }
-
-    async init() {
-        if (this.isInitialized) return;
-
-        try {
-            // Check API health
-            const health = await this.api.checkHealth();
-            if (!health.isHealthy) {
-                console.warn('API health check failed');
-            }
-
-            // Initialize upload handler
-            this.uploadHandler = new FileUploadHandler(this.api);
-
-            // Initialize other components
-            this.initializeNavigation();
-            this.initializeFeatherIcons();
-
-            this.isInitialized = true;
-            console.log('SecuNik application initialized successfully');
-
-        } catch (error) {
-            console.error('Failed to initialize SecuNik application:', error);
-        }
-    }
-
-    initializeNavigation() {
-        // Tab switching functionality
-        const tabButtons = document.querySelectorAll('.nav-tab');
-        const tabSections = document.querySelectorAll('.tab-section');
-
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetTab = button.getAttribute('data-tab');
-
-                // Update button states
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-
-                // Update section visibility
-                tabSections.forEach(section => {
-                    section.classList.remove('active');
-                    if (section.id === `${targetTab}Tab`) {
-                        section.classList.add('active');
-                    }
-                });
-            });
-        });
-    }
-
-    initializeFeatherIcons() {
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
-    }
-
-    // Get API instance
-    getAPI() {
-        return this.api;
-    }
-
-    // Get upload handler instance
-    getUploadHandler() {
-        return this.uploadHandler;
-    }
-}
-
-// Export for global access
-window.SecuNikAPI = SecuNikAPI;
-window.FileUploadHandler = FileUploadHandler;
-window.SecuNikApp = SecuNikApp;
-
-// Auto-initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.secuNikApp = new SecuNikApp();
-    window.secuNikApp.init();
-});
-
-// Export functions for backwards compatibility
-export async function uploadFile(file, settings, endpoints) {
+// Export functions for backwards compatibility and module imports
+export async function uploadFile(file, settings = {}) {
     const api = new SecuNikAPI();
     return await api.uploadFile(file, settings);
 }
 
-export async function checkHealth(endpoints) {
+export async function uploadAndAnalyze(file, options = {}) {
+    const api = new SecuNikAPI();
+    return await api.uploadAndAnalyze(file, options);
+}
+
+export async function checkHealth() {
     const api = new SecuNikAPI();
     const health = await api.checkHealth();
-    return health.isHealthy;
+    return health;
 }
 
 export async function getLatestThreatIntel() {
     const api = new SecuNikAPI();
     return await api.getLatestThreatIntel();
+}
+
+export async function getSupportedFileTypes() {
+    const api = new SecuNikAPI();
+    return await api.getSupportedFileTypes();
+}
+
+// Export classes
+export { FileUploadHandler, SecuNikAPI };
+
+// Global access for non-module environments
+if (typeof window !== 'undefined') {
+    window.SecuNikAPI = SecuNikAPI;
+    window.FileUploadHandler = FileUploadHandler;
 }

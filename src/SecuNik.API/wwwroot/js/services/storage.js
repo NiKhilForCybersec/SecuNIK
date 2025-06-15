@@ -1,3 +1,7 @@
+/**
+ * SecuNik Storage Service - Local Storage Management
+ */
+
 export function loadSettings() {
     try {
         const saved = localStorage.getItem('secunik_dashboard_settings');
@@ -10,7 +14,7 @@ export function loadSettings() {
 export function saveSettings(settings) {
     try {
         localStorage.setItem('secunik_dashboard_settings', JSON.stringify(settings));
-    } catch {}
+    } catch { }
 }
 
 export function loadHistory() {
@@ -25,7 +29,7 @@ export function loadHistory() {
 export function saveHistory(history) {
     try {
         localStorage.setItem('secunik_analysis_history', JSON.stringify(history));
-    } catch {}
+    } catch { }
 }
 
 export function loadCases() {
@@ -40,5 +44,5 @@ export function loadCases() {
 export function saveCases(cases) {
     try {
         localStorage.setItem('secunik_cases', JSON.stringify(cases));
-    } catch {}
+    } catch { }
 }

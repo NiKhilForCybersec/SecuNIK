@@ -1,3 +1,6 @@
+/**
+ * SecuNik Router - Simple Tab Navigation Router
+ */
 export default class Router {
     constructor(navTabs, tabSections) {
         this.navTabs = Array.from(navTabs);
