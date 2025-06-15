@@ -16,7 +16,7 @@ import { init as initExecutiveTab, render as renderExecutiveTab } from "./tabs/e
 import { initTab as initFileDetailsTab } from "./tabs/fileDetails.js";
 import { initTab as initForensicsTab } from "./tabs/forensics.js";
 import { initTab as initHelpTab } from "./tabs/help.js";
-import { exportIOCs, init as initIocsTab } from "./tabs/iocs.js";
+import { exportIOCs, init as initIocsTab, render as renderIocsTab } from "./tabs/iocs.js";
 import { initTab as initRecommendationsTab } from "./tabs/recommendations.js";
 import { initTab as initSettingsTab } from "./tabs/settings.js";
 import { initTab as initThreatIntelTab } from "./tabs/threatIntel.js";
@@ -574,6 +574,7 @@ class SecuNikDashboard {
 
             renderExecutiveTab(analysis);
             renderEventsTab(analysis);
+            renderIocsTab(analysis);
             renderTimelineTab(analysis);
             renderCaseManagementTab();
         } catch (error) {
