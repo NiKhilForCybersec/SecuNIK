@@ -1,426 +1,1233 @@
-let dashboard;
+/**
+ * SecuNik Case Management Tab - Fixed Version
+ * Incident case management and tracking
+ * 
+ * @version 2.1.0
+ * @author SecuNik Team
+ */
 
-export function init(dash) {
-    dashboard = dash;
+let dashboard = null;
+let cases = [];
+let filteredCases = [];
+let currentFilters = {
+    status: 'all',
+    severity: 'all',
+    assignee: 'all',
+    search: ''
+};
+let currentSort = {
+    field: 'createdAt',
+    direction: 'desc'
+};
+let currentPage = 1;
+let itemsPerPage = 10;
+let editingCaseId = null;
 
-    if (dashboard.elements.caseForm) {
-        dashboard.elements.caseForm.addEventListener('submit', handleCaseSubmit);
+/**
+ * Initialize case management tab
+ */
+export function init(dashboardInstance) {
+    dashboard = dashboardInstance;
+    console.log('✅ Case Management tab initialized');
+
+    // Load cases from dashboard state
+    if (dashboard.state.cases) {
+        cases = dashboard.state.cases;
+        filteredCases = [...cases];
     }
 
-    if (dashboard.elements.exportCaseBtn) {
-        dashboard.elements.exportCaseBtn.addEventListener('click', exportCase);
-    }
-
-    if (dashboard.elements.refreshCasesBtn) {
-        dashboard.elements.refreshCasesBtn.addEventListener('click', refreshCases);
-    }
-
-    if (dashboard.elements.caseDescription) {
-        dashboard.elements.caseDescription.addEventListener('input', updateCharCounter);
-    }
-
-    // Add real-time validation
-    setupFormValidation();
+    // Render the case management interface
+    render();
 }
 
+/**
+ * Render case management tab
+ */
 export function render() {
-    refreshCaseHistory();
+    console.log('📊 Rendering case management tab');
+
+    renderCaseManagementInterface();
+    setupCaseManagementEventListeners();
+    applyFiltersAndSort();
+
+    console.log(`✅ Case management rendered with ${cases.length} cases`);
 }
 
-function setupFormValidation() {
-    const titleInput = dashboard.elements.caseTitle;
-    const severitySelect = dashboard.elements.caseSeverity;
-    const descriptionTextarea = dashboard.elements.caseDescription;
+/**
+ * Render main case management interface
+ */
+function renderCaseManagementInterface() {
+    const caseManagementTab = document.getElementById('caseManagementTab');
+    if (!caseManagementTab) return;
 
-    if (titleInput) {
-        titleInput.addEventListener('blur', () => validateField('title', titleInput.value));
-        titleInput.addEventListener('input', () => clearFieldError('title'));
-    }
-
-    if (severitySelect) {
-        severitySelect.addEventListener('change', () => validateField('severity', severitySelect.value));
-    }
-
-    if (descriptionTextarea) {
-        descriptionTextarea.addEventListener('blur', () => validateField('description', descriptionTextarea.value));
-        descriptionTextarea.addEventListener('input', () => clearFieldError('description'));
-    }
-}
-
-function handleCaseSubmit(event) {
-    event.preventDefault();
-
-    // Show loading state
-    const submitBtn = dashboard.elements.createCaseBtn;
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.classList.add('loading');
-        submitBtn.textContent = 'Creating...';
-    }
-
-    try {
-        const formData = new FormData(event.target);
-        const caseData = {
-            id: dashboard.generateCaseId(),
-            title: formData.get('caseTitle')?.trim() || '',
-            severity: formData.get('caseSeverity') || '',
-            assignee: formData.get('caseAssignee')?.trim() || 'Unassigned',
-            description: formData.get('caseDescription')?.trim() || '',
-            status: 'open',
-            createdAt: new Date().toISOString(),
-            analysisId: dashboard.state.currentAnalysis?.analysisId || null,
-            tags: [],
-            priority: mapSeverityToPriority(formData.get('caseSeverity')),
-            estimatedResolution: calculateEstimatedResolution(formData.get('caseSeverity'))
-        };
-
-        if (validateCase(caseData)) {
-            createCase(caseData);
-        }
-    } catch (error) {
-        console.error('Case creation failed:', error);
-        dashboard.showNotification('Failed to create case', 'error');
-    } finally {
-        // Reset button state
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('loading');
-            submitBtn.innerHTML = '<i data-feather="plus"></i> Create Incident';
-            feather.replace();
-        }
-    }
-}
-
-function validateCase(caseData) {
-    const errors = {};
-
-    // Title validation
-    if (!caseData.title || caseData.title.length < 3) {
-        errors.title = 'Title must be at least 3 characters long';
-    } else if (caseData.title.length > 100) {
-        errors.title = 'Title must be less than 100 characters';
-    }
-
-    // Severity validation
-    if (!caseData.severity) {
-        errors.severity = 'Severity is required';
-    } else if (!['low', 'medium', 'high', 'critical'].includes(caseData.severity)) {
-        errors.severity = 'Please select a valid severity level';
-    }
-
-    // Description validation
-    if (!caseData.description || caseData.description.length < 10) {
-        errors.description = 'Description must be at least 10 characters long';
-    } else if (caseData.description.length > 1000) {
-        errors.description = 'Description must be less than 1000 characters';
-    }
-
-    // Assignee validation (optional but if provided, must be valid)
-    if (caseData.assignee && caseData.assignee !== 'Unassigned' && caseData.assignee.length < 2) {
-        errors.assignee = 'Assignee name must be at least 2 characters';
-    }
-
-    // Check for duplicate case titles
-    const existingCase = dashboard.state.cases.find(c =>
-        c.title.toLowerCase() === caseData.title.toLowerCase() && c.status !== 'closed'
-    );
-    if (existingCase) {
-        errors.title = 'A case with this title already exists';
-    }
-
-    displayValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-}
-
-function validateField(fieldName, value) {
-    const errors = {};
-
-    switch (fieldName) {
-        case 'title':
-            if (!value || value.length < 3) {
-                errors.title = 'Title must be at least 3 characters long';
-            } else if (value.length > 100) {
-                errors.title = 'Title must be less than 100 characters';
-            }
-            break;
-        case 'severity':
-            if (!value) {
-                errors.severity = 'Severity is required';
-            }
-            break;
-        case 'description':
-            if (!value || value.length < 10) {
-                errors.description = 'Description must be at least 10 characters long';
-            } else if (value.length > 1000) {
-                errors.description = 'Description must be less than 1000 characters';
-            }
-            break;
-    }
-
-    displayValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-}
-
-function clearFieldError(fieldName) {
-    const errorElement = document.getElementById(`case${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}Error`);
-    const formGroup = errorElement?.closest('.form-group');
-
-    if (errorElement) {
-        errorElement.textContent = '';
-    }
-    if (formGroup) {
-        formGroup.classList.remove('error');
-    }
-}
-
-function displayValidationErrors(errors) {
-    // Clear all previous errors
-    document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-    document.querySelectorAll('.form-group').forEach(el => el.classList.remove('error'));
-
-    Object.entries(errors).forEach(([field, message]) => {
-        const errorElement = document.getElementById(`case${field.charAt(0).toUpperCase() + field.slice(1)}Error`);
-        const formGroup = errorElement?.closest('.form-group');
-
-        if (errorElement) {
-            errorElement.textContent = message;
-        }
-        if (formGroup) {
-            formGroup.classList.add('error');
-        }
-    });
-}
-
-function createCase(caseData) {
-    try {
-        dashboard.state.cases.unshift(caseData); // Add to beginning for recent first
-        dashboard.saveCases();
-        refreshCaseHistory();
-        clearCaseForm();
-
-        dashboard.showNotification(
-            `Case "${caseData.title}" created successfully`,
-            'success'
-        );
-
-        // Auto-link to current analysis if available
-        if (dashboard.state.currentAnalysis) {
-            dashboard.showNotification(
-                'Case has been linked to current analysis',
-                'info'
-            );
-        }
-    } catch (error) {
-        console.error('Failed to create case:', error);
-        dashboard.showNotification('Failed to save case data', 'error');
-    }
-}
-
-function clearCaseForm() {
-    if (dashboard.elements.caseForm) {
-        dashboard.elements.caseForm.reset();
-    }
-
-    // Clear validation errors
-    document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-    document.querySelectorAll('.form-group').forEach(el => el.classList.remove('error'));
-
-    // Reset character counter
-    updateCharCounter({ target: { value: '' } });
-}
-
-function refreshCases() {
-    try {
-        dashboard.loadCases();
-        refreshCaseHistory();
-        dashboard.showNotification('Cases refreshed', 'info');
-    } catch (error) {
-        console.error('Failed to refresh cases:', error);
-        dashboard.showNotification('Failed to refresh cases', 'error');
-    }
-}
-
-function refreshCaseHistory() {
-    if (!dashboard.elements.caseHistoryList) return;
-
-    try {
-        if (dashboard.state.cases.length === 0) {
-            dashboard.elements.caseHistoryList.innerHTML = `
-                <div class="placeholder-content">
-                    <i data-feather="folder" width="32" height="32"></i>
-                    <p>No cases found</p>
-                    <small>Create your first incident case using the form</small>
+    caseManagementTab.innerHTML = `
+        <div class="case-management-container">
+            <!-- Case Management Header -->
+            <div class="section-header">
+                <h2><i data-feather="folder" aria-hidden="true"></i> Case Management</h2>
+                <div class="header-actions">
+                    <div class="cases-summary">
+                        <span class="total-cases">${cases.length} Total Cases</span>
+                        <span class="open-cases">${getOpenCasesCount()} Open</span>
+                        <span class="critical-cases">${getCriticalCasesCount()} Critical</span>
+                    </div>
+                    <button class="btn btn-secondary" id="exportCasesBtn">
+                        <i data-feather="download"></i> Export Cases
+                    </button>
+                    <button class="btn btn-primary" id="newCaseBtn">
+                        <i data-feather="plus"></i> New Case
+                    </button>
                 </div>
-            `;
-        } else {
-            const recentCases = dashboard.state.cases
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                .slice(0, 10);
-
-            dashboard.elements.caseHistoryList.innerHTML = recentCases.map(case_ => `
-                <div class="case-item" data-case-id="${case_.id}" onclick="showCaseDetails('${case_.id}')">
-                    <div class="case-header">
-                        <div class="case-title">${dashboard.sanitizeHTML(case_.title)}</div>
-                        <div class="case-severity ${case_.severity}">${case_.severity.toUpperCase()}</div>
-                    </div>
-                    <div class="case-meta">
-                        <span><strong>Assignee:</strong> ${dashboard.sanitizeHTML(case_.assignee)}</span>
-                        <span><strong>Created:</strong> ${dashboard.formatTimestamp(case_.createdAt)}</span>
-                    </div>
-                    <div class="case-status">
-                        <strong>Status:</strong> ${case_.status.charAt(0).toUpperCase() + case_.status.slice(1)}
-                        ${case_.priority ? `• <strong>Priority:</strong> ${case_.priority}` : ''}
-                    </div>
-                    ${case_.description ? `
-                        <div class="case-description">
-                            ${dashboard.sanitizeHTML(case_.description.substring(0, 150))}${case_.description.length > 150 ? '...' : ''}
-                        </div>
-                    ` : ''}
-                    ${case_.analysisId ? `
-                        <div class="case-analysis-link">
-                            <small><i data-feather="link" width="12" height="12"></i> Linked to analysis ${case_.analysisId}</small>
-                        </div>
-                    ` : ''}
-                </div>
-            `).join('');
-        }
-
-        // Re-initialize feather icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
-    } catch (error) {
-        console.error('Failed to refresh case history:', error);
-        dashboard.elements.caseHistoryList.innerHTML = `
-            <div class="placeholder-content">
-                <i data-feather="alert-circle" width="32" height="32"></i>
-                <p>Failed to load cases</p>
-                <small>Please try refreshing</small>
             </div>
-        `;
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
-    }
-}
 
-function updateCharCounter(event) {
-    const value = event.target.value;
-    const maxLength = 1000;
-    const counter = document.getElementById('descriptionCounter');
-
-    if (counter) {
-        counter.textContent = `${value.length}/${maxLength}`;
-
-        if (value.length > maxLength * 0.9) {
-            counter.className = 'char-counter warning';
-        } else {
-            counter.className = 'char-counter';
-        }
-    }
-}
-
-function exportCase() {
-    if (dashboard.state.cases.length === 0) {
-        dashboard.showNotification('No cases to export', 'warning');
-        return;
-    }
-
-    try {
-        const exportData = {
-            exportedAt: new Date().toISOString(),
-            exportedBy: 'SecuNik Dashboard',
-            totalCases: dashboard.state.cases.length,
-            cases: dashboard.state.cases.map(case_ => ({
-                ...case_,
-                exportNote: 'Exported from SecuNik Professional Dashboard'
-            }))
-        };
-
-        const data = JSON.stringify(exportData, null, 2);
-        const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `secunik-cases-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        dashboard.showNotification(`Exported ${dashboard.state.cases.length} cases successfully`, 'success');
-    } catch (error) {
-        console.error('Export failed:', error);
-        dashboard.showNotification('Failed to export cases', 'error');
-    }
-}
-
-// Utility functions
-function mapSeverityToPriority(severity) {
-    const priorityMap = {
-        'critical': 'P1 - Critical',
-        'high': 'P2 - High',
-        'medium': 'P3 - Medium',
-        'low': 'P4 - Low'
-    };
-    return priorityMap[severity] || 'P3 - Medium';
-}
-
-function calculateEstimatedResolution(severity) {
-    const resolutionMap = {
-        'critical': '4 hours',
-        'high': '24 hours',
-        'medium': '72 hours',
-        'low': '1 week'
-    };
-    return resolutionMap[severity] || '72 hours';
-}
-
-// Global function for case details (called from HTML)
-window.showCaseDetails = function (caseId) {
-    const case_ = dashboard.state.cases.find(c => c.id === caseId);
-    if (!case_) return;
-
-    const detailsHtml = `
-        <div class="case-details-modal">
-            <div class="case-details-header">
-                <h3>${dashboard.sanitizeHTML(case_.title)}</h3>
-                <span class="case-severity ${case_.severity}">${case_.severity.toUpperCase()}</span>
-            </div>
-            <div class="case-details-body">
-                <div class="detail-row">
-                    <strong>ID:</strong> ${case_.id}
-                </div>
-                <div class="detail-row">
-                    <strong>Status:</strong> ${case_.status}
-                </div>
-                <div class="detail-row">
-                    <strong>Assignee:</strong> ${case_.assignee}
-                </div>
-                <div class="detail-row">
-                    <strong>Created:</strong> ${dashboard.formatTimestamp(case_.createdAt)}
-                </div>
-                <div class="detail-row">
-                    <strong>Priority:</strong> ${case_.priority || 'Not set'}
-                </div>
-                <div class="detail-row">
-                    <strong>Est. Resolution:</strong> ${case_.estimatedResolution || 'Not set'}
-                </div>
-                ${case_.analysisId ? `
-                    <div class="detail-row">
-                        <strong>Linked Analysis:</strong> ${case_.analysisId}
+            <!-- Case Management Controls -->
+            <div class="case-controls">
+                <div class="controls-row">
+                    <!-- Search -->
+                    <div class="control-group">
+                        <label for="casesSearch">Search Cases:</label>
+                        <div class="search-input-group">
+                            <input type="text" id="casesSearch" placeholder="Search cases, titles, assignees..." 
+                                   value="${currentFilters.search}">
+                            <button class="search-btn" id="searchCasesBtn">
+                                <i data-feather="search"></i>
+                            </button>
+                        </div>
                     </div>
-                ` : ''}
-                <div class="detail-row">
-                    <strong>Description:</strong>
-                    <p style="margin-top: 0.5rem; line-height: 1.4;">${dashboard.sanitizeHTML(case_.description)}</p>
+
+                    <!-- Status Filter -->
+                    <div class="control-group">
+                        <label for="statusFilter">Status:</label>
+                        <select id="statusFilter" value="${currentFilters.status}">
+                            <option value="all">All Status</option>
+                            <option value="open">Open</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="closed">Closed</option>
+                            <option value="on-hold">On Hold</option>
+                        </select>
+                    </div>
+
+                    <!-- Severity Filter -->
+                    <div class="control-group">
+                        <label for="severityFilter">Severity:</label>
+                        <select id="severityFilter" value="${currentFilters.severity}">
+                            <option value="all">All Severities</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+
+                    <!-- Assignee Filter -->
+                    <div class="control-group">
+                        <label for="assigneeFilter">Assignee:</label>
+                        <select id="assigneeFilter" value="${currentFilters.assignee}">
+                            <option value="all">All Assignees</option>
+                            ${getUniqueAssignees().map(assignee =>
+        `<option value="${assignee}">${assignee}</option>`
+    ).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="controls-row">
+                    <!-- Sort Options -->
+                    <div class="control-group">
+                        <label for="sortField">Sort By:</label>
+                        <select id="sortField" value="${currentSort.field}">
+                            <option value="createdAt">Created Date</option>
+                            <option value="updatedAt">Updated Date</option>
+                            <option value="title">Title</option>
+                            <option value="severity">Severity</option>
+                            <option value="status">Status</option>
+                            <option value="assignee">Assignee</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="sortDirection">Order:</label>
+                        <select id="sortDirection" value="${currentSort.direction}">
+                            <option value="desc">Newest First</option>
+                            <option value="asc">Oldest First</option>
+                        </select>
+                    </div>
+
+                    <!-- Items Per Page -->
+                    <div class="control-group">
+                        <label for="itemsPerPage">Show:</label>
+                        <select id="itemsPerPage" value="${itemsPerPage}">
+                            <option value="5">5 per page</option>
+                            <option value="10">10 per page</option>
+                            <option value="20">20 per page</option>
+                            <option value="50">50 per page</option>
+                        </select>
+                    </div>
+
+                    <!-- Clear Filters -->
+                    <div class="control-group">
+                        <button class="btn btn-outline" id="clearCaseFiltersBtn">
+                            <i data-feather="x"></i> Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Case Statistics -->
+            <div class="case-stats" id="caseStats">
+                <!-- Will be populated by updateCaseStats() -->
+            </div>
+
+            <!-- Case Form Section -->
+            <div class="case-form-section" id="caseFormSection" style="display: none;">
+                <div class="form-header">
+                    <h3 id="caseFormTitle">Create New Case</h3>
+                    <button class="btn btn-outline btn-sm" id="cancelCaseFormBtn">
+                        <i data-feather="x"></i> Cancel
+                    </button>
+                </div>
+                
+                <form class="case-form" id="caseForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="caseTitle">Case Title *</label>
+                            <input type="text" id="caseTitle" name="title" required 
+                                   placeholder="Enter case title">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="caseSeverity">Severity *</label>
+                            <select id="caseSeverity" name="severity" required>
+                                <option value="">Select severity</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="caseAssignee">Assignee *</label>
+                            <input type="text" id="caseAssignee" name="assignee" required 
+                                   placeholder="Enter assignee name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="caseStatus">Status</label>
+                            <select id="caseStatus" name="status">
+                                <option value="open">Open</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="on-hold">On Hold</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="casePriority">Priority</label>
+                            <select id="casePriority" name="priority">
+                                <option value="">Select priority</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="high">High</option>
+                                <option value="normal">Normal</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="caseDueDate">Due Date</label>
+                            <input type="date" id="caseDueDate" name="dueDate">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="caseDescription">Description</label>
+                        <textarea id="caseDescription" name="description" rows="4" 
+                                  placeholder="Enter case description and details"></textarea>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="caseTags">Tags</label>
+                        <input type="text" id="caseTags" name="tags" 
+                               placeholder="Enter tags separated by commas">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="saveCaseBtn">
+                            <i data-feather="save"></i> <span id="saveCaseText">Create Case</span>
+                        </button>
+                        <button type="button" class="btn btn-outline" id="resetCaseFormBtn">
+                            <i data-feather="refresh-ccw"></i> Reset Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Cases List -->
+            <div class="cases-list-section">
+                <div class="cases-list-header">
+                    <h3>Cases</h3>
+                    <div class="list-info">
+                        <span id="casesShowing">Showing 0 cases</span>
+                    </div>
+                </div>
+                
+                <div class="cases-list" id="casesList">
+                    <!-- Cases will be rendered here -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container" id="casesPaginationContainer">
+                    <!-- Pagination will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Case Details Modal -->
+            <div class="case-details-modal" id="caseDetailsModal" style="display: none;">
+                <div class="modal-backdrop" onclick="closeCaseDetails()"></div>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Case Details</h3>
+                        <div class="modal-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="editCase()">
+                                <i data-feather="edit"></i> Edit
+                            </button>
+                            <button class="modal-close" onclick="closeCaseDetails()">
+                                <i data-feather="x"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-body" id="caseDetailsContent">
+                        <!-- Case details will be populated here -->
+                    </div>
                 </div>
             </div>
         </div>
     `;
 
-    // Show in a simple alert for now (you could implement a proper modal)
-    dashboard.showNotification(`Case Details: ${case_.title}`, 'info', 10000);
-    console.log('Case Details:', case_);
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Setup case management event listeners
+ */
+function setupCaseManagementEventListeners() {
+    // Search functionality
+    const searchInput = document.getElementById('casesSearch');
+    const searchBtn = document.getElementById('searchCasesBtn');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(handleCaseSearch, 300));
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleCaseSearch();
+            }
+        });
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', handleCaseSearch);
+    }
+
+    // Filter controls
+    const statusFilter = document.getElementById('statusFilter');
+    const severityFilter = document.getElementById('severityFilter');
+    const assigneeFilter = document.getElementById('assigneeFilter');
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', handleCaseFilterChange);
+    }
+    if (severityFilter) {
+        severityFilter.addEventListener('change', handleCaseFilterChange);
+    }
+    if (assigneeFilter) {
+        assigneeFilter.addEventListener('change', handleCaseFilterChange);
+    }
+
+    // Sort controls
+    const sortField = document.getElementById('sortField');
+    const sortDirection = document.getElementById('sortDirection');
+
+    if (sortField) {
+        sortField.addEventListener('change', handleCaseSortChange);
+    }
+    if (sortDirection) {
+        sortDirection.addEventListener('change', handleCaseSortChange);
+    }
+
+    // Items per page
+    const itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.addEventListener('change', handleCaseItemsPerPageChange);
+    }
+
+    // Clear filters
+    const clearFiltersBtn = document.getElementById('clearCaseFiltersBtn');
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', clearAllCaseFilters);
+    }
+
+    // New case button
+    const newCaseBtn = document.getElementById('newCaseBtn');
+    if (newCaseBtn) {
+        newCaseBtn.addEventListener('click', showNewCaseForm);
+    }
+
+    // Export cases button
+    const exportBtn = document.getElementById('exportCasesBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportCases);
+    }
+
+    // Case form controls
+    const caseForm = document.getElementById('caseForm');
+    const cancelFormBtn = document.getElementById('cancelCaseFormBtn');
+    const resetFormBtn = document.getElementById('resetCaseFormBtn');
+
+    if (caseForm) {
+        caseForm.addEventListener('submit', handleCaseFormSubmit);
+    }
+    if (cancelFormBtn) {
+        cancelFormBtn.addEventListener('click', hideCaseForm);
+    }
+    if (resetFormBtn) {
+        resetFormBtn.addEventListener('click', resetCaseForm);
+    }
+}
+
+/**
+ * Handle case search functionality
+ */
+function handleCaseSearch() {
+    const searchInput = document.getElementById('casesSearch');
+    if (!searchInput) return;
+
+    currentFilters.search = searchInput.value.trim().toLowerCase();
+    currentPage = 1; // Reset to first page
+    applyFiltersAndSort();
+}
+
+/**
+ * Handle case filter changes
+ */
+function handleCaseFilterChange() {
+    const statusFilter = document.getElementById('statusFilter');
+    const severityFilter = document.getElementById('severityFilter');
+    const assigneeFilter = document.getElementById('assigneeFilter');
+
+    if (statusFilter) currentFilters.status = statusFilter.value;
+    if (severityFilter) currentFilters.severity = severityFilter.value;
+    if (assigneeFilter) currentFilters.assignee = assigneeFilter.value;
+
+    currentPage = 1; // Reset to first page
+    applyFiltersAndSort();
+}
+
+/**
+ * Handle case sort changes
+ */
+function handleCaseSortChange() {
+    const sortField = document.getElementById('sortField');
+    const sortDirection = document.getElementById('sortDirection');
+
+    if (sortField) currentSort.field = sortField.value;
+    if (sortDirection) currentSort.direction = sortDirection.value;
+
+    applyFiltersAndSort();
+}
+
+/**
+ * Handle case items per page change
+ */
+function handleCaseItemsPerPageChange() {
+    const itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (!itemsPerPageSelect) return;
+
+    itemsPerPage = parseInt(itemsPerPageSelect.value);
+    currentPage = 1; // Reset to first page
+    applyFiltersAndSort();
+}
+
+/**
+ * Clear all case filters
+ */
+function clearAllCaseFilters() {
+    currentFilters = {
+        status: 'all',
+        severity: 'all',
+        assignee: 'all',
+        search: ''
+    };
+
+    // Reset form controls
+    const searchInput = document.getElementById('casesSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const severityFilter = document.getElementById('severityFilter');
+    const assigneeFilter = document.getElementById('assigneeFilter');
+
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = 'all';
+    if (severityFilter) severityFilter.value = 'all';
+    if (assigneeFilter) assigneeFilter.value = 'all';
+
+    currentPage = 1;
+    applyFiltersAndSort();
+}
+
+/**
+ * Apply filters and sorting to cases
+ */
+function applyFiltersAndSort() {
+    // Start with all cases
+    filteredCases = [...cases];
+
+    // Apply filters
+    filteredCases = filteredCases.filter(caseItem => {
+        // Status filter
+        if (currentFilters.status !== 'all' && caseItem.status !== currentFilters.status) {
+            return false;
+        }
+
+        // Severity filter
+        if (currentFilters.severity !== 'all' && caseItem.severity !== currentFilters.severity) {
+            return false;
+        }
+
+        // Assignee filter
+        if (currentFilters.assignee !== 'all' && caseItem.assignee !== currentFilters.assignee) {
+            return false;
+        }
+
+        // Search filter
+        if (currentFilters.search) {
+            const searchLower = currentFilters.search.toLowerCase();
+            const searchFields = [
+                caseItem.title,
+                caseItem.description,
+                caseItem.assignee,
+                ...(caseItem.tags || [])
+            ].join(' ').toLowerCase();
+
+            if (!searchFields.includes(searchLower)) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    // Apply sorting
+    filteredCases.sort((a, b) => {
+        let aValue = a[currentSort.field];
+        let bValue = b[currentSort.field];
+
+        // Handle special cases
+        if (currentSort.field === 'createdAt' || currentSort.field === 'updatedAt') {
+            aValue = new Date(aValue);
+            bValue = new Date(bValue);
+        } else if (currentSort.field === 'severity') {
+            const severityOrder = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
+            aValue = severityOrder[aValue] || 0;
+            bValue = severityOrder[bValue] || 0;
+        } else if (typeof aValue === 'string') {
+            aValue = aValue.toLowerCase();
+            bValue = bValue.toLowerCase();
+        }
+
+        if (currentSort.direction === 'asc') {
+            return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+        } else {
+            return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+        }
+    });
+
+    // Update display
+    updateCaseStats();
+    renderCasesList();
+    renderCasesPagination();
+}
+
+/**
+ * Update case statistics
+ */
+function updateCaseStats() {
+    const statsContainer = document.getElementById('caseStats');
+    if (!statsContainer) return;
+
+    const total = filteredCases.length;
+    const open = filteredCases.filter(c => c.status === 'open').length;
+    const inProgress = filteredCases.filter(c => c.status === 'in-progress').length;
+    const closed = filteredCases.filter(c => c.status === 'closed').length;
+    const critical = filteredCases.filter(c => c.severity === 'critical').length;
+    const high = filteredCases.filter(c => c.severity === 'high').length;
+
+    statsContainer.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">${total}</div>
+                <div class="stat-label">Total Cases</div>
+            </div>
+            <div class="stat-item open">
+                <div class="stat-value">${open}</div>
+                <div class="stat-label">Open</div>
+            </div>
+            <div class="stat-item progress">
+                <div class="stat-value">${inProgress}</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+            <div class="stat-item closed">
+                <div class="stat-value">${closed}</div>
+                <div class="stat-label">Closed</div>
+            </div>
+            <div class="stat-item critical">
+                <div class="stat-value">${critical}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat-item high">
+                <div class="stat-value">${high}</div>
+                <div class="stat-label">High Priority</div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Render cases list
+ */
+function renderCasesList() {
+    const container = document.getElementById('casesList');
+    const showingSpan = document.getElementById('casesShowing');
+
+    if (!container) return;
+
+    // Calculate pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageCases = filteredCases.slice(startIndex, endIndex);
+
+    // Update showing text
+    if (showingSpan) {
+        showingSpan.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, filteredCases.length)} of ${filteredCases.length} cases`;
+    }
+
+    // Render cases
+    if (pageCases.length === 0) {
+        container.innerHTML = `
+            <div class="no-cases">
+                <div class="no-cases-content">
+                    <i data-feather="folder" width="64" height="64"></i>
+                    <h3>No Cases Found</h3>
+                    <p>${filteredCases.length === 0 && cases.length === 0
+                ? 'No cases have been created yet.'
+                : 'No cases match your current filters.'}</p>
+                    <div class="no-cases-actions">
+                        ${filteredCases.length === 0 && cases.length === 0
+                ? `<button class="btn btn-primary" onclick="showNewCaseForm()">
+                                <i data-feather="plus"></i> Create First Case
+                               </button>`
+                : `<button class="btn btn-outline" onclick="clearAllCaseFilters()">
+                                <i data-feather="x"></i> Clear Filters
+                               </button>`}
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = pageCases.map(caseItem => `
+            <div class="case-card ${caseItem.severity}" data-case-id="${caseItem.id}">
+                <div class="case-header">
+                    <div class="case-title-section">
+                        <h4 class="case-title" onclick="showCaseDetails('${caseItem.id}')">${caseItem.title}</h4>
+                        <div class="case-meta">
+                            <span class="case-id">Case #${caseItem.id}</span>
+                            <span class="case-created">Created: ${formatTimestamp(caseItem.createdAt)}</span>
+                        </div>
+                    </div>
+                    <div class="case-badges">
+                        <span class="severity-badge ${caseItem.severity}">
+                            <i data-feather="${getSeverityIcon(caseItem.severity)}" width="12" height="12"></i>
+                            ${caseItem.severity.toUpperCase()}
+                        </span>
+                        <span class="status-badge ${caseItem.status}">
+                            ${caseItem.status.replace('-', ' ').toUpperCase()}
+                        </span>
+                        ${caseItem.priority ? `
+                            <span class="priority-badge ${caseItem.priority}">
+                                ${caseItem.priority.toUpperCase()}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="case-body">
+                    <div class="case-description">
+                        ${caseItem.description ? truncateText(caseItem.description, 150) : 'No description provided'}
+                    </div>
+                    
+                    <div class="case-details-grid">
+                        <div class="detail-item">
+                            <label>Assignee:</label>
+                            <span>${caseItem.assignee}</span>
+                        </div>
+                        ${caseItem.dueDate ? `
+                            <div class="detail-item">
+                                <label>Due Date:</label>
+                                <span class="${isOverdue(caseItem.dueDate) ? 'overdue' : ''}">${formatDate(caseItem.dueDate)}</span>
+                            </div>
+                        ` : ''}
+                        ${caseItem.updatedAt !== caseItem.createdAt ? `
+                            <div class="detail-item">
+                                <label>Last Updated:</label>
+                                <span>${formatTimestamp(caseItem.updatedAt)}</span>
+                            </div>
+                        ` : ''}
+                        ${caseItem.analysisId ? `
+                            <div class="detail-item">
+                                <label>Linked Analysis:</label>
+                                <span>Analysis #${caseItem.analysisId}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${caseItem.tags && caseItem.tags.length > 0 ? `
+                        <div class="case-tags">
+                            ${caseItem.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="case-actions">
+                    <button class="btn btn-sm btn-outline" onclick="showCaseDetails('${caseItem.id}')">
+                        <i data-feather="eye" width="14" height="14"></i> View Details
+                    </button>
+                    <button class="btn btn-sm btn-outline" onclick="editCaseById('${caseItem.id}')">
+                        <i data-feather="edit" width="14" height="14"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline" onclick="duplicateCase('${caseItem.id}')">
+                        <i data-feather="copy" width="14" height="14"></i> Duplicate
+                    </button>
+                    <button class="btn btn-sm btn-outline" onclick="exportSingleCase('${caseItem.id}')">
+                        <i data-feather="download" width="14" height="14"></i> Export
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCase('${caseItem.id}')">
+                        <i data-feather="trash-2" width="14" height="14"></i> Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Render cases pagination
+ */
+function renderCasesPagination() {
+    const container = document.getElementById('casesPaginationContainer');
+    if (!container) return;
+
+    const totalPages = Math.ceil(filteredCases.length / itemsPerPage);
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const maxVisiblePages = 5;
+    const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    let paginationHTML = `
+        <div class="pagination">
+            <button class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''} 
+                    onclick="changeCasePage(1)" title="First Page">
+                <i data-feather="chevrons-left" width="14" height="14"></i>
+            </button>
+            <button class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''} 
+                    onclick="changeCasePage(${currentPage - 1})" title="Previous Page">
+                <i data-feather="chevron-left" width="14" height="14"></i>
+            </button>
+    `;
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
+                    onclick="changeCasePage(${i})">${i}</button>
+        `;
+    }
+
+    paginationHTML += `
+            <button class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''} 
+                    onclick="changeCasePage(${currentPage + 1})" title="Next Page">
+                <i data-feather="chevron-right" width="14" height="14"></i>
+            </button>
+            <button class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''} 
+                    onclick="changeCasePage(${totalPages})" title="Last Page">
+                <i data-feather="chevrons-right" width="14" height="14"></i>
+            </button>
+        </div>
+        <div class="pagination-info">
+            Page ${currentPage} of ${totalPages}
+        </div>
+    `;
+
+    container.innerHTML = paginationHTML;
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Show new case form
+ */
+function showNewCaseForm() {
+    editingCaseId = null;
+    const formSection = document.getElementById('caseFormSection');
+    const formTitle = document.getElementById('caseFormTitle');
+    const saveText = document.getElementById('saveCaseText');
+
+    if (formSection) formSection.style.display = 'block';
+    if (formTitle) formTitle.textContent = 'Create New Case';
+    if (saveText) saveText.textContent = 'Create Case';
+
+    resetCaseForm();
+
+    // Scroll to form
+    formSection?.scrollIntoView({ behavior: 'smooth' });
+}
+
+/**
+ * Hide case form
+ */
+function hideCaseForm() {
+    const formSection = document.getElementById('caseFormSection');
+    if (formSection) {
+        formSection.style.display = 'none';
+    }
+    editingCaseId = null;
+    resetCaseForm();
+}
+
+/**
+ * Reset case form
+ */
+function resetCaseForm() {
+    const form = document.getElementById('caseForm');
+    if (form) {
+        form.reset();
+    }
+}
+
+/**
+ * Handle case form submission
+ */
+function handleCaseFormSubmit(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const caseData = {
+        title: formData.get('title')?.trim(),
+        severity: formData.get('severity'),
+        assignee: formData.get('assignee')?.trim(),
+        status: formData.get('status') || 'open',
+        priority: formData.get('priority') || '',
+        dueDate: formData.get('dueDate') || '',
+        description: formData.get('description')?.trim() || '',
+        tags: formData.get('tags')?.split(',').map(tag => tag.trim()).filter(tag => tag) || []
+    };
+
+    // Validate required fields
+    if (!caseData.title || !caseData.severity || !caseData.assignee) {
+        dashboard?.showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+
+    if (editingCaseId) {
+        // Update existing case
+        updateCase(editingCaseId, caseData);
+    } else {
+        // Create new case
+        createCase(caseData);
+    }
+}
+
+/**
+ * Create new case
+ */
+function createCase(caseData) {
+    const newCase = {
+        id: Date.now().toString(),
+        ...caseData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        analysisId: dashboard?.state.currentAnalysis?.id || null
+    };
+
+    cases.unshift(newCase);
+    dashboard.state.cases = cases;
+    dashboard.saveCases();
+
+    hideCaseForm();
+    applyFiltersAndSort();
+
+    dashboard?.showNotification(`Case "${newCase.title}" created successfully`, 'success');
+}
+
+/**
+ * Update existing case
+ */
+function updateCase(caseId, caseData) {
+    const caseIndex = cases.findIndex(c => c.id === caseId);
+    if (caseIndex === -1) return;
+
+    cases[caseIndex] = {
+        ...cases[caseIndex],
+        ...caseData,
+        updatedAt: new Date().toISOString()
+    };
+
+    dashboard.state.cases = cases;
+    dashboard.saveCases();
+
+    hideCaseForm();
+    applyFiltersAndSort();
+
+    dashboard?.showNotification(`Case "${cases[caseIndex].title}" updated successfully`, 'success');
+}
+
+/**
+ * Export cases to CSV
+ */
+function exportCases() {
+    try {
+        const csvData = convertCasesToCSV(filteredCases);
+        downloadCSV(csvData, `secunik-cases-${Date.now()}.csv`);
+        dashboard?.showNotification('Cases exported successfully', 'success');
+    } catch (error) {
+        console.error('Cases export failed:', error);
+        dashboard?.showNotification('Failed to export cases', 'error');
+    }
+}
+
+// Helper functions
+
+function getOpenCasesCount() {
+    return cases.filter(c => c.status === 'open' || c.status === 'in-progress').length;
+}
+
+function getCriticalCasesCount() {
+    return cases.filter(c => c.severity === 'critical').length;
+}
+
+function getUniqueAssignees() {
+    const assignees = [...new Set(cases.map(c => c.assignee))];
+    return assignees.filter(assignee => assignee).sort();
+}
+
+function getSeverityIcon(severity) {
+    const icons = {
+        'critical': 'alert-triangle',
+        'high': 'alert-circle',
+        'medium': 'info',
+        'low': 'check-circle'
+    };
+    return icons[severity.toLowerCase()] || 'help-circle';
+}
+
+function formatTimestamp(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleString();
+    } catch {
+        return 'Unknown';
+    }
+}
+
+function formatDate(dateString) {
+    try {
+        return new Date(dateString).toLocaleDateString();
+    } catch {
+        return dateString;
+    }
+}
+
+function isOverdue(dueDate) {
+    if (!dueDate) return false;
+    return new Date(dueDate) < new Date();
+}
+
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function convertCasesToCSV(casesData) {
+    const headers = ['ID', 'Title', 'Severity', 'Status', 'Assignee', 'Priority', 'Due Date', 'Created', 'Updated', 'Description'];
+    const rows = casesData.map(caseItem => [
+        caseItem.id,
+        caseItem.title,
+        caseItem.severity,
+        caseItem.status,
+        caseItem.assignee,
+        caseItem.priority || '',
+        caseItem.dueDate || '',
+        formatTimestamp(caseItem.createdAt),
+        formatTimestamp(caseItem.updatedAt),
+        caseItem.description || ''
+    ]);
+
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+    return csvContent;
+}
+
+function downloadCSV(csvData, filename) {
+    const blob = new Blob([csvData], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Global functions for onclick handlers
+window.changeCasePage = function (page) {
+    currentPage = page;
+    renderCasesList();
+    renderCasesPagination();
 };
+
+window.showCaseDetails = function (caseId) {
+    const caseItem = cases.find(c => c.id === caseId);
+    if (!caseItem) return;
+
+    const modal = document.getElementById('caseDetailsModal');
+    const content = document.getElementById('caseDetailsContent');
+
+    if (!modal || !content) return;
+
+    content.innerHTML = `
+        <div class="case-full-details">
+            <div class="detail-section">
+                <h4>Case Information</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Case ID:</label>
+                        <span>#${caseItem.id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Title:</label>
+                        <span>${caseItem.title}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Status:</label>
+                        <span class="status-badge ${caseItem.status}">${caseItem.status.replace('-', ' ').toUpperCase()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Severity:</label>
+                        <span class="severity-badge ${caseItem.severity}">
+                            <i data-feather="${getSeverityIcon(caseItem.severity)}" width="16" height="16"></i>
+                            ${caseItem.severity.toUpperCase()}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Assignee:</label>
+                        <span>${caseItem.assignee}</span>
+                    </div>
+                    ${caseItem.priority ? `
+                        <div class="detail-item">
+                            <label>Priority:</label>
+                            <span class="priority-badge ${caseItem.priority}">${caseItem.priority.toUpperCase()}</span>
+                        </div>
+                    ` : ''}
+                    <div class="detail-item">
+                        <label>Created:</label>
+                        <span>${formatTimestamp(caseItem.createdAt)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Last Updated:</label>
+                        <span>${formatTimestamp(caseItem.updatedAt)}</span>
+                    </div>
+                    ${caseItem.dueDate ? `
+                        <div class="detail-item">
+                            <label>Due Date:</label>
+                            <span class="${isOverdue(caseItem.dueDate) ? 'overdue' : ''}">${formatDate(caseItem.dueDate)}</span>
+                        </div>
+                    ` : ''}
+                    ${caseItem.analysisId ? `
+                        <div class="detail-item">
+                            <label>Linked Analysis:</label>
+                            <span>Analysis #${caseItem.analysisId}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            ${caseItem.description ? `
+                <div class="detail-section">
+                    <h4>Description</h4>
+                    <p class="case-description-full">${caseItem.description}</p>
+                </div>
+            ` : ''}
+            
+            ${caseItem.tags && caseItem.tags.length > 0 ? `
+                <div class="detail-section">
+                    <h4>Tags</h4>
+                    <div class="tags-container">
+                        ${caseItem.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="detail-actions">
+                <button class="btn btn-primary" onclick="editCaseById('${caseItem.id}')">
+                    <i data-feather="edit"></i> Edit Case
+                </button>
+                <button class="btn btn-secondary" onclick="duplicateCase('${caseItem.id}')">
+                    <i data-feather="copy"></i> Duplicate Case
+                </button>
+                <button class="btn btn-secondary" onclick="exportSingleCase('${caseItem.id}')">
+                    <i data-feather="download"></i> Export Case
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+};
+
+window.closeCaseDetails = function () {
+    const modal = document.getElementById('caseDetailsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+window.editCase = function () {
+    const modal = document.getElementById('caseDetailsModal');
+    const caseId = modal.dataset.caseId;
+    if (caseId) {
+        editCaseById(caseId);
+    }
+    closeCaseDetails();
+};
+
+window.editCaseById = function (caseId) {
+    const caseItem = cases.find(c => c.id === caseId);
+    if (!caseItem) return;
+
+    editingCaseId = caseId;
+
+    // Show form
+    const formSection = document.getElementById('caseFormSection');
+    const formTitle = document.getElementById('caseFormTitle');
+    const saveText = document.getElementById('saveCaseText');
+
+    if (formSection) formSection.style.display = 'block';
+    if (formTitle) formTitle.textContent = 'Edit Case';
+    if (saveText) saveText.textContent = 'Update Case';
+
+    // Populate form
+    const form = document.getElementById('caseForm');
+    if (form) {
+        form.title.value = caseItem.title;
+        form.severity.value = caseItem.severity;
+        form.assignee.value = caseItem.assignee;
+        form.status.value = caseItem.status;
+        form.priority.value = caseItem.priority || '';
+        form.dueDate.value = caseItem.dueDate || '';
+        form.description.value = caseItem.description || '';
+        form.tags.value = (caseItem.tags || []).join(', ');
+    }
+
+    // Scroll to form
+    formSection?.scrollIntoView({ behavior: 'smooth' });
+};
+
+window.duplicateCase = function (caseId) {
+    const caseItem = cases.find(c => c.id === caseId);
+    if (!caseItem) return;
+
+    const duplicatedCase = {
+        ...caseItem,
+        id: Date.now().toString(),
+        title: `${caseItem.title} (Copy)`,
+        status: 'open',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    cases.unshift(duplicatedCase);
+    dashboard.state.cases = cases;
+    dashboard.saveCases();
+
+    applyFiltersAndSort();
+    dashboard?.showNotification(`Case duplicated: "${duplicatedCase.title}"`, 'success');
+};
+
+window.deleteCase = function (caseId) {
+    const caseItem = cases.find(c => c.id === caseId);
+    if (!caseItem) return;
+
+    if (confirm(`Are you sure you want to delete case "${caseItem.title}"? This action cannot be undone.`)) {
+        const caseIndex = cases.findIndex(c => c.id === caseId);
+        if (caseIndex !== -1) {
+            cases.splice(caseIndex, 1);
+            dashboard.state.cases = cases;
+            dashboard.saveCases();
+
+            applyFiltersAndSort();
+            dashboard?.showNotification(`Case "${caseItem.title}" deleted`, 'success');
+        }
+    }
+};
+
+window.exportSingleCase = function (caseId) {
+    const caseItem = cases.find(c => c.id === caseId);
+    if (!caseItem) return;
+
+    try {
+        const csvData = convertCasesToCSV([caseItem]);
+        downloadCSV(csvData, `secunik-case-${caseId}-${Date.now()}.csv`);
+        dashboard?.showNotification('Case exported successfully', 'success');
+    } catch (error) {
+        console.error('Case export failed:', error);
+        dashboard?.showNotification('Failed to export case', 'error');
+    }
+};
+
+window.showNewCaseForm = showNewCaseForm;
+window.clearAllCaseFilters = clearAllCaseFilters;
+
+// Export functions
+export { init, render };
+

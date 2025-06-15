@@ -1,408 +1,561 @@
-let dashboard = null;
-let currentPage = 1;
-let eventsPerPage = 10;
-let totalEvents = 0;
-let filteredEvents = [];
-let allEvents = [];
-let sortField = 'timestamp';
-let sortDirection = 'desc';
-let selectedSeverities = ['critical', 'high', 'medium', 'low'];
+/**
+ * SecuNik Events Tab - Fixed Version
+ * Security events analysis and management
+ * 
+ * @version 2.1.0
+ * @author SecuNik Team
+ */
 
+let dashboard = null;
+let eventsData = [];
+let filteredEvents = [];
+let currentFilters = {
+    severity: 'all',
+    type: 'all',
+    timeRange: 'all',
+    search: ''
+};
+let currentSort = {
+    field: 'timestamp',
+    direction: 'desc'
+};
+let currentPage = 1;
+let itemsPerPage = 25;
+
+/**
+ * Initialize events tab
+ */
 export function init(dashboardInstance) {
     dashboard = dashboardInstance;
     console.log('✅ Events tab initialized');
+
+    // Render initial state if no analysis data
+    if (!dashboard.state.currentAnalysis) {
+        renderEmptyState();
+    }
 }
 
+/**
+ * Render events tab with analysis data
+ */
 export function render(analysis) {
+    if (!analysis) {
+        renderEmptyState();
+        return;
+    }
+
+    console.log('📊 Rendering events tab with analysis data');
+
+    // Extract events from analysis data
+    const data = analysis.result;
+    eventsData = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
+
+    // Process and enhance events data
+    eventsData = processEventsData(eventsData);
+    filteredEvents = [...eventsData];
+
+    // Render the events interface
+    renderEventsInterface();
+
+    // Apply initial filters and sorting
+    applyFiltersAndSort();
+
+    console.log(`✅ Events tab rendered with ${eventsData.length} events`);
+}
+
+/**
+ * Render empty state when no analysis data
+ */
+function renderEmptyState() {
     const eventsTab = document.getElementById('eventsTab');
     if (!eventsTab) return;
 
-    // Extract events data
-    const data = analysis?.result || analysis;
-    allEvents = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
-
-    // Apply initial filters
-    applyFilters();
-
     eventsTab.innerHTML = `
-        <div class="section-header">
-            <h2><i data-feather="alert-triangle" aria-hidden="true"></i> Security Events</h2>
-            <div class="header-actions">
-                <div class="events-summary">
-                    <span class="total-count">${allEvents.length} Total Events</span>
-                    <span class="critical-count">${getCriticalCount()} Critical</span>
-                </div>
-                <button class="btn btn-secondary" id="exportEventsBtn">
-                    <i data-feather="download"></i> Export Events
-                </button>
-                <button class="btn btn-primary" id="refreshEventsBtn">
-                    <i data-feather="refresh-cw"></i> Refresh
+        <div class="empty-state">
+            <div class="empty-content">
+                <i data-feather="shield" width="64" height="64"></i>
+                <h2>No Security Events</h2>
+                <p>Upload and analyze a file to view security events and threats</p>
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput')?.click()">
+                    <i data-feather="upload"></i> Upload File
                 </button>
             </div>
         </div>
-        
-        <div class="section-content">
-            <!-- Filters Section -->
-            <div class="events-filters">
-                <div class="filter-group">
-                    <label for="severityFilter">Severity:</label>
-                    <div class="severity-checkboxes">
-                        <label class="checkbox-label">
-                            <input type="checkbox" value="critical" checked> Critical
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" value="high" checked> High
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" value="medium" checked> Medium
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" value="low" checked> Low
-                        </label>
+    `;
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Render main events interface
+ */
+function renderEventsInterface() {
+    const eventsTab = document.getElementById('eventsTab');
+    if (!eventsTab) return;
+
+    eventsTab.innerHTML = `
+        <div class="events-container">
+            <!-- Events Header -->
+            <div class="section-header">
+                <h2><i data-feather="shield-alert" aria-hidden="true"></i> Security Events</h2>
+                <div class="header-actions">
+                    <div class="events-summary">
+                        <span class="total-events">${eventsData.length} Total Events</span>
+                        <span class="critical-count">${getCriticalCount()} Critical</span>
+                        <span class="high-count">${getHighCount()} High</span>
                     </div>
+                    <button class="btn btn-secondary" id="exportEventsBtn">
+                        <i data-feather="download"></i> Export
+                    </button>
+                    <button class="btn btn-primary" id="refreshEventsBtn">
+                        <i data-feather="refresh-cw"></i> Refresh
+                    </button>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="searchEvents">Search:</label>
-                    <input type="text" id="searchEvents" placeholder="Search events..." class="form-control">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="timeRangeFilter">Time Range:</label>
-                    <select id="timeRangeFilter" class="form-control">
-                        <option value="all">All Time</option>
-                        <option value="1h">Last Hour</option>
-                        <option value="24h">Last 24 Hours</option>
-                        <option value="7d">Last 7 Days</option>
-                        <option value="30d">Last 30 Days</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="eventTypeFilter">Event Type:</label>
-                    <select id="eventTypeFilter" class="form-control">
-                        <option value="all">All Types</option>
-                        ${getUniqueEventTypes().map(type =>
+            </div>
+
+            <!-- Events Controls -->
+            <div class="events-controls">
+                <div class="controls-row">
+                    <!-- Search -->
+                    <div class="control-group">
+                        <label for="eventsSearch">Search Events:</label>
+                        <div class="search-input-group">
+                            <input type="text" id="eventsSearch" placeholder="Search events, IPs, users..." 
+                                   value="${currentFilters.search}">
+                            <button class="search-btn" id="searchEventsBtn">
+                                <i data-feather="search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Severity Filter -->
+                    <div class="control-group">
+                        <label for="severityFilter">Severity:</label>
+                        <select id="severityFilter" value="${currentFilters.severity}">
+                            <option value="all">All Severities</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+
+                    <!-- Type Filter -->
+                    <div class="control-group">
+                        <label for="typeFilter">Event Type:</label>
+                        <select id="typeFilter" value="${currentFilters.type}">
+                            <option value="all">All Types</option>
+                            ${getUniqueEventTypes().map(type =>
         `<option value="${type}">${type}</option>`
     ).join('')}
-                    </select>
-                </div>
-                
-                <button class="btn btn-secondary" id="clearFiltersBtn">
-                    <i data-feather="x"></i> Clear Filters
-                </button>
-            </div>
-            
-            <!-- Events Statistics -->
-            <div class="events-stats">
-                <div class="stat-grid">
-                    <div class="stat-item critical">
-                        <div class="stat-value">${getSeverityCount('critical')}</div>
-                        <div class="stat-label">Critical Events</div>
+                        </select>
                     </div>
-                    <div class="stat-item high">
-                        <div class="stat-value">${getSeverityCount('high')}</div>
-                        <div class="stat-label">High Severity</div>
-                    </div>
-                    <div class="stat-item medium">
-                        <div class="stat-value">${getSeverityCount('medium')}</div>
-                        <div class="stat-label">Medium Severity</div>
-                    </div>
-                    <div class="stat-item low">
-                        <div class="stat-value">${getSeverityCount('low')}</div>
-                        <div class="stat-label">Low Severity</div>
+
+                    <!-- Time Range Filter -->
+                    <div class="control-group">
+                        <label for="timeRangeFilter">Time Range:</label>
+                        <select id="timeRangeFilter" value="${currentFilters.timeRange}">
+                            <option value="all">All Time</option>
+                            <option value="1h">Last Hour</option>
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                        </select>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Events Table -->
-            <div class="events-table-container">
-                <div class="table-controls">
-                    <div class="pagination-info">
-                        Showing ${getStartIndex()} - ${getEndIndex()} of ${filteredEvents.length} events
+
+                <div class="controls-row">
+                    <!-- Sort Options -->
+                    <div class="control-group">
+                        <label for="sortField">Sort By:</label>
+                        <select id="sortField" value="${currentSort.field}">
+                            <option value="timestamp">Timestamp</option>
+                            <option value="severity">Severity</option>
+                            <option value="type">Event Type</option>
+                            <option value="source">Source</option>
+                        </select>
                     </div>
-                    <div class="table-actions">
-                        <select id="eventsPerPageSelect" class="form-control">
+
+                    <div class="control-group">
+                        <label for="sortDirection">Order:</label>
+                        <select id="sortDirection" value="${currentSort.direction}">
+                            <option value="desc">Newest First</option>
+                            <option value="asc">Oldest First</option>
+                        </select>
+                    </div>
+
+                    <!-- Items Per Page -->
+                    <div class="control-group">
+                        <label for="itemsPerPage">Show:</label>
+                        <select id="itemsPerPage" value="${itemsPerPage}">
                             <option value="10">10 per page</option>
                             <option value="25">25 per page</option>
                             <option value="50">50 per page</option>
                             <option value="100">100 per page</option>
                         </select>
                     </div>
+
+                    <!-- Clear Filters -->
+                    <div class="control-group">
+                        <button class="btn btn-outline" id="clearFiltersBtn">
+                            <i data-feather="x"></i> Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events Statistics -->
+            <div class="events-stats" id="eventsStats">
+                <!-- Will be populated by updateEventsStats() -->
+            </div>
+
+            <!-- Events Table Container -->
+            <div class="events-table-container">
+                <div class="table-header">
+                    <h3>Events List</h3>
+                    <div class="table-info">
+                        <span id="eventsShowing">Showing 0 events</span>
+                    </div>
                 </div>
                 
-                <div class="events-table-wrapper">
-                    <table class="events-table">
+                <div class="table-wrapper">
+                    <table class="events-table" id="eventsTable">
                         <thead>
                             <tr>
                                 <th class="sortable" data-field="timestamp">
-                                    <i data-feather="clock"></i> Time
-                                    <span class="sort-indicator ${sortField === 'timestamp' ? sortDirection : ''}"></span>
+                                    <i data-feather="clock" width="16" height="16"></i> Timestamp
+                                    <i class="sort-icon" data-feather="chevron-down" width="12" height="12"></i>
                                 </th>
                                 <th class="sortable" data-field="severity">
-                                    <i data-feather="alert-circle"></i> Severity
-                                    <span class="sort-indicator ${sortField === 'severity' ? sortDirection : ''}"></span>
+                                    <i data-feather="alert-triangle" width="16" height="16"></i> Severity
+                                    <i class="sort-icon" data-feather="chevron-down" width="12" height="12"></i>
                                 </th>
-                                <th class="sortable" data-field="eventType">
-                                    <i data-feather="tag"></i> Event Type
-                                    <span class="sort-indicator ${sortField === 'eventType' ? sortDirection : ''}"></span>
+                                <th class="sortable" data-field="type">
+                                    <i data-feather="tag" width="16" height="16"></i> Type
+                                    <i class="sort-icon" data-feather="chevron-down" width="12" height="12"></i>
+                                </th>
+                                <th>
+                                    <i data-feather="file-text" width="16" height="16"></i> Description
                                 </th>
                                 <th class="sortable" data-field="source">
-                                    <i data-feather="server"></i> Source
-                                    <span class="sort-indicator ${sortField === 'source' ? sortDirection : ''}"></span>
+                                    <i data-feather="monitor" width="16" height="16"></i> Source
+                                    <i class="sort-icon" data-feather="chevron-down" width="12" height="12"></i>
                                 </th>
                                 <th>
-                                    <i data-feather="file-text"></i> Description
-                                </th>
-                                <th>
-                                    <i data-feather="tool"></i> Actions
+                                    <i data-feather="settings" width="16" height="16"></i> Actions
                                 </th>
                             </tr>
                         </thead>
                         <tbody id="eventsTableBody">
-                            ${renderEventsTable()}
+                            <!-- Table rows will be populated here -->
                         </tbody>
                     </table>
                 </div>
-                
+
                 <!-- Pagination -->
-                <div class="pagination-container">
-                    ${renderPagination()}
+                <div class="pagination-container" id="paginationContainer">
+                    <!-- Pagination will be rendered here -->
                 </div>
             </div>
-            
-            <!-- Event Timeline Chart -->
-            <div class="events-timeline-section">
-                <h3><i data-feather="bar-chart-2"></i> Event Timeline</h3>
-                <div class="timeline-chart" id="eventsTimelineChart">
-                    ${renderTimelineChart()}
+
+            <!-- Event Details Modal -->
+            <div class="event-details-modal" id="eventDetailsModal" style="display: none;">
+                <div class="modal-backdrop" onclick="closeEventDetails()"></div>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Event Details</h3>
+                        <button class="modal-close" onclick="closeEventDetails()">
+                            <i data-feather="x"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="eventDetailsContent">
+                        <!-- Event details will be populated here -->
+                    </div>
                 </div>
             </div>
         </div>
     `;
 
-    // Initialize event listeners
-    setupEventListeners();
-
-    // Replace feather icons
-    feather.replace();
-
-    console.log(`✅ Events tab rendered with ${allEvents.length} events`);
-}
-
-function setupEventListeners() {
-    // Export events button
-    const exportBtn = document.getElementById('exportEventsBtn');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', exportEvents);
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
     }
 
-    // Refresh events button
-    const refreshBtn = document.getElementById('refreshEventsBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            if (dashboard?.state?.currentAnalysis) {
-                render(dashboard.state.currentAnalysis);
+    // Setup event listeners
+    setupEventsEventListeners();
+}
+
+/**
+ * Process and enhance events data
+ */
+function processEventsData(events) {
+    return events.map((event, index) => {
+        // Ensure consistent structure
+        const processedEvent = {
+            id: event.id || index + 1,
+            timestamp: event.timestamp || event.Timestamp || new Date().toISOString(),
+            severity: (event.severity || event.Severity || 'low').toLowerCase(),
+            type: event.type || event.Type || 'Unknown Event',
+            description: event.description || event.Description || 'No description available',
+            source: event.source || event.Source || event.sourceIP || event.SourceIP || 'Unknown',
+            user: event.user || event.User || event.username || event.Username || 'Unknown',
+            details: event.details || event.Details || {},
+            ...event // Preserve any additional fields
+        };
+
+        // Add computed fields
+        processedEvent.timestampObj = new Date(processedEvent.timestamp);
+        processedEvent.formattedTime = formatTimestamp(processedEvent.timestamp);
+        processedEvent.severityScore = getSeverityScore(processedEvent.severity);
+
+        return processedEvent;
+    }).sort((a, b) => b.timestampObj - a.timestampObj); // Default sort by timestamp desc
+}
+
+/**
+ * Setup event listeners for events tab
+ */
+function setupEventsEventListeners() {
+    // Search functionality
+    const searchInput = document.getElementById('eventsSearch');
+    const searchBtn = document.getElementById('searchEventsBtn');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(handleSearch, 300));
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
             }
         });
     }
 
-    // Filter event listeners
-    const severityCheckboxes = document.querySelectorAll('.severity-checkboxes input[type="checkbox"]');
-    severityCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', handleSeverityFilter);
-    });
-
-    const searchInput = document.getElementById('searchEvents');
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(handleSearch, 300));
+    if (searchBtn) {
+        searchBtn.addEventListener('click', handleSearch);
     }
 
+    // Filter controls
+    const severityFilter = document.getElementById('severityFilter');
+    const typeFilter = document.getElementById('typeFilter');
     const timeRangeFilter = document.getElementById('timeRangeFilter');
+
+    if (severityFilter) {
+        severityFilter.addEventListener('change', handleFilterChange);
+    }
+    if (typeFilter) {
+        typeFilter.addEventListener('change', handleFilterChange);
+    }
     if (timeRangeFilter) {
-        timeRangeFilter.addEventListener('change', handleTimeRangeFilter);
+        timeRangeFilter.addEventListener('change', handleFilterChange);
     }
 
-    const eventTypeFilter = document.getElementById('eventTypeFilter');
-    if (eventTypeFilter) {
-        eventTypeFilter.addEventListener('change', handleEventTypeFilter);
+    // Sort controls
+    const sortField = document.getElementById('sortField');
+    const sortDirection = document.getElementById('sortDirection');
+
+    if (sortField) {
+        sortField.addEventListener('change', handleSortChange);
+    }
+    if (sortDirection) {
+        sortDirection.addEventListener('change', handleSortChange);
     }
 
+    // Items per page
+    const itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.addEventListener('change', handleItemsPerPageChange);
+    }
+
+    // Clear filters
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', clearAllFilters);
     }
 
-    // Events per page selector
-    const eventsPerPageSelect = document.getElementById('eventsPerPageSelect');
-    if (eventsPerPageSelect) {
-        eventsPerPageSelect.value = eventsPerPage.toString();
-        eventsPerPageSelect.addEventListener('change', handleEventsPerPageChange);
+    // Export events
+    const exportBtn = document.getElementById('exportEventsBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportEvents);
+    }
+
+    // Refresh events
+    const refreshBtn = document.getElementById('refreshEventsBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshEvents);
     }
 
     // Table sorting
-    const sortableHeaders = document.querySelectorAll('.sortable');
+    const sortableHeaders = document.querySelectorAll('.events-table th.sortable');
     sortableHeaders.forEach(header => {
         header.addEventListener('click', () => {
             const field = header.getAttribute('data-field');
-            handleSort(field);
-        });
-    });
-
-    // Pagination buttons
-    const paginationButtons = document.querySelectorAll('.pagination-btn');
-    paginationButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const action = e.target.getAttribute('data-action');
-            handlePagination(action);
+            handleTableSort(field);
         });
     });
 }
 
-function handleSeverityFilter() {
-    const checkboxes = document.querySelectorAll('.severity-checkboxes input[type="checkbox"]');
-    selectedSeverities = Array.from(checkboxes)
-        .filter(cb => cb.checked)
-        .map(cb => cb.value);
+/**
+ * Handle search functionality
+ */
+function handleSearch() {
+    const searchInput = document.getElementById('eventsSearch');
+    if (!searchInput) return;
 
-    applyFilters();
-    updateTable();
+    currentFilters.search = searchInput.value.trim().toLowerCase();
+    currentPage = 1; // Reset to first page
+    applyFiltersAndSort();
 }
 
-function handleSearch(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    applyFilters(searchTerm);
-    updateTable();
+/**
+ * Handle filter changes
+ */
+function handleFilterChange() {
+    const severityFilter = document.getElementById('severityFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const timeRangeFilter = document.getElementById('timeRangeFilter');
+
+    if (severityFilter) currentFilters.severity = severityFilter.value;
+    if (typeFilter) currentFilters.type = typeFilter.value;
+    if (timeRangeFilter) currentFilters.timeRange = timeRangeFilter.value;
+
+    currentPage = 1; // Reset to first page
+    applyFiltersAndSort();
 }
 
-function handleTimeRangeFilter(e) {
-    const timeRange = e.target.value;
-    applyFilters(null, timeRange);
-    updateTable();
+/**
+ * Handle sort changes
+ */
+function handleSortChange() {
+    const sortField = document.getElementById('sortField');
+    const sortDirection = document.getElementById('sortDirection');
+
+    if (sortField) currentSort.field = sortField.value;
+    if (sortDirection) currentSort.direction = sortDirection.value;
+
+    applyFiltersAndSort();
 }
 
-function handleEventTypeFilter(e) {
-    const eventType = e.target.value;
-    applyFilters(null, null, eventType);
-    updateTable();
+/**
+ * Handle items per page change
+ */
+function handleItemsPerPageChange() {
+    const itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (!itemsPerPageSelect) return;
+
+    itemsPerPage = parseInt(itemsPerPageSelect.value);
+    currentPage = 1; // Reset to first page
+    applyFiltersAndSort();
 }
 
-function clearAllFilters() {
-    // Reset checkboxes
-    const checkboxes = document.querySelectorAll('.severity-checkboxes input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = true);
-
-    // Reset other filters
-    document.getElementById('searchEvents').value = '';
-    document.getElementById('timeRangeFilter').value = 'all';
-    document.getElementById('eventTypeFilter').value = 'all';
-
-    // Reset state
-    selectedSeverities = ['critical', 'high', 'medium', 'low'];
-    currentPage = 1;
-
-    applyFilters();
-    updateTable();
-}
-
-function handleEventsPerPageChange(e) {
-    eventsPerPage = parseInt(e.target.value);
-    currentPage = 1;
-    updateTable();
-}
-
-function handleSort(field) {
-    if (sortField === field) {
-        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+/**
+ * Handle table header sorting
+ */
+function handleTableSort(field) {
+    if (currentSort.field === field) {
+        // Toggle direction if same field
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
     } else {
-        sortField = field;
-        sortDirection = 'desc';
+        // New field, default to desc
+        currentSort.field = field;
+        currentSort.direction = 'desc';
     }
 
-    sortEvents();
-    updateTable();
-    updateSortIndicators();
+    // Update sort selects
+    const sortField = document.getElementById('sortField');
+    const sortDirection = document.getElementById('sortDirection');
+    if (sortField) sortField.value = currentSort.field;
+    if (sortDirection) sortDirection.value = currentSort.direction;
+
+    applyFiltersAndSort();
 }
 
-function handlePagination(action) {
-    const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+/**
+ * Clear all filters
+ */
+function clearAllFilters() {
+    currentFilters = {
+        severity: 'all',
+        type: 'all',
+        timeRange: 'all',
+        search: ''
+    };
 
-    switch (action) {
-        case 'first':
-            currentPage = 1;
-            break;
-        case 'prev':
-            currentPage = Math.max(1, currentPage - 1);
-            break;
-        case 'next':
-            currentPage = Math.min(totalPages, currentPage + 1);
-            break;
-        case 'last':
-            currentPage = totalPages;
-            break;
-        default:
-            const pageNum = parseInt(action);
-            if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
-                currentPage = pageNum;
-            }
-    }
+    // Reset form controls
+    const searchInput = document.getElementById('eventsSearch');
+    const severityFilter = document.getElementById('severityFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const timeRangeFilter = document.getElementById('timeRangeFilter');
 
-    updateTable();
+    if (searchInput) searchInput.value = '';
+    if (severityFilter) severityFilter.value = 'all';
+    if (typeFilter) typeFilter.value = 'all';
+    if (timeRangeFilter) timeRangeFilter.value = 'all';
+
+    currentPage = 1;
+    applyFiltersAndSort();
 }
 
-function applyFilters(searchTerm = null, timeRange = null, eventType = null) {
-    // Get current filter values if not provided
-    if (searchTerm === null) {
-        const searchInput = document.getElementById('searchEvents');
-        searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-    }
+/**
+ * Apply filters and sorting
+ */
+function applyFiltersAndSort() {
+    // Start with all events
+    filteredEvents = [...eventsData];
 
-    if (timeRange === null) {
-        const timeRangeSelect = document.getElementById('timeRangeFilter');
-        timeRange = timeRangeSelect ? timeRangeSelect.value : 'all';
-    }
-
-    if (eventType === null) {
-        const eventTypeSelect = document.getElementById('eventTypeFilter');
-        eventType = eventTypeSelect ? eventTypeSelect.value : 'all';
-    }
-
-    filteredEvents = allEvents.filter(event => {
+    // Apply filters
+    filteredEvents = filteredEvents.filter(event => {
         // Severity filter
-        const eventSeverity = (event.severity || event.Severity || 'low').toLowerCase();
-        if (!selectedSeverities.includes(eventSeverity)) {
+        if (currentFilters.severity !== 'all' && event.severity !== currentFilters.severity) {
             return false;
         }
 
-        // Search filter
-        if (searchTerm) {
-            const searchableText = [
-                event.description || event.Description || '',
-                event.eventType || event.EventType || '',
-                event.source || event.Source || '',
-                event.details || event.Details || ''
-            ].join(' ').toLowerCase();
-
-            if (!searchableText.includes(searchTerm)) {
-                return false;
-            }
+        // Type filter
+        if (currentFilters.type !== 'all' && event.type !== currentFilters.type) {
+            return false;
         }
 
         // Time range filter
-        if (timeRange !== 'all') {
-            const eventTime = new Date(event.timestamp || event.Timestamp || Date.now());
+        if (currentFilters.timeRange !== 'all') {
             const now = new Date();
-            const timeRangeMs = getTimeRangeMs(timeRange);
+            const eventTime = event.timestampObj;
+            let cutoffTime;
 
-            if (now - eventTime > timeRangeMs) {
+            switch (currentFilters.timeRange) {
+                case '1h':
+                    cutoffTime = new Date(now.getTime() - (60 * 60 * 1000));
+                    break;
+                case '24h':
+                    cutoffTime = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+                    break;
+                case '7d':
+                    cutoffTime = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+                    break;
+                case '30d':
+                    cutoffTime = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+                    break;
+                default:
+                    cutoffTime = null;
+            }
+
+            if (cutoffTime && eventTime < cutoffTime) {
                 return false;
             }
         }
 
-        // Event type filter
-        if (eventType !== 'all') {
-            const eventEventType = event.eventType || event.EventType || '';
-            if (eventEventType !== eventType) {
+        // Search filter
+        if (currentFilters.search) {
+            const searchLower = currentFilters.search.toLowerCase();
+            const searchFields = [
+                event.type,
+                event.description,
+                event.source,
+                event.user,
+                JSON.stringify(event.details)
+            ].join(' ').toLowerCase();
+
+            if (!searchFields.includes(searchLower)) {
                 return false;
             }
         }
@@ -410,346 +563,295 @@ function applyFilters(searchTerm = null, timeRange = null, eventType = null) {
         return true;
     });
 
-    // Reset to first page when filters change
-    currentPage = 1;
-
-    // Sort the filtered events
-    sortEvents();
-}
-
-function sortEvents() {
+    // Apply sorting
     filteredEvents.sort((a, b) => {
-        let aValue, bValue;
+        let aValue = a[currentSort.field];
+        let bValue = b[currentSort.field];
 
-        switch (sortField) {
-            case 'timestamp':
-                aValue = new Date(a.timestamp || a.Timestamp || 0);
-                bValue = new Date(b.timestamp || b.Timestamp || 0);
-                break;
-            case 'severity':
-                const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-                aValue = severityOrder[(a.severity || a.Severity || 'low').toLowerCase()] || 0;
-                bValue = severityOrder[(b.severity || b.Severity || 'low').toLowerCase()] || 0;
-                break;
-            case 'eventType':
-                aValue = (a.eventType || a.EventType || '').toLowerCase();
-                bValue = (b.eventType || b.EventType || '').toLowerCase();
-                break;
-            case 'source':
-                aValue = (a.source || a.Source || '').toLowerCase();
-                bValue = (b.source || b.Source || '').toLowerCase();
-                break;
-            default:
-                return 0;
+        // Handle special cases
+        if (currentSort.field === 'timestamp') {
+            aValue = a.timestampObj;
+            bValue = b.timestampObj;
+        } else if (currentSort.field === 'severity') {
+            aValue = a.severityScore;
+            bValue = b.severityScore;
         }
 
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-        return 0;
-    });
-}
+        // Convert to strings for comparison if needed
+        if (typeof aValue === 'string') {
+            aValue = aValue.toLowerCase();
+        }
+        if (typeof bValue === 'string') {
+            bValue = bValue.toLowerCase();
+        }
 
-function updateTable() {
-    const tableBody = document.getElementById('eventsTableBody');
-    if (tableBody) {
-        tableBody.innerHTML = renderEventsTable();
-    }
-
-    const paginationContainer = document.querySelector('.pagination-container');
-    if (paginationContainer) {
-        paginationContainer.innerHTML = renderPagination();
-    }
-
-    const paginationInfo = document.querySelector('.pagination-info');
-    if (paginationInfo) {
-        paginationInfo.textContent = `Showing ${getStartIndex()} - ${getEndIndex()} of ${filteredEvents.length} events`;
-    }
-
-    // Re-attach pagination event listeners
-    const paginationButtons = document.querySelectorAll('.pagination-btn');
-    paginationButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const action = e.target.getAttribute('data-action');
-            handlePagination(action);
-        });
-    });
-
-    feather.replace();
-}
-
-function updateSortIndicators() {
-    const sortableHeaders = document.querySelectorAll('.sortable');
-    sortableHeaders.forEach(header => {
-        const indicator = header.querySelector('.sort-indicator');
-        const field = header.getAttribute('data-field');
-
-        if (field === sortField) {
-            indicator.className = `sort-indicator ${sortDirection}`;
+        if (currentSort.direction === 'asc') {
+            return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
         } else {
-            indicator.className = 'sort-indicator';
+            return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
         }
     });
+
+    // Update display
+    updateEventsStats();
+    renderEventsTable();
+    renderPagination();
 }
 
-function renderEventsTable() {
-    const startIndex = (currentPage - 1) * eventsPerPage;
-    const endIndex = startIndex + eventsPerPage;
-    const pageEvents = filteredEvents.slice(startIndex, endIndex);
+/**
+ * Update events statistics
+ */
+function updateEventsStats() {
+    const statsContainer = document.getElementById('eventsStats');
+    if (!statsContainer) return;
 
-    if (pageEvents.length === 0) {
-        return `
-            <tr>
-                <td colspan="6" class="no-events">
-                    <div class="empty-state">
-                        <i data-feather="search"></i>
-                        <h3>No events found</h3>
-                        <p>Try adjusting your filters or search criteria</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }
+    const total = filteredEvents.length;
+    const critical = filteredEvents.filter(e => e.severity === 'critical').length;
+    const high = filteredEvents.filter(e => e.severity === 'high').length;
+    const medium = filteredEvents.filter(e => e.severity === 'medium').length;
+    const low = filteredEvents.filter(e => e.severity === 'low').length;
 
-    return pageEvents.map((event, index) => {
-        const severity = (event.severity || event.Severity || 'low').toLowerCase();
-        const timestamp = formatTimestamp(event.timestamp || event.Timestamp);
-        const eventType = event.eventType || event.EventType || 'Unknown';
-        const source = event.source || event.Source || 'Unknown';
-        const description = truncateText(event.description || event.Description || 'No description', 60);
-        const eventIndex = startIndex + index;
-
-        return `
-            <tr class="event-row ${severity}" data-event-index="${eventIndex}">
-                <td class="timestamp-cell">
-                    <div class="timestamp-wrapper">
-                        <span class="timestamp">${timestamp}</span>
-                        <span class="relative-time">${getRelativeTime(event.timestamp || event.Timestamp)}</span>
-                    </div>
-                </td>
-                <td class="severity-cell">
-                    <span class="severity-badge ${severity}">${severity.toUpperCase()}</span>
-                </td>
-                <td class="event-type-cell">
-                    <span class="event-type" title="${eventType}">${eventType}</span>
-                </td>
-                <td class="source-cell">
-                    <span class="source" title="${source}">${source}</span>
-                </td>
-                <td class="description-cell">
-                    <span class="description" title="${event.description || event.Description || ''}">${description}</span>
-                </td>
-                <td class="actions-cell">
-                    <div class="action-buttons">
-                        <button class="btn-icon" onclick="viewEventDetails(${eventIndex})" title="View Details">
-                            <i data-feather="eye"></i>
-                        </button>
-                        <button class="btn-icon" onclick="createCaseFromEvent(${eventIndex})" title="Create Case">
-                            <i data-feather="folder-plus"></i>
-                        </button>
-                        <button class="btn-icon" onclick="exportSingleEvent(${eventIndex})" title="Export Event">
-                            <i data-feather="download"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function renderPagination() {
-    const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
-
-    if (totalPages <= 1) return '';
-
-    let paginationHTML = '<div class="pagination">';
-
-    // First and Previous buttons
-    paginationHTML += `
-        <button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" 
-                data-action="first" ${currentPage === 1 ? 'disabled' : ''}>
-            <i data-feather="chevrons-left"></i>
-        </button>
-        <button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" 
-                data-action="prev" ${currentPage === 1 ? 'disabled' : ''}>
-            <i data-feather="chevron-left"></i>
-        </button>
-    `;
-
-    // Page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-
-    if (startPage > 1) {
-        paginationHTML += '<button class="pagination-btn" data-action="1">1</button>';
-        if (startPage > 2) {
-            paginationHTML += '<span class="pagination-ellipsis">...</span>';
-        }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-        paginationHTML += `
-            <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
-                    data-action="${i}">${i}</button>
-        `;
-    }
-
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-            paginationHTML += '<span class="pagination-ellipsis">...</span>';
-        }
-        paginationHTML += `<button class="pagination-btn" data-action="${totalPages}">${totalPages}</button>`;
-    }
-
-    // Next and Last buttons
-    paginationHTML += `
-        <button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" 
-                data-action="next" ${currentPage === totalPages ? 'disabled' : ''}>
-            <i data-feather="chevron-right"></i>
-        </button>
-        <button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" 
-                data-action="last" ${currentPage === totalPages ? 'disabled' : ''}>
-            <i data-feather="chevrons-right"></i>
-        </button>
-    `;
-
-    paginationHTML += '</div>';
-    return paginationHTML;
-}
-
-function renderTimelineChart() {
-    if (allEvents.length === 0) {
-        return '<div class="chart-placeholder">No events to display</div>';
-    }
-
-    // Group events by hour
-    const hourlyGroups = {};
-    allEvents.forEach(event => {
-        const date = new Date(event.timestamp || event.Timestamp || Date.now());
-        const hour = new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
-        const hourKey = hour.toISOString();
-
-        if (!hourlyGroups[hourKey]) {
-            hourlyGroups[hourKey] = { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
-        }
-
-        const severity = (event.severity || event.Severity || 'low').toLowerCase();
-        hourlyGroups[hourKey][severity]++;
-        hourlyGroups[hourKey].total++;
-    });
-
-    // Sort by time and take last 24 hours
-    const sortedGroups = Object.entries(hourlyGroups)
-        .sort(([a], [b]) => new Date(a) - new Date(b))
-        .slice(-24);
-
-    const maxCount = Math.max(...sortedGroups.map(([, counts]) => counts.total));
-
-    return `
-        <div class="timeline-chart-container">
-            <div class="chart-legend">
-                <span class="legend-item critical">Critical</span>
-                <span class="legend-item high">High</span>
-                <span class="legend-item medium">Medium</span>
-                <span class="legend-item low">Low</span>
+    statsContainer.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">${total}</div>
+                <div class="stat-label">Total Events</div>
             </div>
-            <div class="chart-bars">
-                ${sortedGroups.map(([time, counts]) => {
-        const hour = new Date(time).getHours();
-        const height = (counts.total / maxCount) * 100;
-
-        return `
-                        <div class="chart-bar" style="height: ${height}%" 
-                             title="${new Date(time).toLocaleString()}: ${counts.total} events">
-                            <div class="bar-segments">
-                                ${counts.critical > 0 ? `<div class="bar-segment critical" style="height: ${(counts.critical / counts.total) * 100}%"></div>` : ''}
-                                ${counts.high > 0 ? `<div class="bar-segment high" style="height: ${(counts.high / counts.total) * 100}%"></div>` : ''}
-                                ${counts.medium > 0 ? `<div class="bar-segment medium" style="height: ${(counts.medium / counts.total) * 100}%"></div>` : ''}
-                                ${counts.low > 0 ? `<div class="bar-segment low" style="height: ${(counts.low / counts.total) * 100}%"></div>` : ''}
-                            </div>
-                            <div class="bar-label">${hour}:00</div>
-                        </div>
-                    `;
-    }).join('')}
+            <div class="stat-item critical">
+                <div class="stat-value">${critical}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat-item high">
+                <div class="stat-value">${high}</div>
+                <div class="stat-label">High</div>
+            </div>
+            <div class="stat-item medium">
+                <div class="stat-value">${medium}</div>
+                <div class="stat-label">Medium</div>
+            </div>
+            <div class="stat-item low">
+                <div class="stat-value">${low}</div>
+                <div class="stat-label">Low</div>
             </div>
         </div>
     `;
 }
 
-// Utility functions
-function getCriticalCount() {
-    return allEvents.filter(e =>
-        (e.severity || e.Severity || '').toLowerCase() === 'critical'
-    ).length;
-}
+/**
+ * Render events table
+ */
+function renderEventsTable() {
+    const tbody = document.getElementById('eventsTableBody');
+    const showingSpan = document.getElementById('eventsShowing');
 
-function getSeverityCount(severity) {
-    return allEvents.filter(e =>
-        (e.severity || e.Severity || '').toLowerCase() === severity
-    ).length;
-}
+    if (!tbody) return;
 
-function getUniqueEventTypes() {
-    const types = new Set();
-    allEvents.forEach(event => {
-        const type = event.eventType || event.EventType;
-        if (type) types.add(type);
-    });
-    return Array.from(types).sort();
-}
+    // Calculate pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageEvents = filteredEvents.slice(startIndex, endIndex);
 
-function getStartIndex() {
-    return filteredEvents.length === 0 ? 0 : (currentPage - 1) * eventsPerPage + 1;
-}
+    // Update showing text
+    if (showingSpan) {
+        showingSpan.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, filteredEvents.length)} of ${filteredEvents.length} events`;
+    }
 
-function getEndIndex() {
-    return Math.min(currentPage * eventsPerPage, filteredEvents.length);
-}
+    // Render table rows
+    if (pageEvents.length === 0) {
+        tbody.innerHTML = `
+            <tr class="no-events">
+                <td colspan="6">
+                    <div class="no-events-content">
+                        <i data-feather="search" width="32" height="32"></i>
+                        <p>No events match your current filters</p>
+                        <button class="btn btn-outline" onclick="clearAllFilters()">Clear Filters</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = pageEvents.map(event => `
+            <tr class="event-row ${event.severity}" data-event-id="${event.id}">
+                <td class="timestamp-cell">
+                    <div class="timestamp-full">${event.formattedTime}</div>
+                    <div class="timestamp-short">${formatTimestampShort(event.timestamp)}</div>
+                </td>
+                <td class="severity-cell">
+                    <span class="severity-badge ${event.severity}">
+                        <i data-feather="${getSeverityIcon(event.severity)}" width="12" height="12"></i>
+                        ${event.severity.toUpperCase()}
+                    </span>
+                </td>
+                <td class="type-cell">
+                    <span class="event-type">${event.type}</span>
+                </td>
+                <td class="description-cell">
+                    <div class="description-text" title="${event.description}">
+                        ${truncateText(event.description, 100)}
+                    </div>
+                </td>
+                <td class="source-cell">
+                    <div class="source-info">
+                        <div class="source-primary">${event.source}</div>
+                        ${event.user !== 'Unknown' ? `<div class="source-user">User: ${event.user}</div>` : ''}
+                    </div>
+                </td>
+                <td class="actions-cell">
+                    <div class="action-buttons">
+                        <button class="btn-icon" onclick="showEventDetails(${event.id})" title="View Details">
+                            <i data-feather="eye" width="14" height="14"></i>
+                        </button>
+                        <button class="btn-icon" onclick="createCaseFromEvent(${event.id})" title="Create Case">
+                            <i data-feather="folder-plus" width="14" height="14"></i>
+                        </button>
+                        <button class="btn-icon" onclick="exportSingleEvent(${event.id})" title="Export">
+                            <i data-feather="download" width="14" height="14"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
 
-function getTimeRangeMs(timeRange) {
-    const ranges = {
-        '1h': 60 * 60 * 1000,
-        '24h': 24 * 60 * 60 * 1000,
-        '7d': 7 * 24 * 60 * 60 * 1000,
-        '30d': 30 * 24 * 60 * 60 * 1000
-    };
-    return ranges[timeRange] || 0;
-}
-
-function formatTimestamp(timestamp) {
-    if (!timestamp) return 'Unknown';
-
-    try {
-        const date = new Date(timestamp);
-        return date.toLocaleString();
-    } catch (error) {
-        return 'Invalid Date';
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
     }
 }
 
-function getRelativeTime(timestamp) {
-    if (!timestamp) return '';
+/**
+ * Render pagination
+ */
+function renderPagination() {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
 
+    const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const maxVisiblePages = 5;
+    const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    let paginationHTML = `
+        <div class="pagination">
+            <button class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''} 
+                    onclick="changePage(1)" title="First Page">
+                <i data-feather="chevrons-left" width="14" height="14"></i>
+            </button>
+            <button class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''} 
+                    onclick="changePage(${currentPage - 1})" title="Previous Page">
+                <i data-feather="chevron-left" width="14" height="14"></i>
+            </button>
+    `;
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
+                    onclick="changePage(${i})">${i}</button>
+        `;
+    }
+
+    paginationHTML += `
+            <button class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''} 
+                    onclick="changePage(${currentPage + 1})" title="Next Page">
+                <i data-feather="chevron-right" width="14" height="14"></i>
+            </button>
+            <button class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''} 
+                    onclick="changePage(${totalPages})" title="Last Page">
+                <i data-feather="chevrons-right" width="14" height="14"></i>
+            </button>
+        </div>
+        <div class="pagination-info">
+            Page ${currentPage} of ${totalPages}
+        </div>
+    `;
+
+    container.innerHTML = paginationHTML;
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Export events to CSV
+ */
+function exportEvents() {
     try {
-        const now = new Date();
-        const time = new Date(timestamp);
-        const diffMs = now - time;
-        const diffMinutes = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-
-        if (diffMinutes < 1) return 'Just now';
-        if (diffMinutes < 60) return `${diffMinutes}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
-        return '';
+        const csvData = convertEventsToCSV(filteredEvents);
+        downloadCSV(csvData, `secunik-events-${Date.now()}.csv`);
+        dashboard?.showNotification('Events exported successfully', 'success');
     } catch (error) {
-        return '';
+        console.error('Export failed:', error);
+        dashboard?.showNotification('Failed to export events', 'error');
+    }
+}
+
+/**
+ * Refresh events (re-render)
+ */
+function refreshEvents() {
+    if (dashboard?.state.currentAnalysis) {
+        render(dashboard.state.currentAnalysis);
+        dashboard?.showNotification('Events refreshed', 'success');
+    }
+}
+
+// Helper functions
+
+function getCriticalCount() {
+    return eventsData.filter(e => e.severity === 'critical').length;
+}
+
+function getHighCount() {
+    return eventsData.filter(e => e.severity === 'high').length;
+}
+
+function getUniqueEventTypes() {
+    const types = [...new Set(eventsData.map(e => e.type))];
+    return types.filter(type => type && type !== 'Unknown Event').sort();
+}
+
+function getSeverityScore(severity) {
+    const scores = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
+    return scores[severity.toLowerCase()] || 0;
+}
+
+function getSeverityIcon(severity) {
+    const icons = {
+        'critical': 'alert-triangle',
+        'high': 'alert-circle',
+        'medium': 'info',
+        'low': 'check-circle'
+    };
+    return icons[severity.toLowerCase()] || 'help-circle';
+}
+
+function formatTimestamp(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleString();
+    } catch {
+        return timestamp || 'Unknown';
+    }
+}
+
+function formatTimestampShort(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleTimeString();
+    } catch {
+        return 'Unknown';
     }
 }
 
 function truncateText(text, maxLength) {
-    if (!text || text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
 function debounce(func, wait) {
@@ -764,40 +866,22 @@ function debounce(func, wait) {
     };
 }
 
-// Export functions
-function exportEvents() {
-    if (!dashboard?.state?.currentAnalysis) {
-        dashboard?.showNotification('No events to export', 'warning');
-        return;
-    }
-
-    try {
-        const csvData = convertEventsToCSV(filteredEvents);
-        downloadCSV(csvData, `secunik-events-${Date.now()}.csv`);
-        dashboard?.showNotification('Events exported successfully', 'success');
-    } catch (error) {
-        console.error('Events export failed:', error);
-        dashboard?.showNotification('Failed to export events', 'error');
-    }
-}
-
 function convertEventsToCSV(events) {
-    const headers = ['Timestamp', 'Severity', 'Event Type', 'Source', 'Description', 'Details'];
-    const csvRows = [headers.join(',')];
+    const headers = ['Timestamp', 'Severity', 'Type', 'Description', 'Source', 'User'];
+    const rows = events.map(event => [
+        event.formattedTime,
+        event.severity,
+        event.type,
+        event.description,
+        event.source,
+        event.user
+    ]);
 
-    events.forEach(event => {
-        const row = [
-            `"${formatTimestamp(event.timestamp || event.Timestamp)}"`,
-            `"${(event.severity || event.Severity || '').toUpperCase()}"`,
-            `"${event.eventType || event.EventType || ''}"`,
-            `"${event.source || event.Source || ''}"`,
-            `"${(event.description || event.Description || '').replace(/"/g, '""')}"`,
-            `"${(event.details || event.Details || '').replace(/"/g, '""')}"`
-        ];
-        csvRows.push(row.join(','));
-    });
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
 
-    return csvRows.join('\n');
+    return csvContent;
 }
 
 function downloadCSV(csvData, filename) {
@@ -812,131 +896,133 @@ function downloadCSV(csvData, filename) {
     URL.revokeObjectURL(url);
 }
 
-// Global functions for button actions
-window.viewEventDetails = function (eventIndex) {
-    const event = filteredEvents[eventIndex];
-    if (!event) return;
-
-    const modal = createEventDetailsModal(event);
-    document.body.appendChild(modal);
-    modal.style.display = 'flex';
-
-    dashboard?.showNotification('Event details opened', 'info', 2000);
+// Global functions for onclick handlers
+window.changePage = function (page) {
+    currentPage = page;
+    renderEventsTable();
+    renderPagination();
 };
 
-window.createCaseFromEvent = function (eventIndex) {
-    const event = filteredEvents[eventIndex];
+window.showEventDetails = function (eventId) {
+    const event = eventsData.find(e => e.id === eventId);
     if (!event) return;
 
-    // Switch to case management tab and pre-fill form
-    dashboard?.switchToTab('case');
+    const modal = document.getElementById('eventDetailsModal');
+    const content = document.getElementById('eventDetailsContent');
 
+    if (!modal || !content) return;
+
+    content.innerHTML = `
+        <div class="event-details">
+            <div class="detail-section">
+                <h4>Basic Information</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Event ID:</label>
+                        <span>${event.id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Timestamp:</label>
+                        <span>${event.formattedTime}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Severity:</label>
+                        <span class="severity-badge ${event.severity}">${event.severity.toUpperCase()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Type:</label>
+                        <span>${event.type}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Source:</label>
+                        <span>${event.source}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>User:</label>
+                        <span>${event.user}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>Description</h4>
+                <p>${event.description}</p>
+            </div>
+            
+            ${Object.keys(event.details).length > 0 ? `
+                <div class="detail-section">
+                    <h4>Additional Details</h4>
+                    <pre class="details-json">${JSON.stringify(event.details, null, 2)}</pre>
+                </div>
+            ` : ''}
+            
+            <div class="detail-actions">
+                <button class="btn btn-primary" onclick="createCaseFromEvent(${event.id})">
+                    <i data-feather="folder-plus"></i> Create Case
+                </button>
+                <button class="btn btn-secondary" onclick="exportSingleEvent(${event.id})">
+                    <i data-feather="download"></i> Export Event
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+};
+
+window.closeEventDetails = function () {
+    const modal = document.getElementById('eventDetailsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+window.createCaseFromEvent = function (eventId) {
+    const event = eventsData.find(e => e.id === eventId);
+    if (!event) return;
+
+    dashboard?.switchToTab('caseManagement');
+
+    // Fill case form with event data
     setTimeout(() => {
         const titleField = document.getElementById('caseTitle');
         const severityField = document.getElementById('caseSeverity');
         const descriptionField = document.getElementById('caseDescription');
 
         if (titleField) {
-            titleField.value = `Security Event: ${event.eventType || event.EventType || 'Unknown'}`;
+            titleField.value = `Security Event: ${event.type}`;
         }
 
         if (severityField) {
-            const severity = (event.severity || event.Severity || 'medium').toLowerCase();
-            severityField.value = severity;
+            severityField.value = event.severity;
         }
 
         if (descriptionField) {
-            descriptionField.value = `Automated case creation from security event.\n\nEvent Details:\n${event.description || event.Description || 'No description available'}`;
+            descriptionField.value = `Case created from security event.\n\nEvent: ${event.type}\nTime: ${event.formattedTime}\nSource: ${event.source}\nDescription: ${event.description}`;
         }
     }, 100);
 };
 
-window.exportSingleEvent = function (eventIndex) {
-    const event = filteredEvents[eventIndex];
+window.exportSingleEvent = function (eventId) {
+    const event = eventsData.find(e => e.id === eventId);
     if (!event) return;
 
     try {
         const csvData = convertEventsToCSV([event]);
-        downloadCSV(csvData, `secunik-event-${eventIndex}-${Date.now()}.csv`);
+        downloadCSV(csvData, `secunik-event-${eventId}-${Date.now()}.csv`);
         dashboard?.showNotification('Event exported successfully', 'success');
     } catch (error) {
-        console.error('Single event export failed:', error);
+        console.error('Export failed:', error);
         dashboard?.showNotification('Failed to export event', 'error');
     }
 };
 
-function createEventDetailsModal(event) {
-    const modal = document.createElement('div');
-    modal.className = 'event-modal';
-    modal.innerHTML = `
-        <div class="modal-backdrop" onclick="closeEventModal()"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Event Details</h3>
-                <button class="modal-close" onclick="closeEventModal()">
-                    <i data-feather="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="event-details">
-                    <div class="detail-row">
-                        <label>Timestamp:</label>
-                        <span>${formatTimestamp(event.timestamp || event.Timestamp)}</span>
-                    </div>
-                    <div class="detail-row">
-                        <label>Severity:</label>
-                        <span class="severity-badge ${(event.severity || event.Severity || 'low').toLowerCase()}">
-                            ${(event.severity || event.Severity || '').toUpperCase()}
-                        </span>
-                    </div>
-                    <div class="detail-row">
-                        <label>Event Type:</label>
-                        <span>${event.eventType || event.EventType || 'Unknown'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <label>Source:</label>
-                        <span>${event.source || event.Source || 'Unknown'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <label>Description:</label>
-                        <span>${event.description || event.Description || 'No description'}</span>
-                    </div>
-                    ${event.details || event.Details ? `
-                        <div class="detail-row">
-                            <label>Details:</label>
-                            <pre class="event-details-text">${event.details || event.Details}</pre>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeEventModal()">Close</button>
-                <button class="btn btn-primary" onclick="createCaseFromEvent(${filteredEvents.indexOf(event)})">
-                    Create Case
-                </button>
-            </div>
-        </div>
-    `;
+window.clearAllFilters = clearAllFilters;
 
-    // Add modal styles
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 10000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    `;
-
-    return modal;
-}
-
-window.closeEventModal = function () {
-    const modal = document.querySelector('.event-modal');
-    if (modal) {
-        modal.remove();
-    }
-};
+// Export functions
+export { init, render };

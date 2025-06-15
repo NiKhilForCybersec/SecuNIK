@@ -1,20 +1,37 @@
+/**
+ * SecuNik Timeline Tab - Fixed Version
+ * Timeline analysis and visualization
+ * 
+ * @version 2.1.0
+ * @author SecuNik Team
+ */
+
 let dashboard = null;
 let timelineData = [];
 let filteredTimelineData = [];
 let selectedTimeRange = 'all';
 let selectedEventTypes = [];
 let zoomLevel = 1;
-let timelineChart = null;
 let currentView = 'detailed'; // detailed, compact, heatmap
 
+/**
+ * Initialize timeline tab
+ */
 export function init(dashboardInstance) {
     dashboard = dashboardInstance;
     console.log('✅ Timeline tab initialized');
 }
 
+/**
+ * Render timeline tab with analysis data
+ */
 export function render(analysis) {
-    const timelineTab = document.getElementById('timelineTab');
-    if (!timelineTab) return;
+    if (!analysis) {
+        renderEmptyState();
+        return;
+    }
+
+    console.log('📊 Rendering timeline tab with analysis data');
 
     // Extract and process timeline data
     const data = analysis?.result || analysis;
@@ -24,27 +41,67 @@ export function render(analysis) {
     // Initialize filters
     selectedEventTypes = getUniqueEventTypes();
 
+    renderTimelineInterface();
+    setupTimelineEventListeners();
+
+    console.log(`✅ Timeline rendered with ${timelineData.length} events`);
+}
+
+/**
+ * Render empty state when no analysis data
+ */
+function renderEmptyState() {
+    const timelineTab = document.getElementById('timelineTab');
+    if (!timelineTab) return;
+
     timelineTab.innerHTML = `
-        <div class="section-header">
-            <h2><i data-feather="clock" aria-hidden="true"></i> Timeline Analysis</h2>
-            <div class="header-actions">
-                <div class="timeline-summary">
-                    <span class="total-events">${timelineData.length} Timeline Events</span>
-                    <span class="time-span">${getTimeSpan()}</span>
-                </div>
-                <button class="btn btn-secondary" id="exportTimelineBtn">
-                    <i data-feather="download"></i> Export Timeline
-                </button>
-                <button class="btn btn-secondary" id="generateTimelineReportBtn">
-                    <i data-feather="file-text"></i> Generate Report
-                </button>
-                <button class="btn btn-primary" id="refreshTimelineBtn">
-                    <i data-feather="refresh-cw"></i> Refresh
+        <div class="empty-state">
+            <div class="empty-content">
+                <i data-feather="clock" width="64" height="64"></i>
+                <h2>No Timeline Data</h2>
+                <p>Upload and analyze a file to view the timeline of events</p>
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput')?.click()">
+                    <i data-feather="upload"></i> Upload File
                 </button>
             </div>
         </div>
-        
-        <div class="section-content">
+    `;
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Render main timeline interface
+ */
+function renderTimelineInterface() {
+    const timelineTab = document.getElementById('timelineTab');
+    if (!timelineTab) return;
+
+    timelineTab.innerHTML = `
+        <div class="timeline-container">
+            <!-- Timeline Header -->
+            <div class="section-header">
+                <h2><i data-feather="clock" aria-hidden="true"></i> Timeline Analysis</h2>
+                <div class="header-actions">
+                    <div class="timeline-summary">
+                        <span class="total-events">${timelineData.length} Timeline Events</span>
+                        <span class="time-span">${getTimeSpan()}</span>
+                    </div>
+                    <button class="btn btn-secondary" id="exportTimelineBtn">
+                        <i data-feather="download"></i> Export Timeline
+                    </button>
+                    <button class="btn btn-secondary" id="generateTimelineReportBtn">
+                        <i data-feather="file-text"></i> Generate Report
+                    </button>
+                    <button class="btn btn-primary" id="refreshTimelineBtn">
+                        <i data-feather="refresh-cw"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
             <!-- Timeline Controls -->
             <div class="timeline-controls">
                 <div class="control-group">
@@ -63,191 +120,75 @@ export function render(analysis) {
                 </div>
                 
                 <div class="control-group">
-                    <label for="timeRangeSelect">Time Range:</label>
-                    <select id="timeRangeSelect" class="form-control">
+                    <label for="timelineTimeRange">Time Range:</label>
+                    <select id="timelineTimeRange">
                         <option value="all">All Time</option>
                         <option value="1h">Last Hour</option>
                         <option value="6h">Last 6 Hours</option>
                         <option value="24h">Last 24 Hours</option>
                         <option value="7d">Last 7 Days</option>
                         <option value="30d">Last 30 Days</option>
-                        <option value="custom">Custom Range</option>
                     </select>
                 </div>
                 
-                <div class="control-group" id="customRangeGroup" style="display: none;">
-                    <label>Custom Range:</label>
-                    <input type="datetime-local" id="startTime" class="form-control">
-                    <span>to</span>
-                    <input type="datetime-local" id="endTime" class="form-control">
-                </div>
-                
                 <div class="control-group">
-                    <label>Event Types:</label>
-                    <div class="event-type-checkboxes">
+                    <label for="timelineEventTypes">Event Types:</label>
+                    <select id="timelineEventTypes" multiple>
                         ${getUniqueEventTypes().map(type => `
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="${type}" checked> ${type}
-                            </label>
+                            <option value="${type}" selected>${type}</option>
                         `).join('')}
-                    </div>
-                </div>
-                
-                <div class="control-group">
-                    <label for="severityFilter">Minimum Severity:</label>
-                    <select id="severityFilter" class="form-control">
-                        <option value="all">All Severities</option>
-                        <option value="low">Low and above</option>
-                        <option value="medium">Medium and above</option>
-                        <option value="high">High and above</option>
-                        <option value="critical">Critical only</option>
                     </select>
                 </div>
                 
                 <div class="control-group">
-                    <label for="timelineSearch">Search:</label>
-                    <input type="text" id="timelineSearch" placeholder="Search events..." class="form-control">
+                    <label for="timelineZoom">Zoom Level:</label>
+                    <input type="range" id="timelineZoom" min="1" max="10" value="${zoomLevel}" 
+                           class="zoom-slider">
+                    <span class="zoom-value">${zoomLevel}x</span>
                 </div>
                 
-                <button class="btn btn-secondary" id="clearTimelineFiltersBtn">
-                    <i data-feather="x"></i> Clear Filters
-                </button>
+                <div class="control-group">
+                    <button class="btn btn-outline" id="resetTimelineFilters">
+                        <i data-feather="refresh-ccw"></i> Reset Filters
+                    </button>
+                </div>
             </div>
-            
+
             <!-- Timeline Statistics -->
-            <div class="timeline-stats">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon critical">
-                            <i data-feather="alert-octagon"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value">${getSeverityCount('critical')}</div>
-                            <div class="stat-label">Critical Events</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon high">
-                            <i data-feather="alert-triangle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value">${getSeverityCount('high')}</div>
-                            <div class="stat-label">High Priority</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon info">
-                            <i data-feather="activity"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value">${getEventDensity()}</div>
-                            <div class="stat-label">Events/Hour</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon success">
-                            <i data-feather="clock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value">${getAverageInterval()}</div>
-                            <div class="stat-label">Avg Interval</div>
-                        </div>
-                    </div>
-                </div>
+            <div class="timeline-stats" id="timelineStats">
+                <!-- Will be populated by updateTimelineStats() -->
             </div>
-            
+
             <!-- Timeline Visualization -->
-            <div class="timeline-visualization">
-                <div class="timeline-header">
-                    <h3>Event Timeline</h3>
-                    <div class="timeline-zoom">
-                        <button class="zoom-btn" id="zoomOutBtn">
-                            <i data-feather="zoom-out"></i>
+            <div class="timeline-visualization" id="timelineVisualization">
+                <!-- Timeline will be rendered here -->
+            </div>
+
+            <!-- Timeline Events List -->
+            <div class="timeline-events-section">
+                <div class="timeline-events-header">
+                    <h3>Timeline Events</h3>
+                    <div class="events-controls">
+                        <span id="timelineEventsCount">0 events</span>
+                        <button class="btn btn-outline btn-sm" id="expandAllEvents">
+                            <i data-feather="chevrons-down"></i> Expand All
                         </button>
-                        <span class="zoom-level">${Math.round(zoomLevel * 100)}%</span>
-                        <button class="zoom-btn" id="zoomInBtn">
-                            <i data-feather="zoom-in"></i>
-                        </button>
-                        <button class="zoom-btn" id="resetZoomBtn">
-                            <i data-feather="maximize"></i>
+                        <button class="btn btn-outline btn-sm" id="collapseAllEvents">
+                            <i data-feather="chevrons-up"></i> Collapse All
                         </button>
                     </div>
                 </div>
                 
-                <div class="timeline-container" id="timelineContainer">
-                    <div class="timeline-content" id="timelineContent">
-                        ${renderTimelineView()}
-                    </div>
+                <div class="timeline-events-list" id="timelineEventsList">
+                    <!-- Events will be rendered here -->
                 </div>
             </div>
-            
-            <!-- Timeline Legend -->
-            <div class="timeline-legend">
-                <h4>Legend</h4>
-                <div class="legend-items">
-                    <div class="legend-item">
-                        <span class="legend-color critical"></span>
-                        <span class="legend-label">Critical Events</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color high"></span>
-                        <span class="legend-label">High Priority</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color medium"></span>
-                        <span class="legend-label">Medium Priority</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color low"></span>
-                        <span class="legend-label">Low Priority</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color info"></span>
-                        <span class="legend-label">Information</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Timeline Analysis -->
-            <div class="timeline-analysis">
-                <div class="analysis-grid">
-                    <!-- Pattern Analysis -->
-                    <div class="analysis-widget">
-                        <div class="widget-header">
-                            <h3><i data-feather="trending-up"></i> Pattern Analysis</h3>
-                        </div>
-                        <div class="widget-content">
-                            ${renderPatternAnalysis()}
-                        </div>
-                    </div>
-                    
-                    <!-- Event Correlation -->
-                    <div class="analysis-widget">
-                        <div class="widget-header">
-                            <h3><i data-feather="git-merge"></i> Event Correlations</h3>
-                        </div>
-                        <div class="widget-content">
-                            ${renderEventCorrelations()}
-                        </div>
-                    </div>
-                    
-                    <!-- Anomaly Detection -->
-                    <div class="analysis-widget">
-                        <div class="widget-header">
-                            <h3><i data-feather="alert-circle"></i> Anomaly Detection</h3>
-                        </div>
-                        <div class="widget-content">
-                            ${renderAnomalyDetection()}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
+
             <!-- Event Details Panel -->
             <div class="event-details-panel" id="eventDetailsPanel" style="display: none;">
                 <div class="panel-header">
                     <h3>Event Details</h3>
-                    <button class="panel-close" id="closeDetailsPanelBtn">
+                    <button class="panel-close" onclick="closeDetailsPanel()">
                         <i data-feather="x"></i>
                     </button>
                 </div>
@@ -258,595 +199,587 @@ export function render(analysis) {
         </div>
     `;
 
-    // Initialize event listeners
-    setupTimelineEventListeners();
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
 
-    // Apply initial filters
-    applyTimelineFilters();
-
-    // Replace feather icons
-    feather.replace();
-
-    console.log(`✅ Timeline tab rendered with ${timelineData.length} events`);
+    // Update timeline display
+    updateTimelineStats();
+    renderTimelineVisualization();
+    renderTimelineEventsList();
 }
 
+/**
+ * Process timeline data from analysis
+ */
+function processTimelineData(data) {
+    const events = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
+    const forensics = data.forensics || data.Forensics || {};
+    const timeline = forensics.timeline || [];
+
+    // Combine security events and forensic timeline
+    let allEvents = [];
+
+    // Process security events
+    events.forEach((event, index) => {
+        allEvents.push({
+            id: `event_${index}`,
+            timestamp: new Date(event.timestamp || event.Timestamp || Date.now()),
+            title: event.type || event.Type || 'Security Event',
+            description: event.description || event.Description || 'No description available',
+            severity: (event.severity || event.Severity || 'low').toLowerCase(),
+            type: 'security',
+            source: event.source || event.Source || 'Unknown',
+            user: event.user || event.User || 'Unknown',
+            details: event
+        });
+    });
+
+    // Process forensic timeline events
+    timeline.forEach((event, index) => {
+        allEvents.push({
+            id: `forensic_${index}`,
+            timestamp: new Date(event.timestamp || event.Timestamp || Date.now()),
+            title: event.event || event.Event || 'Forensic Event',
+            description: event.description || event.Description || 'Forensic timeline event',
+            severity: event.importance === 'high' ? 'high' : 'medium',
+            type: 'forensic',
+            source: 'Forensic Analysis',
+            user: 'System',
+            details: event
+        });
+    });
+
+    // Sort by timestamp
+    allEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Add sequence numbers and time gaps
+    allEvents.forEach((event, index) => {
+        event.sequence = index + 1;
+        if (index > 0) {
+            const prevEvent = allEvents[index - 1];
+            event.timeSincePrevious = event.timestamp - prevEvent.timestamp;
+        } else {
+            event.timeSincePrevious = 0;
+        }
+    });
+
+    return allEvents;
+}
+
+/**
+ * Setup timeline event listeners
+ */
 function setupTimelineEventListeners() {
-    // Export and report buttons
+    // View mode buttons
+    const viewButtons = document.querySelectorAll('.view-btn');
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            viewButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentView = btn.getAttribute('data-view');
+            renderTimelineVisualization();
+        });
+    });
+
+    // Time range filter
+    const timeRangeSelect = document.getElementById('timelineTimeRange');
+    if (timeRangeSelect) {
+        timeRangeSelect.addEventListener('change', () => {
+            selectedTimeRange = timeRangeSelect.value;
+            applyTimelineFilters();
+        });
+    }
+
+    // Event types filter
+    const eventTypesSelect = document.getElementById('timelineEventTypes');
+    if (eventTypesSelect) {
+        eventTypesSelect.addEventListener('change', () => {
+            selectedEventTypes = Array.from(eventTypesSelect.selectedOptions).map(option => option.value);
+            applyTimelineFilters();
+        });
+    }
+
+    // Zoom slider
+    const zoomSlider = document.getElementById('timelineZoom');
+    if (zoomSlider) {
+        zoomSlider.addEventListener('input', () => {
+            zoomLevel = parseInt(zoomSlider.value);
+            document.querySelector('.zoom-value').textContent = `${zoomLevel}x`;
+            renderTimelineVisualization();
+        });
+    }
+
+    // Reset filters
+    const resetBtn = document.getElementById('resetTimelineFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetTimelineFilters);
+    }
+
+    // Export timeline
     const exportBtn = document.getElementById('exportTimelineBtn');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportTimeline);
     }
 
-    const generateReportBtn = document.getElementById('generateTimelineReportBtn');
-    if (generateReportBtn) {
-        generateReportBtn.addEventListener('click', generateTimelineReport);
+    // Generate report
+    const reportBtn = document.getElementById('generateTimelineReportBtn');
+    if (reportBtn) {
+        reportBtn.addEventListener('click', generateTimelineReport);
     }
 
+    // Refresh timeline
     const refreshBtn = document.getElementById('refreshTimelineBtn');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            if (dashboard?.state?.currentAnalysis) {
-                render(dashboard.state.currentAnalysis);
-            }
-        });
+        refreshBtn.addEventListener('click', refreshTimeline);
     }
 
-    // View mode buttons
-    const viewButtons = document.querySelectorAll('.view-btn');
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const view = e.target.closest('.view-btn').getAttribute('data-view');
-            switchTimelineView(view);
-        });
-    });
+    // Expand/collapse all events
+    const expandAllBtn = document.getElementById('expandAllEvents');
+    const collapseAllBtn = document.getElementById('collapseAllEvents');
 
-    // Time range selector
-    const timeRangeSelect = document.getElementById('timeRangeSelect');
-    if (timeRangeSelect) {
-        timeRangeSelect.addEventListener('change', handleTimeRangeChange);
+    if (expandAllBtn) {
+        expandAllBtn.addEventListener('click', () => toggleAllEvents(true));
     }
-
-    // Custom range inputs
-    const startTimeInput = document.getElementById('startTime');
-    const endTimeInput = document.getElementById('endTime');
-    if (startTimeInput && endTimeInput) {
-        startTimeInput.addEventListener('change', applyTimelineFilters);
-        endTimeInput.addEventListener('change', applyTimelineFilters);
-    }
-
-    // Event type checkboxes
-    const eventTypeCheckboxes = document.querySelectorAll('.event-type-checkboxes input[type="checkbox"]');
-    eventTypeCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', handleEventTypeFilter);
-    });
-
-    // Severity filter
-    const severityFilter = document.getElementById('severityFilter');
-    if (severityFilter) {
-        severityFilter.addEventListener('change', applyTimelineFilters);
-    }
-
-    // Search input
-    const searchInput = document.getElementById('timelineSearch');
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(applyTimelineFilters, 300));
-    }
-
-    // Clear filters
-    const clearFiltersBtn = document.getElementById('clearTimelineFiltersBtn');
-    if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', clearTimelineFilters);
-    }
-
-    // Zoom controls
-    const zoomInBtn = document.getElementById('zoomInBtn');
-    const zoomOutBtn = document.getElementById('zoomOutBtn');
-    const resetZoomBtn = document.getElementById('resetZoomBtn');
-
-    if (zoomInBtn) zoomInBtn.addEventListener('click', () => adjustZoom(1.25));
-    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => adjustZoom(0.8));
-    if (resetZoomBtn) resetZoomBtn.addEventListener('click', () => resetZoom());
-
-    // Close details panel
-    const closeDetailsPanelBtn = document.getElementById('closeDetailsPanelBtn');
-    if (closeDetailsPanelBtn) {
-        closeDetailsPanelBtn.addEventListener('click', closeDetailsPanel);
+    if (collapseAllBtn) {
+        collapseAllBtn.addEventListener('click', () => toggleAllEvents(false));
     }
 }
 
-function processTimelineData(data) {
-    const events = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
-    const iocs = data.technical?.detectedIOCs || data.Technical?.DetectedIOCs || [];
-
-    const timeline = [];
-
-    // Process security events
-    events.forEach((event, index) => {
-        timeline.push({
-            id: `event-${index}`,
-            type: 'security_event',
-            timestamp: new Date(event.timestamp || event.Timestamp || Date.now()),
-            title: event.eventType || event.EventType || 'Security Event',
-            description: event.description || event.Description || '',
-            severity: (event.severity || event.Severity || 'low').toLowerCase(),
-            source: event.source || event.Source || 'Unknown',
-            details: event.details || event.Details || {},
-            category: 'Security',
-            originalData: event
-        });
-    });
-
-    // Process IOCs as timeline events
-    iocs.forEach((ioc, index) => {
-        // Simulate detection time for IOCs (would be real in production)
-        const detectionTime = new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000);
-
-        timeline.push({
-            id: `ioc-${index}`,
-            type: 'ioc_detection',
-            timestamp: detectionTime,
-            title: `IOC Detected: ${ioc.category || ioc.Category || 'Unknown'}`,
-            description: `${ioc.value || ioc.Value || ''} - ${ioc.description || ioc.Description || ''}`,
-            severity: (ioc.severity || ioc.Severity || 'medium').toLowerCase(),
-            source: ioc.source || ioc.Source || 'IOC Engine',
-            details: {
-                value: ioc.value || ioc.Value,
-                confidence: ioc.confidence || ioc.Confidence,
-                threatType: ioc.threatType || ioc.ThreatType
-            },
-            category: 'IOC',
-            originalData: ioc
-        });
-    });
-
-    // Add system events (simulated)
-    const systemEvents = generateSystemEvents();
-    timeline.push(...systemEvents);
-
-    // Sort by timestamp
-    return timeline.sort((a, b) => a.timestamp - b.timestamp);
-}
-
-function generateSystemEvents() {
-    const events = [];
-    const eventTypes = ['System Start', 'Service Start', 'Login Attempt', 'File Access', 'Network Connection'];
-    const now = new Date();
-
-    // Generate some system events for demonstration
-    for (let i = 0; i < 20; i++) {
-        const eventTime = new Date(now - Math.random() * 7 * 24 * 60 * 60 * 1000);
-        const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-
-        events.push({
-            id: `system-${i}`,
-            type: 'system_event',
-            timestamp: eventTime,
-            title: eventType,
-            description: `System event: ${eventType}`,
-            severity: Math.random() > 0.8 ? 'medium' : 'low',
-            source: 'System',
-            details: { eventId: 1000 + i },
-            category: 'System',
-            originalData: { synthetic: true }
-        });
-    }
-
-    return events;
-}
-
-function handleTimeRangeChange(e) {
-    selectedTimeRange = e.target.value;
-    const customRangeGroup = document.getElementById('customRangeGroup');
-
-    if (selectedTimeRange === 'custom') {
-        customRangeGroup.style.display = 'flex';
-        setDefaultCustomRange();
-    } else {
-        customRangeGroup.style.display = 'none';
-    }
-
-    applyTimelineFilters();
-}
-
-function setDefaultCustomRange() {
-    const endTime = new Date();
-    const startTime = new Date(endTime - 24 * 60 * 60 * 1000); // 24 hours ago
-
-    const startInput = document.getElementById('startTime');
-    const endInput = document.getElementById('endTime');
-
-    if (startInput && endInput) {
-        startInput.value = formatDateTimeLocal(startTime);
-        endInput.value = formatDateTimeLocal(endTime);
-    }
-}
-
-function handleEventTypeFilter() {
-    const checkboxes = document.querySelectorAll('.event-type-checkboxes input[type="checkbox"]');
-    selectedEventTypes = Array.from(checkboxes)
-        .filter(cb => cb.checked)
-        .map(cb => cb.value);
-
-    applyTimelineFilters();
-}
-
+/**
+ * Apply timeline filters
+ */
 function applyTimelineFilters() {
-    const searchTerm = document.getElementById('timelineSearch')?.value.toLowerCase() || '';
-    const severityFilter = document.getElementById('severityFilter')?.value || 'all';
+    filteredTimelineData = [...timelineData];
 
-    filteredTimelineData = timelineData.filter(event => {
-        // Time range filter
-        if (!isInTimeRange(event.timestamp)) {
-            return false;
+    // Apply time range filter
+    if (selectedTimeRange !== 'all') {
+        const now = new Date();
+        let cutoffTime;
+
+        switch (selectedTimeRange) {
+            case '1h':
+                cutoffTime = new Date(now.getTime() - (60 * 60 * 1000));
+                break;
+            case '6h':
+                cutoffTime = new Date(now.getTime() - (6 * 60 * 60 * 1000));
+                break;
+            case '24h':
+                cutoffTime = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+                break;
+            case '7d':
+                cutoffTime = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+                break;
+            case '30d':
+                cutoffTime = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+                break;
         }
 
-        // Event type filter
-        if (!selectedEventTypes.includes(event.category)) {
-            return false;
+        if (cutoffTime) {
+            filteredTimelineData = filteredTimelineData.filter(event => event.timestamp >= cutoffTime);
         }
+    }
 
-        // Severity filter
-        if (!passesSeverityFilter(event.severity, severityFilter)) {
-            return false;
-        }
+    // Apply event types filter
+    if (selectedEventTypes.length > 0) {
+        filteredTimelineData = filteredTimelineData.filter(event =>
+            selectedEventTypes.includes(event.title) || selectedEventTypes.includes(event.type)
+        );
+    }
 
-        // Search filter
-        if (searchTerm) {
-            const searchableText = [
-                event.title,
-                event.description,
-                event.source,
-                event.category
-            ].join(' ').toLowerCase();
-
-            if (!searchableText.includes(searchTerm)) {
-                return false;
-            }
-        }
-
-        return true;
-    });
-
-    updateTimelineView();
+    // Update display
     updateTimelineStats();
+    renderTimelineVisualization();
+    renderTimelineEventsList();
 }
 
-function isInTimeRange(timestamp) {
-    const now = new Date();
+/**
+ * Reset timeline filters
+ */
+function resetTimelineFilters() {
+    selectedTimeRange = 'all';
+    selectedEventTypes = getUniqueEventTypes();
+    zoomLevel = 1;
 
-    switch (selectedTimeRange) {
-        case 'all':
-            return true;
-        case '1h':
-            return now - timestamp <= 60 * 60 * 1000;
-        case '6h':
-            return now - timestamp <= 6 * 60 * 60 * 1000;
-        case '24h':
-            return now - timestamp <= 24 * 60 * 60 * 1000;
-        case '7d':
-            return now - timestamp <= 7 * 24 * 60 * 60 * 1000;
-        case '30d':
-            return now - timestamp <= 30 * 24 * 60 * 60 * 1000;
-        case 'custom':
-            const startInput = document.getElementById('startTime');
-            const endInput = document.getElementById('endTime');
-            if (startInput && endInput && startInput.value && endInput.value) {
-                const startTime = new Date(startInput.value);
-                const endTime = new Date(endInput.value);
-                return timestamp >= startTime && timestamp <= endTime;
-            }
-            return true;
-        default:
-            return true;
+    // Reset UI controls
+    const timeRangeSelect = document.getElementById('timelineTimeRange');
+    const eventTypesSelect = document.getElementById('timelineEventTypes');
+    const zoomSlider = document.getElementById('timelineZoom');
+
+    if (timeRangeSelect) timeRangeSelect.value = 'all';
+    if (zoomSlider) {
+        zoomSlider.value = '1';
+        document.querySelector('.zoom-value').textContent = '1x';
+    }
+    if (eventTypesSelect) {
+        Array.from(eventTypesSelect.options).forEach(option => option.selected = true);
+    }
+
+    applyTimelineFilters();
+}
+
+/**
+ * Update timeline statistics
+ */
+function updateTimelineStats() {
+    const statsContainer = document.getElementById('timelineStats');
+    if (!statsContainer) return;
+
+    const total = filteredTimelineData.length;
+    const critical = filteredTimelineData.filter(e => e.severity === 'critical').length;
+    const high = filteredTimelineData.filter(e => e.severity === 'high').length;
+    const medium = filteredTimelineData.filter(e => e.severity === 'medium').length;
+    const low = filteredTimelineData.filter(e => e.severity === 'low').length;
+
+    const securityEvents = filteredTimelineData.filter(e => e.type === 'security').length;
+    const forensicEvents = filteredTimelineData.filter(e => e.type === 'forensic').length;
+
+    statsContainer.innerHTML = `
+        <div class="timeline-stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">${total}</div>
+                <div class="stat-label">Total Events</div>
+            </div>
+            <div class="stat-card critical">
+                <div class="stat-value">${critical}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat-card high">
+                <div class="stat-value">${high}</div>
+                <div class="stat-label">High</div>
+            </div>
+            <div class="stat-card medium">
+                <div class="stat-value">${medium}</div>
+                <div class="stat-label">Medium</div>
+            </div>
+            <div class="stat-card low">
+                <div class="stat-value">${low}</div>
+                <div class="stat-label">Low</div>
+            </div>
+            <div class="stat-card info">
+                <div class="stat-value">${securityEvents}</div>
+                <div class="stat-label">Security Events</div>
+            </div>
+            <div class="stat-card info">
+                <div class="stat-value">${forensicEvents}</div>
+                <div class="stat-label">Forensic Events</div>
+            </div>
+        </div>
+    `;
+
+    // Update events count
+    const eventsCount = document.getElementById('timelineEventsCount');
+    if (eventsCount) {
+        eventsCount.textContent = `${total} events`;
     }
 }
 
-function passesSeverityFilter(eventSeverity, filter) {
-    if (filter === 'all') return true;
+/**
+ * Render timeline visualization
+ */
+function renderTimelineVisualization() {
+    const container = document.getElementById('timelineVisualization');
+    if (!container) return;
 
-    const severityLevels = { low: 1, medium: 2, high: 3, critical: 4 };
-    const eventLevel = severityLevels[eventSeverity] || 1;
-    const filterLevel = severityLevels[filter] || 1;
-
-    return eventLevel >= filterLevel;
-}
-
-function switchTimelineView(view) {
-    currentView = view;
-
-    // Update active button
-    document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.getAttribute('data-view') === view) {
-            btn.classList.add('active');
-        }
-    });
-
-    updateTimelineView();
-}
-
-function updateTimelineView() {
-    const timelineContent = document.getElementById('timelineContent');
-    if (timelineContent) {
-        timelineContent.innerHTML = renderTimelineView();
-
-        // Re-attach event listeners for timeline items
-        attachTimelineItemListeners();
+    if (filteredTimelineData.length === 0) {
+        container.innerHTML = `
+            <div class="timeline-empty">
+                <i data-feather="clock" width="48" height="48"></i>
+                <p>No timeline events to display</p>
+            </div>
+        `;
+        return;
     }
 
-    updateZoomDisplay();
-}
-
-function renderTimelineView() {
     switch (currentView) {
         case 'detailed':
-            return renderDetailedTimeline();
+            renderDetailedTimeline(container);
+            break;
         case 'compact':
-            return renderCompactTimeline();
+            renderCompactTimeline(container);
+            break;
         case 'heatmap':
-            return renderHeatmapTimeline();
+            renderHeatmapTimeline(container);
+            break;
         default:
-            return renderDetailedTimeline();
+            renderDetailedTimeline(container);
+    }
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
     }
 }
 
-function renderDetailedTimeline() {
-    if (filteredTimelineData.length === 0) {
-        return `
-            <div class="timeline-empty">
-                <i data-feather="clock"></i>
-                <h3>No events found</h3>
-                <p>Try adjusting your filters to see timeline events</p>
-            </div>
-        `;
-    }
-
-    const timelineHTML = filteredTimelineData.map((event, index) => {
-        const relativeTime = getRelativeTime(event.timestamp);
-        const absoluteTime = formatAbsoluteTime(event.timestamp);
-
-        return `
-            <div class="timeline-item ${event.severity}" data-event-id="${event.id}" onclick="showEventDetails('${event.id}')">
-                <div class="timeline-marker">
-                    <div class="marker-dot ${event.severity}"></div>
-                    <div class="marker-line"></div>
-                </div>
-                <div class="timeline-content">
-                    <div class="timeline-header">
-                        <h4 class="event-title">${event.title}</h4>
-                        <div class="event-meta">
-                            <span class="event-time" title="${absoluteTime}">${relativeTime}</span>
-                            <span class="event-severity ${event.severity}">${event.severity.toUpperCase()}</span>
-                            <span class="event-category">${event.category}</span>
+/**
+ * Render detailed timeline view
+ */
+function renderDetailedTimeline(container) {
+    const timelineHtml = `
+        <div class="detailed-timeline">
+            <div class="timeline-axis">
+                ${filteredTimelineData.map((event, index) => `
+                    <div class="timeline-event ${event.severity} ${event.type}" 
+                         data-event-id="${event.id}"
+                         onclick="showEventDetails('${event.id}')">
+                        <div class="timeline-marker">
+                            <div class="marker-dot"></div>
+                            <div class="marker-line ${index === filteredTimelineData.length - 1 ? 'last' : ''}"></div>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <div class="timeline-title">${event.title}</div>
+                                <div class="timeline-timestamp">${formatTimestamp(event.timestamp)}</div>
+                            </div>
+                            <div class="timeline-body">
+                                <div class="timeline-description">${truncateText(event.description, 150)}</div>
+                                <div class="timeline-meta">
+                                    <span class="severity-badge ${event.severity}">
+                                        <i data-feather="${getSeverityIcon(event.severity)}" width="12" height="12"></i>
+                                        ${event.severity.toUpperCase()}
+                                    </span>
+                                    <span class="event-source">Source: ${event.source}</span>
+                                    ${event.user !== 'Unknown' ? `<span class="event-user">User: ${event.user}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="timeline-actions">
+                                <button class="btn-sm" onclick="event.stopPropagation(); showEventDetails('${event.id}')">
+                                    <i data-feather="eye" width="12" height="12"></i> Details
+                                </button>
+                                <button class="btn-sm" onclick="event.stopPropagation(); createCaseFromTimelineEvent('${event.id}')">
+                                    <i data-feather="folder-plus" width="12" height="12"></i> Create Case
+                                </button>
+                                <button class="btn-sm" onclick="event.stopPropagation(); exportTimelineEvent('${event.id}')">
+                                    <i data-feather="download" width="12" height="12"></i> Export
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="timeline-body">
-                        <p class="event-description">${event.description}</p>
-                        <div class="event-source">
-                            <i data-feather="server"></i>
-                            <span>Source: ${event.source}</span>
-                        </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = timelineHtml;
+}
+
+/**
+ * Render compact timeline view
+ */
+function renderCompactTimeline(container) {
+    const timelineHtml = `
+        <div class="compact-timeline">
+            <div class="timeline-scale">
+                ${generateTimeScale()}
+            </div>
+            <div class="timeline-bars">
+                ${filteredTimelineData.map(event => `
+                    <div class="timeline-bar ${event.severity}" 
+                         data-event-id="${event.id}"
+                         title="${event.title} - ${formatTimestamp(event.timestamp)}"
+                         onclick="showEventDetails('${event.id}')">
                     </div>
-                    <div class="timeline-actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); createCaseFromTimelineEvent('${event.id}')" title="Create Case">
-                            <i data-feather="folder-plus"></i>
-                        </button>
-                        <button class="action-btn" onclick="event.stopPropagation(); exportTimelineEvent('${event.id}')" title="Export Event">
-                            <i data-feather="download"></i>
-                        </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = timelineHtml;
+}
+
+/**
+ * Render heatmap timeline view
+ */
+function renderHeatmapTimeline(container) {
+    const heatmapData = generateHeatmapData();
+
+    const heatmapHtml = `
+        <div class="heatmap-timeline">
+            <div class="heatmap-header">
+                <h4>Activity Heatmap - Last 24 Hours</h4>
+            </div>
+            <div class="heatmap-grid">
+                ${heatmapData.map((hourData, hour) => `
+                    <div class="heatmap-cell ${getHeatmapIntensity(hourData.count)}" 
+                         title="${hourData.count} events at ${hour}:00"
+                         onclick="showHourDetails('${hourData.timestamp}')">
+                        <div class="heatmap-hour">${hour}</div>
+                        <div class="heatmap-count">${hourData.count}</div>
                     </div>
+                `).join('')}
+            </div>
+            <div class="heatmap-legend">
+                <span>Less</span>
+                <div class="legend-scale">
+                    <div class="legend-cell intensity-0"></div>
+                    <div class="legend-cell intensity-1"></div>
+                    <div class="legend-cell intensity-2"></div>
+                    <div class="legend-cell intensity-3"></div>
+                    <div class="legend-cell intensity-4"></div>
+                </div>
+                <span>More</span>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = heatmapHtml;
+}
+
+/**
+ * Render timeline events list
+ */
+function renderTimelineEventsList() {
+    const container = document.getElementById('timelineEventsList');
+    if (!container) return;
+
+    if (filteredTimelineData.length === 0) {
+        container.innerHTML = `
+            <div class="no-events">
+                <i data-feather="clock" width="32" height="32"></i>
+                <p>No timeline events match your current filters</p>
+                <button class="btn btn-outline" onclick="resetTimelineFilters()">Reset Filters</button>
+            </div>
+        `;
+        return;
+    }
+
+    const eventsHtml = filteredTimelineData.map(event => `
+        <div class="timeline-event-item ${event.severity}" data-event-id="${event.id}">
+            <div class="event-item-header" onclick="toggleEventExpansion('${event.id}')">
+                <div class="event-item-main">
+                    <div class="event-item-title">${event.title}</div>
+                    <div class="event-item-timestamp">${formatTimestamp(event.timestamp)}</div>
+                </div>
+                <div class="event-item-meta">
+                    <span class="severity-badge ${event.severity}">
+                        ${event.severity.toUpperCase()}
+                    </span>
+                    <button class="expand-btn">
+                        <i data-feather="chevron-down" width="16" height="16"></i>
+                    </button>
                 </div>
             </div>
-        `;
-    }).join('');
-
-    return `<div class="timeline-detailed" style="zoom: ${zoomLevel}">${timelineHTML}</div>`;
-}
-
-function renderCompactTimeline() {
-    if (filteredTimelineData.length === 0) {
-        return '<div class="timeline-empty">No events to display</div>';
-    }
-
-    const compactHTML = filteredTimelineData.map(event => {
-        return `
-            <div class="timeline-compact-item ${event.severity}" data-event-id="${event.id}" onclick="showEventDetails('${event.id}')">
-                <div class="compact-marker ${event.severity}"></div>
-                <div class="compact-content">
-                    <span class="compact-time">${formatCompactTime(event.timestamp)}</span>
-                    <span class="compact-title">${event.title}</span>
-                    <span class="compact-severity ${event.severity}">${event.severity}</span>
+            <div class="event-item-details" style="display: none;">
+                <div class="event-detail-content">
+                    <p><strong>Description:</strong> ${event.description}</p>
+                    <p><strong>Source:</strong> ${event.source}</p>
+                    <p><strong>User:</strong> ${event.user}</p>
+                    <p><strong>Type:</strong> ${event.type}</p>
+                    ${event.timeSincePrevious > 0 ? `
+                        <p><strong>Time since previous:</strong> ${formatDuration(event.timeSincePrevious)}</p>
+                    ` : ''}
+                </div>
+                <div class="event-detail-actions">
+                    <button class="btn btn-sm" onclick="showEventDetails('${event.id}')">
+                        <i data-feather="eye" width="14" height="14"></i> Full Details
+                    </button>
+                    <button class="btn btn-sm" onclick="createCaseFromTimelineEvent('${event.id}')">
+                        <i data-feather="folder-plus" width="14" height="14"></i> Create Case
+                    </button>
+                    <button class="btn btn-sm" onclick="exportTimelineEvent('${event.id}')">
+                        <i data-feather="download" width="14" height="14"></i> Export
+                    </button>
                 </div>
             </div>
-        `;
-    }).join('');
+        </div>
+    `).join('');
 
-    return `<div class="timeline-compact" style="zoom: ${zoomLevel}">${compactHTML}</div>`;
-}
+    container.innerHTML = eventsHtml;
 
-function renderHeatmapTimeline() {
-    if (filteredTimelineData.length === 0) {
-        return '<div class="timeline-empty">No events to display</div>';
-    }
-
-    // Group events by hour
-    const hourlyGroups = {};
-    filteredTimelineData.forEach(event => {
-        const hour = new Date(event.timestamp);
-        hour.setMinutes(0, 0, 0);
-        const hourKey = hour.toISOString();
-
-        if (!hourlyGroups[hourKey]) {
-            hourlyGroups[hourKey] = { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
-        }
-
-        hourlyGroups[hourKey][event.severity]++;
-        hourlyGroups[hourKey].total++;
-    });
-
-    const sortedGroups = Object.entries(hourlyGroups)
-        .sort(([a], [b]) => new Date(a) - new Date(b));
-
-    const maxCount = Math.max(...sortedGroups.map(([, counts]) => counts.total));
-
-    const heatmapHTML = sortedGroups.map(([time, counts]) => {
-        const intensity = counts.total / maxCount;
-        const date = new Date(time);
-
-        return `
-            <div class="heatmap-cell" 
-                 style="opacity: ${0.1 + intensity * 0.9}" 
-                 data-time="${time}"
-                 onclick="showHourDetails('${time}')"
-                 title="${date.toLocaleString()}: ${counts.total} events">
-                <div class="cell-label">${date.getHours()}:00</div>
-                <div class="cell-count">${counts.total}</div>
-            </div>
-        `;
-    }).join('');
-
-    return `<div class="timeline-heatmap" style="zoom: ${zoomLevel}">${heatmapHTML}</div>`;
-}
-
-function attachTimelineItemListeners() {
-    // Event listeners are attached via onclick attributes for simplicity
-    // In a production app, you might want to use event delegation
-}
-
-function adjustZoom(factor) {
-    zoomLevel = Math.max(0.25, Math.min(3, zoomLevel * factor));
-    updateTimelineView();
-}
-
-function resetZoom() {
-    zoomLevel = 1;
-    updateTimelineView();
-}
-
-function updateZoomDisplay() {
-    const zoomDisplay = document.querySelector('.zoom-level');
-    if (zoomDisplay) {
-        zoomDisplay.textContent = `${Math.round(zoomLevel * 100)}%`;
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
     }
 }
 
-function clearTimelineFilters() {
-    // Reset time range
-    selectedTimeRange = 'all';
-    document.getElementById('timeRangeSelect').value = 'all';
-
-    // Reset custom range
-    document.getElementById('customRangeGroup').style.display = 'none';
-
-    // Reset event types
-    selectedEventTypes = getUniqueEventTypes();
-    document.querySelectorAll('.event-type-checkboxes input[type="checkbox"]').forEach(cb => {
-        cb.checked = true;
-    });
-
-    // Reset severity
-    document.getElementById('severityFilter').value = 'all';
-
-    // Reset search
-    document.getElementById('timelineSearch').value = '';
-
-    applyTimelineFilters();
-}
-
-function updateTimelineStats() {
-    // Update the stats display
-    const criticalCount = document.querySelector('.stat-card .stat-value');
-    if (criticalCount) {
-        // Stats are rendered in the initial HTML, but could be updated here
+/**
+ * Export timeline to CSV
+ */
+function exportTimeline() {
+    try {
+        const csvData = convertTimelineToCSV(filteredTimelineData);
+        downloadCSV(csvData, `secunik-timeline-${Date.now()}.csv`);
+        dashboard?.showNotification('Timeline exported successfully', 'success');
+    } catch (error) {
+        console.error('Timeline export failed:', error);
+        dashboard?.showNotification('Failed to export timeline', 'error');
     }
 }
 
-// Utility functions
+/**
+ * Generate timeline report
+ */
+function generateTimelineReport() {
+    const reportData = {
+        summary: {
+            totalEvents: filteredTimelineData.length,
+            timeSpan: getTimeSpan(),
+            criticalEvents: filteredTimelineData.filter(e => e.severity === 'critical').length,
+            highEvents: filteredTimelineData.filter(e => e.severity === 'high').length
+        },
+        events: filteredTimelineData
+    };
+
+    // Create and download report
+    const reportContent = generateReportContent(reportData);
+    const blob = new Blob([reportContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `secunik-timeline-report-${Date.now()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    dashboard?.showNotification('Timeline report generated', 'success');
+}
+
+/**
+ * Refresh timeline
+ */
+function refreshTimeline() {
+    if (dashboard?.state.currentAnalysis) {
+        render(dashboard.state.currentAnalysis);
+        dashboard?.showNotification('Timeline refreshed', 'success');
+    }
+}
+
+// Helper functions
+
 function getUniqueEventTypes() {
-    const types = new Set();
-    timelineData.forEach(event => {
-        types.add(event.category);
-    });
-    return Array.from(types).sort();
-}
-
-function getSeverityCount(severity) {
-    return filteredTimelineData.filter(event => event.severity === severity).length;
-}
-
-function getEventDensity() {
-    if (filteredTimelineData.length === 0) return '0';
-
-    const timeSpan = getTimeSpanHours();
-    const density = timeSpan > 0 ? filteredTimelineData.length / timeSpan : 0;
-
-    return density.toFixed(1);
-}
-
-function getAverageInterval() {
-    if (filteredTimelineData.length < 2) return 'N/A';
-
-    const timestamps = filteredTimelineData.map(e => e.timestamp.getTime()).sort();
-    const intervals = [];
-
-    for (let i = 1; i < timestamps.length; i++) {
-        intervals.push(timestamps[i] - timestamps[i - 1]);
-    }
-
-    const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
-
-    return formatDuration(avgInterval);
+    const types = [...new Set(timelineData.map(e => e.title))];
+    return types.filter(type => type && type !== 'Unknown Event').sort();
 }
 
 function getTimeSpan() {
-    if (timelineData.length === 0) return 'No data';
+    if (filteredTimelineData.length === 0) return 'No data';
 
-    const timestamps = timelineData.map(e => e.timestamp).sort();
-    const span = timestamps[timestamps.length - 1] - timestamps[0];
+    const timestamps = filteredTimelineData.map(e => e.timestamp).sort((a, b) => a - b);
+    const start = timestamps[0];
+    const end = timestamps[timestamps.length - 1];
 
-    return formatDuration(span);
+    const duration = end - start;
+    return formatDuration(duration);
 }
 
-function getTimeSpanHours() {
-    if (filteredTimelineData.length === 0) return 0;
-
-    const timestamps = filteredTimelineData.map(e => e.timestamp).sort();
-    const span = timestamps[timestamps.length - 1] - timestamps[0];
-
-    return span / (1000 * 60 * 60); // Convert to hours
+function getSeverityIcon(severity) {
+    const icons = {
+        'critical': 'alert-triangle',
+        'high': 'alert-circle',
+        'medium': 'info',
+        'low': 'check-circle'
+    };
+    return icons[severity.toLowerCase()] || 'help-circle';
 }
 
-function getRelativeTime(timestamp) {
-    const now = new Date();
-    const diff = now - timestamp;
-
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return timestamp.toLocaleDateString();
-}
-
-function formatAbsoluteTime(timestamp) {
-    return timestamp.toLocaleString();
-}
-
-function formatCompactTime(timestamp) {
-    return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDateTimeLocal(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+function formatTimestamp(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleString();
+    } catch {
+        return 'Unknown time';
+    }
 }
 
 function formatDuration(milliseconds) {
@@ -861,249 +794,81 @@ function formatDuration(milliseconds) {
     return `${seconds}s`;
 }
 
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
-// Analysis functions
-function renderPatternAnalysis() {
-    const patterns = analyzePatterns();
+function generateTimeScale() {
+    if (filteredTimelineData.length === 0) return '';
 
-    return patterns.map(pattern => `
-        <div class="pattern-item">
-            <div class="pattern-header">
-                <span class="pattern-name">${pattern.name}</span>
-                <span class="pattern-confidence ${pattern.confidence >= 0.8 ? 'high' : pattern.confidence >= 0.6 ? 'medium' : 'low'}">
-                    ${Math.round(pattern.confidence * 100)}%
-                </span>
+    const timestamps = filteredTimelineData.map(e => e.timestamp).sort((a, b) => a - b);
+    const start = timestamps[0];
+    const end = timestamps[timestamps.length - 1];
+    const duration = end - start;
+
+    // Generate scale marks
+    const scaleMarks = [];
+    const numMarks = 10;
+
+    for (let i = 0; i <= numMarks; i++) {
+        const time = new Date(start.getTime() + (duration * i / numMarks));
+        scaleMarks.push(`
+            <div class="scale-mark">
+                <div class="scale-line"></div>
+                <div class="scale-label">${time.toLocaleTimeString()}</div>
             </div>
-            <div class="pattern-description">${pattern.description}</div>
-            <div class="pattern-events">${pattern.eventCount} events match this pattern</div>
-        </div>
-    `).join('');
+        `);
+    }
+
+    return scaleMarks.join('');
 }
 
-function renderEventCorrelations() {
-    const correlations = findEventCorrelations();
+function generateHeatmapData() {
+    const heatmapData = Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        count: 0,
+        timestamp: new Date().setHours(hour, 0, 0, 0)
+    }));
 
-    return correlations.map(correlation => `
-        <div class="correlation-item">
-            <div class="correlation-header">
-                <span class="correlation-type">${correlation.type}</span>
-                <span class="correlation-strength">${correlation.strength}</span>
-            </div>
-            <div class="correlation-description">${correlation.description}</div>
-        </div>
-    `).join('');
-}
+    const now = new Date();
+    const last24h = new Date(now.getTime() - (24 * 60 * 60 * 1000));
 
-function renderAnomalyDetection() {
-    const anomalies = detectAnomalies();
-
-    return anomalies.map(anomaly => `
-        <div class="anomaly-item ${anomaly.severity}">
-            <div class="anomaly-header">
-                <span class="anomaly-type">${anomaly.type}</span>
-                <span class="anomaly-score">${anomaly.score.toFixed(2)}</span>
-            </div>
-            <div class="anomaly-description">${anomaly.description}</div>
-        </div>
-    `).join('');
-}
-
-function analyzePatterns() {
-    // Simulate pattern analysis
-    return [
-        {
-            name: 'Login Burst Pattern',
-            confidence: 0.85,
-            description: 'Multiple login attempts in short succession',
-            eventCount: 12
-        },
-        {
-            name: 'Service Restart Cycle',
-            confidence: 0.72,
-            description: 'Regular service restarts detected',
-            eventCount: 8
-        },
-        {
-            name: 'Network Spike Pattern',
-            confidence: 0.68,
-            description: 'Unusual network activity spikes',
-            eventCount: 15
+    filteredTimelineData.forEach(event => {
+        if (event.timestamp >= last24h) {
+            const hour = event.timestamp.getHours();
+            heatmapData[hour].count++;
         }
-    ];
+    });
+
+    return heatmapData;
 }
 
-function findEventCorrelations() {
-    // Simulate correlation analysis
-    return [
-        {
-            type: 'Temporal Correlation',
-            strength: 'Strong',
-            description: 'Failed logins followed by privilege escalation attempts'
-        },
-        {
-            type: 'Source Correlation',
-            strength: 'Medium',
-            description: 'Multiple event types from same source IP'
-        },
-        {
-            type: 'Sequence Correlation',
-            strength: 'Weak',
-            description: 'Service restarts preceding system errors'
-        }
-    ];
-}
-
-function detectAnomalies() {
-    // Simulate anomaly detection
-    return [
-        {
-            type: 'Volume Anomaly',
-            severity: 'high',
-            score: 0.89,
-            description: 'Event volume 3x higher than baseline'
-        },
-        {
-            type: 'Timing Anomaly',
-            severity: 'medium',
-            score: 0.65,
-            description: 'Events occurring outside normal hours'
-        },
-        {
-            type: 'Source Anomaly',
-            severity: 'low',
-            score: 0.45,
-            description: 'New event sources detected'
-        }
-    ];
-}
-
-// Export functions
-function exportTimeline() {
-    if (!dashboard?.state?.currentAnalysis) {
-        dashboard?.showNotification('No timeline data to export', 'warning');
-        return;
-    }
-
-    try {
-        const csvData = convertTimelineToCSV(filteredTimelineData);
-        downloadCSV(csvData, `secunik-timeline-${Date.now()}.csv`);
-        dashboard?.showNotification('Timeline exported successfully', 'success');
-    } catch (error) {
-        console.error('Timeline export failed:', error);
-        dashboard?.showNotification('Failed to export timeline', 'error');
-    }
-}
-
-function generateTimelineReport() {
-    if (!dashboard?.state?.currentAnalysis) {
-        dashboard?.showNotification('No timeline data for report', 'warning');
-        return;
-    }
-
-    try {
-        const report = generateTimelineReportData();
-        const reportHTML = createTimelineReportHTML(report);
-        downloadHTML(reportHTML, `secunik-timeline-report-${Date.now()}.html`);
-        dashboard?.showNotification('Timeline report generated successfully', 'success');
-    } catch (error) {
-        console.error('Timeline report generation failed:', error);
-        dashboard?.showNotification('Failed to generate timeline report', 'error');
-    }
+function getHeatmapIntensity(count) {
+    if (count === 0) return 'intensity-0';
+    if (count <= 2) return 'intensity-1';
+    if (count <= 5) return 'intensity-2';
+    if (count <= 10) return 'intensity-3';
+    return 'intensity-4';
 }
 
 function convertTimelineToCSV(events) {
-    const headers = ['Timestamp', 'Type', 'Category', 'Title', 'Description', 'Severity', 'Source'];
-    const csvRows = [headers.join(',')];
+    const headers = ['Timestamp', 'Title', 'Description', 'Severity', 'Type', 'Source', 'User'];
+    const rows = events.map(event => [
+        formatTimestamp(event.timestamp),
+        event.title,
+        event.description,
+        event.severity,
+        event.type,
+        event.source,
+        event.user
+    ]);
 
-    events.forEach(event => {
-        const row = [
-            `"${event.timestamp.toISOString()}"`,
-            `"${event.type}"`,
-            `"${event.category}"`,
-            `"${event.title.replace(/"/g, '""')}"`,
-            `"${event.description.replace(/"/g, '""')}"`,
-            `"${event.severity.toUpperCase()}"`,
-            `"${event.source}"`
-        ];
-        csvRows.push(row.join(','));
-    });
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
 
-    return csvRows.join('\n');
-}
-
-function generateTimelineReportData() {
-    return {
-        summary: {
-            totalEvents: filteredTimelineData.length,
-            timeSpan: getTimeSpan(),
-            criticalEvents: getSeverityCount('critical'),
-            highEvents: getSeverityCount('high'),
-            eventDensity: getEventDensity()
-        },
-        patterns: analyzePatterns(),
-        correlations: findEventCorrelations(),
-        anomalies: detectAnomalies(),
-        events: filteredTimelineData.slice(0, 50) // Top 50 events
-    };
-}
-
-function createTimelineReportHTML(report) {
-    return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>SecuNik Timeline Analysis Report</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                .header { border-bottom: 2px solid #333; padding-bottom: 10px; }
-                .summary { background: #f5f5f5; padding: 15px; margin: 20px 0; }
-                .section { margin: 20px 0; }
-                .event { border-left: 3px solid #ddd; padding: 10px; margin: 10px 0; }
-                .critical { border-color: #dc3545; }
-                .high { border-color: #fd7e14; }
-                .medium { border-color: #ffc107; }
-                .low { border-color: #28a745; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>SecuNik Timeline Analysis Report</h1>
-                <p>Generated: ${new Date().toLocaleString()}</p>
-            </div>
-            
-            <div class="summary">
-                <h2>Summary</h2>
-                <p><strong>Total Events:</strong> ${report.summary.totalEvents}</p>
-                <p><strong>Time Span:</strong> ${report.summary.timeSpan}</p>
-                <p><strong>Critical Events:</strong> ${report.summary.criticalEvents}</p>
-                <p><strong>Event Density:</strong> ${report.summary.eventDensity} events/hour</p>
-            </div>
-            
-            <div class="section">
-                <h2>Key Events</h2>
-                ${report.events.map(event => `
-                    <div class="event ${event.severity}">
-                        <h4>${event.title}</h4>
-                        <p><strong>Time:</strong> ${event.timestamp.toLocaleString()}</p>
-                        <p><strong>Severity:</strong> ${event.severity.toUpperCase()}</p>
-                        <p>${event.description}</p>
-                    </div>
-                `).join('')}
-            </div>
-        </body>
-        </html>
-    `;
+    return csvContent;
 }
 
 function downloadCSV(csvData, filename) {
@@ -1118,69 +883,148 @@ function downloadCSV(csvData, filename) {
     URL.revokeObjectURL(url);
 }
 
-function downloadHTML(htmlData, filename) {
-    const blob = new Blob([htmlData], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+function generateReportContent(data) {
+    return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>SecuNik Timeline Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { border-bottom: 2px solid #333; margin-bottom: 20px; }
+                .summary { background: #f5f5f5; padding: 15px; margin-bottom: 20px; }
+                .event { border-left: 4px solid #ddd; padding: 10px; margin: 10px 0; }
+                .critical { border-color: #ef4444; }
+                .high { border-color: #f59e0b; }
+                .medium { border-color: #3b82f6; }
+                .low { border-color: #10b981; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>SecuNik Timeline Report</h1>
+                <p>Generated: ${new Date().toLocaleString()}</p>
+            </div>
+            
+            <div class="summary">
+                <h2>Summary</h2>
+                <p>Total Events: ${data.summary.totalEvents}</p>
+                <p>Time Span: ${data.summary.timeSpan}</p>
+                <p>Critical Events: ${data.summary.criticalEvents}</p>
+                <p>High Priority Events: ${data.summary.highEvents}</p>
+            </div>
+            
+            <div class="events">
+                <h2>Timeline Events</h2>
+                ${data.events.map(event => `
+                    <div class="event ${event.severity}">
+                        <h3>${event.title}</h3>
+                        <p><strong>Time:</strong> ${formatTimestamp(event.timestamp)}</p>
+                        <p><strong>Severity:</strong> ${event.severity.toUpperCase()}</p>
+                        <p><strong>Description:</strong> ${event.description}</p>
+                        <p><strong>Source:</strong> ${event.source}</p>
+                    </div>
+                `).join('')}
+            </div>
+        </body>
+        </html>
+    `;
 }
 
-// Global functions for timeline interactions
+function toggleAllEvents(expand) {
+    const eventItems = document.querySelectorAll('.timeline-event-item');
+    eventItems.forEach(item => {
+        const details = item.querySelector('.event-item-details');
+        const expandBtn = item.querySelector('.expand-btn i');
+
+        if (details && expandBtn) {
+            details.style.display = expand ? 'block' : 'none';
+            expandBtn.setAttribute('data-feather', expand ? 'chevron-up' : 'chevron-down');
+        }
+    });
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+// Global functions for onclick handlers
 window.showEventDetails = function (eventId) {
-    const event = filteredTimelineData.find(e => e.id === eventId);
+    const event = timelineData.find(e => e.id === eventId);
     if (!event) return;
 
     const detailsPanel = document.getElementById('eventDetailsPanel');
-    const detailsContent = document.getElementById('eventDetailsPanelContent');
+    const content = document.getElementById('eventDetailsPanelContent');
 
-    if (detailsPanel && detailsContent) {
-        detailsContent.innerHTML = `
-            <div class="event-details">
-                <div class="detail-section">
-                    <h4>Basic Information</h4>
-                    <div class="detail-grid">
-                        <div class="detail-item">
-                            <label>Title:</label>
-                            <span>${event.title}</span>
-                        </div>
-                        <div class="detail-item">
-                            <label>Timestamp:</label>
-                            <span>${event.timestamp.toLocaleString()}</span>
-                        </div>
-                        <div class="detail-item">
-                            <label>Severity:</label>
-                            <span class="severity-badge ${event.severity}">${event.severity.toUpperCase()}</span>
-                        </div>
-                        <div class="detail-item">
-                            <label>Category:</label>
-                            <span>${event.category}</span>
-                        </div>
-                        <div class="detail-item">
-                            <label>Source:</label>
-                            <span>${event.source}</span>
-                        </div>
+    if (!detailsPanel || !content) return;
+
+    content.innerHTML = `
+        <div class="event-full-details">
+            <div class="detail-section">
+                <h4>Basic Information</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Event ID:</label>
+                        <span>${event.id}</span>
                     </div>
-                </div>
-                
-                <div class="detail-section">
-                    <h4>Description</h4>
-                    <p>${event.description}</p>
-                </div>
-                
-                <div class="detail-section">
-                    <h4>Additional Details</h4>
-                    <pre class="detail-json">${JSON.stringify(event.details, null, 2)}</pre>
+                    <div class="detail-item">
+                        <label>Sequence:</label>
+                        <span>#${event.sequence}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Timestamp:</label>
+                        <span>${formatTimestamp(event.timestamp)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Severity:</label>
+                        <span class="severity-badge ${event.severity}">${event.severity.toUpperCase()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Type:</label>
+                        <span>${event.type}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Source:</label>
+                        <span>${event.source}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>User:</label>
+                        <span>${event.user}</span>
+                    </div>
+                    ${event.timeSincePrevious > 0 ? `
+                        <div class="detail-item">
+                            <label>Time since previous:</label>
+                            <span>${formatDuration(event.timeSincePrevious)}</span>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
-        `;
+            
+            <div class="detail-section">
+                <h4>Description</h4>
+                <p>${event.description}</p>
+            </div>
+            
+            ${Object.keys(event.details).length > 0 ? `
+                <div class="detail-section">
+                    <h4>Raw Event Data</h4>
+                    <pre class="details-json">${JSON.stringify(event.details, null, 2)}</pre>
+                </div>
+            ` : ''}
+            
+            <div class="detail-actions">
+                <button class="btn btn-primary" onclick="createCaseFromTimelineEvent('${event.id}')">
+                    <i data-feather="folder-plus"></i> Create Case
+                </button>
+                <button class="btn btn-secondary" onclick="exportTimelineEvent('${event.id}')">
+                    <i data-feather="download"></i> Export Event
+                </button>
+            </div>
+        </div>
+    `;
 
-        detailsPanel.style.display = 'block';
-    }
+    detailsPanel.style.display = 'block';
 };
 
 window.showHourDetails = function (hourTime) {
@@ -1198,7 +1042,7 @@ window.createCaseFromTimelineEvent = function (eventId) {
     const event = filteredTimelineData.find(e => e.id === eventId);
     if (!event) return;
 
-    dashboard?.switchToTab('case');
+    dashboard?.switchToTab('caseManagement');
 
     setTimeout(() => {
         const titleField = document.getElementById('caseTitle');
@@ -1214,7 +1058,7 @@ window.createCaseFromTimelineEvent = function (eventId) {
         }
 
         if (descriptionField) {
-            descriptionField.value = `Case created from timeline event.\n\nEvent: ${event.title}\nTime: ${event.timestamp.toLocaleString()}\nDescription: ${event.description}`;
+            descriptionField.value = `Case created from timeline event.\n\nEvent: ${event.title}\nTime: ${formatTimestamp(event.timestamp)}\nDescription: ${event.description}`;
         }
     }, 100);
 };
@@ -1233,9 +1077,33 @@ window.exportTimelineEvent = function (eventId) {
     }
 };
 
+window.toggleEventExpansion = function (eventId) {
+    const eventItem = document.querySelector(`[data-event-id="${eventId}"]`);
+    if (!eventItem) return;
+
+    const details = eventItem.querySelector('.event-item-details');
+    const expandBtn = eventItem.querySelector('.expand-btn i');
+
+    if (details && expandBtn) {
+        const isExpanded = details.style.display === 'block';
+        details.style.display = isExpanded ? 'none' : 'block';
+        expandBtn.setAttribute('data-feather', isExpanded ? 'chevron-down' : 'chevron-up');
+
+        // Re-initialize Feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+};
+
 function closeDetailsPanel() {
     const detailsPanel = document.getElementById('eventDetailsPanel');
     if (detailsPanel) {
         detailsPanel.style.display = 'none';
     }
 }
+
+window.resetTimelineFilters = resetTimelineFilters;
+
+// Export functions
+export { init, render };

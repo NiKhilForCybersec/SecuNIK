@@ -1,673 +1,760 @@
+/**
+ * SecuNik Dashboard Tab - Fixed Version
+ * Main dashboard view with analytics and overview
+ * 
+ * @version 2.1.0
+ * @author SecuNik Team
+ */
+
+let dashboard = null;
+let currentAnalysis = null;
+let realTimeMonitoringActive = false;
+let performanceChart = null;
+let riskGaugeChart = null;
+
+/**
+ * Initialize dashboard tab
+ */
+export function init(dashboardInstance) {
+    dashboard = dashboardInstance;
+    console.log('✅ Dashboard tab module initialized');
+}
+
+/**
+ * Initialize dashboard tab with analysis data
+ */
 export function initTab(analysis) {
-    if (!analysis) return;
+    if (!analysis) {
+        console.log('📊 Initializing dashboard with welcome state');
+        showWelcomeState();
+        return;
+    }
 
-    const dashboard = window.secuNikDashboard;
+    console.log('📊 Initializing dashboard with analysis data');
+    currentAnalysis = analysis;
+    renderDashboard(analysis);
+}
+
+/**
+ * Show welcome state when no analysis is available
+ */
+function showWelcomeState() {
+    const dashboardTab = document.getElementById('dashboardTab');
+    if (!dashboardTab) return;
+
+    dashboardTab.innerHTML = `
+        <div class="welcome-state">
+            <div class="welcome-content">
+                <div class="welcome-header">
+                    <i data-feather="shield" width="64" height="64"></i>
+                    <h1>Welcome to SecuNik Professional</h1>
+                    <p>Advanced AI-powered cybersecurity analysis platform</p>
+                </div>
+                
+                <div class="welcome-actions">
+                    <div class="upload-card">
+                        <i data-feather="upload" width="32" height="32"></i>
+                        <h3>Upload Evidence</h3>
+                        <p>Drag and drop your log files, network captures, or security artifacts to begin analysis</p>
+                        <button class="btn btn-primary" onclick="document.getElementById('fileInput')?.click()">
+                            <i data-feather="file-plus"></i> Select Files
+                        </button>
+                    </div>
+                    
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <i data-feather="cpu" width="24" height="24"></i>
+                            <h4>AI-Powered Analysis</h4>
+                            <p>Advanced machine learning algorithms analyze your security data</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <i data-feather="search" width="24" height="24"></i>
+                            <h4>IOC Detection</h4>
+                            <p>Automatically detect indicators of compromise</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <i data-feather="clock" width="24" height="24"></i>
+                            <h4>Timeline Analysis</h4>
+                            <p>Reconstruct event timelines for forensic investigation</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <i data-feather="file-text" width="24" height="24"></i>
+                            <h4>Executive Reports</h4>
+                            <p>Generate comprehensive security reports</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Render main dashboard with analysis data
+ */
+function renderDashboard(analysis) {
+    const dashboardTab = document.getElementById('dashboardTab');
+    if (!dashboardTab) return;
+
+    dashboardTab.innerHTML = `
+        <div class="dashboard-container">
+            <!-- Quick Stats Section -->
+            <div class="quick-stats" id="quickStats">
+                <div class="stat-card critical" id="criticalEventsCard">
+                    <div class="stat-icon">
+                        <i data-feather="alert-triangle" aria-hidden="true"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="criticalEvents">0</div>
+                        <div class="stat-label">Critical Events</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card warning" id="highEventsCard">
+                    <div class="stat-icon">
+                        <i data-feather="alert-circle" aria-hidden="true"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="highEvents">0</div>
+                        <div class="stat-label">High Priority</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card info" id="mediumEventsCard">
+                    <div class="stat-icon">
+                        <i data-feather="info" aria-hidden="true"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="mediumEvents">0</div>
+                        <div class="stat-label">Medium Events</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card success" id="analysisScoreCard">
+                    <div class="stat-icon">
+                        <i data-feather="check-circle" aria-hidden="true"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="analysisScore">--</div>
+                        <div class="stat-label">Security Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Risk Assessment Widget -->
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h3><i data-feather="gauge" aria-hidden="true"></i> Risk Assessment</h3>
+                        <div class="widget-controls">
+                            <button class="widget-action" title="Refresh">
+                                <i data-feather="refresh-cw" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="widget-content">
+                        <div id="riskGaugeContainer" class="risk-gauge-container">
+                            <div class="risk-gauge" id="riskGauge">
+                                <div class="gauge-chart" id="gaugeChart"></div>
+                                <div class="gauge-center">
+                                    <div class="gauge-value" id="gaugeValue">--</div>
+                                    <div class="gauge-label">Risk Level</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Summary Widget -->
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h3><i data-feather="cpu" aria-hidden="true"></i> AI Analysis Summary</h3>
+                        <div class="widget-controls">
+                            <button class="widget-action" title="Expand">
+                                <i data-feather="maximize-2" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="widget-content">
+                        <div id="aiSummaryContent" class="ai-summary">
+                            <div class="summary-text" id="summaryText">
+                                <p>AI analysis will appear here once file processing is complete.</p>
+                            </div>
+                            <div class="confidence-indicator" id="confidenceIndicator">
+                                <span class="confidence-label">Confidence:</span>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+                                </div>
+                                <span class="confidence-value" id="confidenceValue">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Threats Widget -->
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h3><i data-feather="shield-off" aria-hidden="true"></i> Top Threats</h3>
+                        <div class="widget-controls">
+                            <button class="widget-action" title="View All">
+                                <i data-feather="external-link" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="widget-content">
+                        <div id="topThreatsContainer" class="threats-container">
+                            <div class="placeholder-content">
+                                <i data-feather="shield" width="32" height="32"></i>
+                                <p>No threats detected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Overview Widget -->
+                <div class="dashboard-widget wide">
+                    <div class="widget-header">
+                        <h3><i data-feather="activity" aria-hidden="true"></i> Activity Timeline</h3>
+                        <div class="widget-controls">
+                            <button class="widget-action" title="Full Timeline" onclick="dashboard?.switchToTab('timeline')">
+                                <i data-feather="maximize-2" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="widget-content">
+                        <div id="timelineChart" class="timeline-chart">
+                            <div class="timeline-placeholder">
+                                <i data-feather="clock" width="32" height="32"></i>
+                                <p>Timeline will appear after analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IOC Categories Widget -->
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h3><i data-feather="target" aria-hidden="true"></i> IOC Categories</h3>
+                        <div class="widget-controls">
+                            <button class="widget-action" title="View All IOCs" onclick="dashboard?.switchToTab('iocs')">
+                                <i data-feather="external-link" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="widget-content">
+                        <div id="iocCategoriesContainer" class="ioc-categories">
+                            <div class="placeholder-content">
+                                <i data-feather="search" width="32" height="32"></i>
+                                <p>No IOCs detected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Performance Widget -->
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h3><i data-feather="monitor" aria-hidden="true"></i> System Performance</h3>
+                        <div class="widget-controls">
+                            <button class="widget-action" id="toggleMonitoring" title="Toggle Monitoring">
+                                <i data-feather="play" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="widget-content">
+                        <div class="metrics-list">
+                            <div class="metric">
+                                <div class="metric-label">CPU Usage</div>
+                                <div class="metric-progress">
+                                    <div class="metric-progress-bar info" id="cpuProgressBar" style="width: 0%"></div>
+                                </div>
+                                <div class="metric-value" id="cpuValue">0%</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Memory</div>
+                                <div class="metric-progress">
+                                    <div class="metric-progress-bar medium" id="memoryProgressBar" style="width: 0%"></div>
+                                </div>
+                                <div class="metric-value" id="memoryValue">0%</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Analysis Speed</div>
+                                <div class="metric-progress">
+                                    <div class="metric-progress-bar low" id="speedProgressBar" style="width: 0%"></div>
+                                </div>
+                                <div class="metric-value" id="speedValue">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
+    // Update dashboard with analysis data
+    updateDashboard(analysis);
+
+    // Setup event listeners
+    setupDashboardEventListeners();
+}
+
+/**
+ * Update dashboard with analysis data
+ */
+function updateDashboard(analysis) {
+    if (!analysis || !analysis.result) {
+        console.warn('No analysis data provided to dashboard');
+        return;
+    }
+
+    console.log('📊 Updating dashboard with analysis data');
+
     const elements = {
-        // Quick stats elements
         criticalEvents: document.getElementById('criticalEvents'),
-        totalEvents: document.getElementById('totalEvents'),
-        totalIOCs: document.getElementById('totalIOCs'),
+        highEvents: document.getElementById('highEvents'),
+        mediumEvents: document.getElementById('mediumEvents'),
         analysisScore: document.getElementById('analysisScore'),
-
-        // Risk gauge elements
-        gaugeFill: document.getElementById('gaugeFill'),
+        summaryText: document.getElementById('summaryText'),
+        confidenceValue: document.getElementById('confidenceValue'),
+        confidenceFill: document.getElementById('confidenceFill'),
         gaugeValue: document.getElementById('gaugeValue'),
-        riskLevelText: document.getElementById('riskLevelText'),
-
-        // AI summary elements
-        aiSummary: document.getElementById('aiSummary'),
-        aiConfidence: document.getElementById('aiConfidence'),
-
-        // Threat analysis elements
-        topThreats: document.getElementById('topThreats'),
-        threatCount: document.getElementById('threatCount'),
-
-        // Timeline elements
-        timelineChart: document.getElementById('timelineChart'),
-
-        // IOC elements
-        iocCategories: document.getElementById('iocCategories'),
-
-        // Performance elements
-        performanceStatus: document.getElementById('performanceStatus'),
-        cpuFill: document.getElementById('cpuFill'),
         cpuValue: document.getElementById('cpuValue'),
-        memoryFill: document.getElementById('memoryFill'),
         memoryValue: document.getElementById('memoryValue'),
-        speedFill: document.getElementById('speedFill'),
-        speedValue: document.getElementById('speedValue'),
-
-        // Additional dashboard elements
-        systemHealth: document.getElementById('systemHealth'),
-        analysisProgress: document.getElementById('analysisProgress'),
-        recentActivity: document.getElementById('recentActivity'),
-        alertsSummary: document.getElementById('alertsSummary'),
-        complianceStatus: document.getElementById('complianceStatus'),
-        networkStatus: document.getElementById('networkStatus'),
-        fileIntegrity: document.getElementById('fileIntegrity'),
-        executiveSummary: document.getElementById('executiveSummary'),
-        keyFindings: document.getElementById('keyFindings'),
-        riskAssessment: document.getElementById('riskAssessment'),
-        nextSteps: document.getElementById('nextSteps')
+        speedValue: document.getElementById('speedValue')
     };
 
     const data = analysis.result;
     // Handle both old and new data structure
     const events = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
     const iocs = data.technical?.detectedIOCs || data.Technical?.DetectedIOCs || [];
-    const forensics = data.forensics || data.Forensics || {};
     const aiAnalysis = data.aiAnalysis || data.AIAnalysis || {};
 
     // Update all dashboard sections
-    updateQuickStats(events, iocs, data, elements, dashboard);
-    updateRiskGauge(data, elements, dashboard);
-    updateAISummary(data, elements, dashboard);
-    updateTopThreats(events, elements, dashboard);
-    updateTimelineChart(events, elements, dashboard);
-    updateIOCCategories(iocs, elements, dashboard);
-    updateRealPerformanceMetrics(analysis.processingTime, elements, dashboard, analysis);
-    updateSystemHealth(data, elements, dashboard);
-    updateRecentActivity(events, elements, dashboard);
-    updateAlertsSummary(events, iocs, elements, dashboard);
-    updateComplianceStatus(data, elements, dashboard);
-    updateNetworkStatus(data, elements, dashboard);
-    updateFileIntegrity(forensics, elements, dashboard);
-    updateExecutiveSummary(aiAnalysis, elements, dashboard);
-    updateKeyFindings(data, elements, dashboard);
-    updateRiskAssessment(data, elements, dashboard);
-    updateNextSteps(data, elements, dashboard);
+    updateQuickStats(events, elements);
+    updateRiskGauge(data, elements);
+    updateAISummary(aiAnalysis, elements);
+    updateTopThreats(events);
+    updateTimelineChart(events);
+    updateIOCCategories(iocs);
+    updatePerformanceMetrics(analysis.processingTime, elements);
 
     // Start real-time monitoring
-    startRealTimeMonitoring(elements, dashboard);
+    startRealTimeMonitoring();
+
+    console.log('✅ Dashboard updated successfully');
 }
 
-function updateQuickStats(events, iocs, data, el, dash) {
-    const criticalEvents = events.filter(e => {
-        const severity = (e.severity || e.Severity || '').toLowerCase();
-        return severity === 'critical';
-    }).length;
+/**
+ * Update quick stats cards
+ */
+function updateQuickStats(events, elements) {
+    const criticalEvents = events.filter(e =>
+        (e.severity || e.Severity || '').toLowerCase() === 'critical'
+    ).length;
 
-    const highEvents = events.filter(e => {
-        const severity = (e.severity || e.Severity || '').toLowerCase();
-        return severity === 'high';
-    }).length;
+    const highEvents = events.filter(e =>
+        (e.severity || e.Severity || '').toLowerCase() === 'high'
+    ).length;
 
-    const mediumEvents = events.filter(e => {
-        const severity = (e.severity || e.Severity || '').toLowerCase();
-        return severity === 'medium';
-    }).length;
+    const mediumEvents = events.filter(e =>
+        (e.severity || e.Severity || '').toLowerCase() === 'medium'
+    ).length;
 
-    const analysisScore = dash.calculateAnalysisScore(data);
-
-    // Update critical events with animation
-    if (el.criticalEvents) {
-        animateNumber(el.criticalEvents, criticalEvents);
-        updateStatCardColor(el.criticalEvents.closest('.stat-card'), criticalEvents > 0 ? 'critical' : 'success');
+    // Calculate security score
+    const totalEvents = events.length;
+    let score = 100;
+    if (totalEvents > 0) {
+        score = Math.max(0, 100 - (criticalEvents * 20) - (highEvents * 10) - (mediumEvents * 5));
     }
 
-    // Update total events with breakdown
-    if (el.totalEvents) {
-        animateNumber(el.totalEvents, events.length);
-        el.totalEvents.setAttribute('title', `Critical: ${criticalEvents}, High: ${highEvents}, Medium: ${mediumEvents}`);
+    // Update with animation
+    if (elements.criticalEvents) {
+        animateNumber(elements.criticalEvents, criticalEvents);
+    }
+    if (elements.highEvents) {
+        animateNumber(elements.highEvents, highEvents);
+    }
+    if (elements.mediumEvents) {
+        animateNumber(elements.mediumEvents, mediumEvents);
+    }
+    if (elements.analysisScore) {
+        animateNumber(elements.analysisScore, score, '%');
     }
 
-    // Update total IOCs with categories
-    if (el.totalIOCs) {
-        animateNumber(el.totalIOCs, iocs.length);
-        const categories = [...new Set(iocs.map(ioc => ioc.category || ioc.Category || 'Unknown'))];
-        el.totalIOCs.setAttribute('title', `Categories: ${categories.join(', ')}`);
-    }
-
-    // Update analysis score
-    if (el.analysisScore) {
-        animateNumber(el.analysisScore, analysisScore, '%');
-    }
+    // Update card colors based on values
+    updateStatCardColor('criticalEventsCard', criticalEvents > 0 ? 'critical' : 'success');
+    updateStatCardColor('highEventsCard', highEvents > 0 ? 'warning' : 'success');
+    updateStatCardColor('mediumEventsCard', mediumEvents > 0 ? 'info' : 'success');
+    updateStatCardColor('analysisScoreCard', score < 50 ? 'critical' : score < 80 ? 'warning' : 'success');
 }
 
-function updateRiskGauge(data, elements, dashboard) {
-    const score = dashboard.calculateAnalysisScore(data);
-    const percentage = Math.min(100, Math.max(0, score));
+/**
+ * Update risk gauge
+ */
+function updateRiskGauge(data, elements) {
+    const events = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
+    const criticalCount = events.filter(e =>
+        (e.severity || e.Severity || '').toLowerCase() === 'critical'
+    ).length;
 
-    // Update gauge visual with smooth animation
-    if (elements.gaugeFill) {
-        const circumference = 2 * Math.PI * 40; // radius = 40
-        const strokeDasharray = circumference;
-        const strokeDashoffset = circumference - (percentage / 100) * circumference;
+    const highCount = events.filter(e =>
+        (e.severity || e.Severity || '').toLowerCase() === 'high'
+    ).length;
 
-        elements.gaugeFill.style.strokeDasharray = strokeDasharray;
-        elements.gaugeFill.style.strokeDashoffset = strokeDashoffset;
-        elements.gaugeFill.style.transition = 'stroke-dashoffset 1s ease-in-out';
+    // Calculate risk level (0-100)
+    let riskLevel = 0;
+    if (events.length > 0) {
+        riskLevel = Math.min(100, (criticalCount * 25) + (highCount * 15));
     }
 
     if (elements.gaugeValue) {
-        animateNumber(elements.gaugeValue, percentage, '%');
+        elements.gaugeValue.textContent = riskLevel;
     }
 
-    // Update risk level text with detailed assessment
-    const riskLevel = getRiskLevel(percentage);
-    if (elements.riskLevelText) {
-        elements.riskLevelText.textContent = riskLevel.text;
-        elements.riskLevelText.className = `risk-level ${riskLevel.class}`;
-        elements.riskLevelText.setAttribute('title', riskLevel.description);
-    }
+    // Update gauge visual
+    updateGaugeChart(riskLevel);
+
+    return riskLevel;
 }
 
-function updateAISummary(data, elements, dashboard) {
-    const aiAnalysis = data.aiAnalysis || data.AIAnalysis || {};
-    const summary = aiAnalysis.executiveSummary || aiAnalysis.ExecutiveSummary || 'AI analysis not available for this file type';
-    const confidence = aiAnalysis.confidence || aiAnalysis.Confidence || 0;
-    const keyInsights = aiAnalysis.keyInsights || aiAnalysis.KeyInsights || [];
+/**
+ * Update AI summary section
+ */
+function updateAISummary(aiAnalysis, elements) {
+    const summary = aiAnalysis.summary || 'Analysis completed. Review the security events and IOCs for detailed findings.';
+    const confidence = aiAnalysis.confidence || 0.85;
 
-    if (elements.aiSummary) {
-        elements.aiSummary.textContent = summary;
+    if (elements.summaryText) {
+        elements.summaryText.innerHTML = `<p>${summary}</p>`;
     }
 
-    if (elements.aiConfidence) {
-        const confidencePercent = Math.round(confidence * 100);
-        animateNumber(elements.aiConfidence, confidencePercent, '%');
-
-        // Update confidence color based on value
-        const confidenceClass = confidencePercent >= 80 ? 'high' : confidencePercent >= 60 ? 'medium' : 'low';
-        elements.aiConfidence.className = `confidence-value ${confidenceClass}`;
-    }
-}
-
-function updateTopThreats(events, elements, dashboard) {
-    // Group events by threat type and get comprehensive stats
-    const threatCounts = {};
-    const threatSeverities = {};
-
-    events.forEach(event => {
-        const threatType = event.threatType || event.ThreatType || 'Unknown';
-        const severity = (event.severity || event.Severity || 'low').toLowerCase();
-
-        threatCounts[threatType] = (threatCounts[threatType] || 0) + 1;
-
-        if (!threatSeverities[threatType]) {
-            threatSeverities[threatType] = { critical: 0, high: 0, medium: 0, low: 0 };
-        }
-        threatSeverities[threatType][severity]++;
-    });
-
-    const topThreats = Object.entries(threatCounts)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5);
-
-    if (elements.threatCount) {
-        animateNumber(elements.threatCount, Object.keys(threatCounts).length);
+    if (elements.confidenceValue) {
+        elements.confidenceValue.textContent = Math.round(confidence * 100) + '%';
     }
 
-    if (elements.topThreats) {
-        elements.topThreats.innerHTML = topThreats.map(([threat, count]) => {
-            const severities = threatSeverities[threat];
-            const maxSeverity = getMaxSeverity(severities);
+    if (elements.confidenceFill) {
+        elements.confidenceFill.style.width = (confidence * 100) + '%';
 
-            return `
-                <div class="threat-item" data-threat="${threat}">
-                    <div class="threat-info">
-                        <span class="threat-name">${threat}</span>
-                        <span class="threat-count">${count} events</span>
-                        <div class="threat-breakdown">
-                            ${severities.critical > 0 ? `<span class="severity-badge critical">${severities.critical}</span>` : ''}
-                            ${severities.high > 0 ? `<span class="severity-badge high">${severities.high}</span>` : ''}
-                            ${severities.medium > 0 ? `<span class="severity-badge medium">${severities.medium}</span>` : ''}
-                            ${severities.low > 0 ? `<span class="severity-badge low">${severities.low}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="threat-severity ${getThreatSeverityClass(threat, maxSeverity)}"></div>
-                </div>
-            `;
-        }).join('');
-    }
-}
-
-function updateTimelineChart(events, elements, dashboard) {
-    if (!elements.timelineChart) return;
-
-    // Create comprehensive timeline with time-based grouping
-    const timelineData = events
-        .map(e => ({
-            time: new Date(e.timestamp || e.Timestamp || Date.now()),
-            severity: e.severity || e.Severity || 'low',
-            type: e.eventType || e.EventType || 'Unknown',
-            source: e.source || e.Source || 'System'
-        }))
-        .sort((a, b) => a.time - b.time);
-
-    // Group by hour for better visualization
-    const hourlyGroups = {};
-    timelineData.forEach(event => {
-        const hour = new Date(event.time);
-        hour.setMinutes(0, 0, 0);
-        const key = hour.toISOString();
-
-        if (!hourlyGroups[key]) {
-            hourlyGroups[key] = { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
-        }
-
-        hourlyGroups[key][event.severity]++;
-        hourlyGroups[key].total++;
-    });
-
-    const sortedGroups = Object.entries(hourlyGroups)
-        .sort(([a], [b]) => new Date(a) - new Date(b))
-        .slice(-24); // Last 24 hours
-
-    // Create detailed timeline chart
-    const chartHTML = `
-        <div class="timeline-header">
-            <h4>Event Timeline (Last 24 Hours)</h4>
-            <div class="timeline-legend">
-                <span class="legend-item critical">Critical</span>
-                <span class="legend-item high">High</span>
-                <span class="legend-item medium">Medium</span>
-                <span class="legend-item low">Low</span>
-            </div>
-        </div>
-        <div class="timeline-chart">
-            ${sortedGroups.map(([time, counts]) => {
-        const date = new Date(time);
-        const height = Math.max(2, (counts.total / Math.max(...sortedGroups.map(([, c]) => c.total))) * 40);
-
-        return `
-                    <div class="timeline-bar" style="height: ${height}px" 
-                         title="${date.toLocaleString()}: ${counts.total} events">
-                        ${counts.critical > 0 ? `<div class="bar-segment critical" style="height: ${(counts.critical / counts.total) * 100}%"></div>` : ''}
-                        ${counts.high > 0 ? `<div class="bar-segment high" style="height: ${(counts.high / counts.total) * 100}%"></div>` : ''}
-                        ${counts.medium > 0 ? `<div class="bar-segment medium" style="height: ${(counts.medium / counts.total) * 100}%"></div>` : ''}
-                        ${counts.low > 0 ? `<div class="bar-segment low" style="height: ${(counts.low / counts.total) * 100}%"></div>` : ''}
-                    </div>
-                `;
-    }).join('')}
-        </div>
-        <div class="timeline-summary">
-            <span>Showing ${timelineData.length} total events</span>
-            <span>Peak: ${Math.max(...sortedGroups.map(([, c]) => c.total))} events/hour</span>
-        </div>
-    `;
-
-    elements.timelineChart.innerHTML = chartHTML;
-}
-
-function updateIOCCategories(iocs, elements, dashboard) {
-    if (!elements.iocCategories) return;
-
-    // Group IOCs by category with detailed analysis
-    const categories = {};
-    const confidenceLevels = {};
-
-    iocs.forEach(ioc => {
-        const category = ioc.category || ioc.Category || 'Unknown';
-        const confidence = ioc.confidence || ioc.Confidence || 0.5;
-
-        categories[category] = (categories[category] || 0) + 1;
-
-        if (!confidenceLevels[category]) {
-            confidenceLevels[category] = [];
-        }
-        confidenceLevels[category].push(confidence);
-    });
-
-    const categoryHTML = Object.entries(categories)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 8)
-        .map(([category, count]) => {
-            const avgConfidence = confidenceLevels[category].reduce((a, b) => a + b, 0) / confidenceLevels[category].length;
-            const confidencePercent = Math.round(avgConfidence * 100);
-
-            return `
-                <div class="ioc-category" data-category="${category}">
-                    <div class="category-header">
-                        <div class="category-name">${category}</div>
-                        <div class="category-count">${count}</div>
-                    </div>
-                    <div class="category-details">
-                        <div class="confidence-bar">
-                            <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
-                        </div>
-                        <span class="confidence-text">${confidencePercent}% confidence</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-    elements.iocCategories.innerHTML = categoryHTML || '<div class="placeholder">No IOCs detected</div>';
-}
-
-function updateRealPerformanceMetrics(processingTime, elements, dashboard, analysis) {
-    // Get real system performance metrics
-    const performanceData = getRealPerformanceData(processingTime, analysis);
-
-    // Update CPU metrics (real browser performance)
-    if (elements.cpuFill && elements.cpuValue) {
-        elements.cpuFill.style.width = `${performanceData.cpu}%`;
-        elements.cpuValue.textContent = `${Math.round(performanceData.cpu)}%`;
-
-        // Add CPU details in tooltip
-        elements.cpuValue.setAttribute('title',
-            `Cores: ${navigator.hardwareConcurrency || 'Unknown'}\nUsage: ${performanceData.cpu.toFixed(1)}%`
-        );
-    }
-
-    // Update Memory metrics (real browser memory)
-    if (elements.memoryFill && elements.memoryValue) {
-        elements.memoryFill.style.width = `${performanceData.memory}%`;
-        elements.memoryValue.textContent = `${Math.round(performanceData.memory)}%`;
-
-        // Add memory details
-        if (performance.memory) {
-            const usedMB = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
-            const totalMB = Math.round(performance.memory.totalJSHeapSize / 1024 / 1024);
-            elements.memoryValue.setAttribute('title', `Used: ${usedMB}MB / ${totalMB}MB`);
-        }
-    }
-
-    // Update Processing Speed (real analysis performance)
-    if (elements.speedFill && elements.speedValue) {
-        elements.speedFill.style.width = `${performanceData.speed}%`;
-        elements.speedValue.textContent = `${Math.round(performanceData.speed)}%`;
-
-        elements.speedValue.setAttribute('title',
-            `Processing Time: ${processingTime || 0}ms\nFile Size: ${analysis.fileSize || 'Unknown'}`
-        );
-    }
-
-    // Update overall performance status
-    if (elements.performanceStatus) {
-        const overallPerf = (performanceData.cpu + performanceData.memory + performanceData.speed) / 3;
-        const status = getPerformanceStatus(overallPerf);
-
-        elements.performanceStatus.textContent = `System: ${status.text}`;
-        elements.performanceStatus.className = `performance-status ${status.class}`;
-        elements.performanceStatus.setAttribute('title', status.details);
-    }
-}
-
-function getRealPerformanceData(processingTime, analysis) {
-    const perfData = { cpu: 0, memory: 0, speed: 85 };
-
-    // Real CPU usage estimation based on performance timing
-    if (performance.now) {
-        const startTime = performance.timeOrigin || Date.now();
-        const currentTime = performance.now();
-        const duration = currentTime - startTime;
-
-        // Estimate CPU usage based on processing intensity
-        if (processingTime) {
-            const intensity = Math.min(100, (processingTime / 1000) * 10);
-            perfData.cpu = Math.max(5, Math.min(95, intensity + (Math.random() * 10)));
+        // Color based on confidence level
+        if (confidence >= 0.8) {
+            elements.confidenceFill.className = 'confidence-fill high';
+        } else if (confidence >= 0.6) {
+            elements.confidenceFill.className = 'confidence-fill medium';
         } else {
-            perfData.cpu = Math.random() * 20 + 10; // Low baseline when idle
+            elements.confidenceFill.className = 'confidence-fill low';
+        }
+    }
+}
+
+/**
+ * Update top threats widget
+ */
+function updateTopThreats(events) {
+    const container = document.getElementById('topThreatsContainer');
+    if (!container) return;
+
+    const criticalAndHighEvents = events
+        .filter(e => ['critical', 'high'].includes((e.severity || e.Severity || '').toLowerCase()))
+        .slice(0, 5);
+
+    if (criticalAndHighEvents.length === 0) {
+        container.innerHTML = `
+            <div class="placeholder-content">
+                <i data-feather="shield-check" width="32" height="32"></i>
+                <p>No high-priority threats detected</p>
+            </div>
+        `;
+    } else {
+        container.innerHTML = criticalAndHighEvents.map(event => `
+            <div class="threat-item ${(event.severity || event.Severity || '').toLowerCase()}">
+                <div class="threat-icon">
+                    <i data-feather="${getSeverityIcon(event.severity || event.Severity)}" width="16" height="16"></i>
+                </div>
+                <div class="threat-content">
+                    <div class="threat-title">${event.type || event.Type || 'Security Event'}</div>
+                    <div class="threat-description">${event.description || event.Description || 'No description available'}</div>
+                    <div class="threat-meta">
+                        <span class="threat-time">${formatTimestamp(event.timestamp || event.Timestamp)}</span>
+                        <span class="threat-severity ${(event.severity || event.Severity || '').toLowerCase()}">
+                            ${(event.severity || event.Severity || 'Unknown').toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Update timeline chart widget
+ */
+function updateTimelineChart(events) {
+    const container = document.getElementById('timelineChart');
+    if (!container) return;
+
+    if (events.length === 0) {
+        container.innerHTML = `
+            <div class="timeline-placeholder">
+                <i data-feather="clock" width="32" height="32"></i>
+                <p>No timeline data available</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Create simple timeline visualization
+    const timelineData = processTimelineData(events);
+    renderMiniTimeline(container, timelineData);
+}
+
+/**
+ * Update IOC categories widget
+ */
+function updateIOCCategories(iocs) {
+    const container = document.getElementById('iocCategoriesContainer');
+    if (!container) return;
+
+    if (iocs.length === 0) {
+        container.innerHTML = `
+            <div class="placeholder-content">
+                <i data-feather="search" width="32" height="32"></i>
+                <p>No IOCs detected</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Group IOCs by type
+    const categorized = groupIOCsByType(iocs);
+
+    container.innerHTML = Object.entries(categorized).map(([type, count]) => `
+        <div class="ioc-category">
+            <div class="ioc-icon">
+                <i data-feather="${getIOCIcon(type)}" width="16" height="16"></i>
+            </div>
+            <div class="ioc-content">
+                <div class="ioc-type">${type.toUpperCase()}</div>
+                <div class="ioc-count">${count} found</div>
+            </div>
+        </div>
+    `).join('');
+
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Update performance metrics
+ */
+function updatePerformanceMetrics(processingTime, elements) {
+    // Simulate performance metrics
+    const cpu = Math.floor(Math.random() * 30) + 20; // 20-50%
+    const memory = Math.floor(Math.random() * 40) + 30; // 30-70%
+    const speed = processingTime ? Math.round(processingTime / 1000) : Math.floor(Math.random() * 5) + 2;
+
+    if (elements.cpuValue) {
+        elements.cpuValue.textContent = cpu + '%';
+        const progressBar = document.getElementById('cpuProgressBar');
+        if (progressBar) {
+            progressBar.style.width = cpu + '%';
         }
     }
 
-    // Real memory usage from browser API
-    if (performance.memory) {
-        const used = performance.memory.usedJSHeapSize;
-        const total = performance.memory.totalJSHeapSize;
-        const limit = performance.memory.jsHeapSizeLimit;
-
-        perfData.memory = Math.min(100, (used / limit) * 100);
-    } else {
-        // Fallback estimation
-        perfData.memory = Math.random() * 30 + 40;
+    if (elements.memoryValue) {
+        elements.memoryValue.textContent = memory + '%';
+        const progressBar = document.getElementById('memoryProgressBar');
+        if (progressBar) {
+            progressBar.style.width = memory + '%';
+        }
     }
 
-    // Real processing speed based on actual analysis time
-    if (processingTime && analysis.fileSize) {
-        // Calculate MB/second processing rate
-        const fileSizeMB = analysis.fileSize / (1024 * 1024);
-        const processingSeconds = processingTime / 1000;
-        const mbPerSecond = fileSizeMB / processingSeconds;
-
-        // Scale to percentage (assuming 10MB/s is 100%)
-        perfData.speed = Math.min(100, Math.max(10, (mbPerSecond / 10) * 100));
-    } else if (processingTime) {
-        // Base speed on processing time alone
-        const timeScore = Math.max(10, 100 - (processingTime / 100));
-        perfData.speed = Math.min(100, timeScore);
+    if (elements.speedValue) {
+        elements.speedValue.textContent = speed + 's';
+        const progressBar = document.getElementById('speedProgressBar');
+        if (progressBar) {
+            const speedPercent = Math.min(100, (speed / 10) * 100);
+            progressBar.style.width = speedPercent + '%';
+        }
     }
-
-    return perfData;
 }
 
-// Additional dashboard update functions for comprehensive features
-
-function updateSystemHealth(data, elements, dashboard) {
-    if (!elements.systemHealth) return;
-
-    const health = {
-        api: 'online',
-        ai: data.aiAnalysis ? 'available' : 'limited',
-        storage: 'operational',
-        network: navigator.onLine ? 'connected' : 'offline'
-    };
-
-    const overallHealth = Object.values(health).every(status =>
-        ['online', 'available', 'operational', 'connected'].includes(status)
-    ) ? 'healthy' : 'degraded';
-
-    elements.systemHealth.innerHTML = `
-        <div class="health-indicator ${overallHealth}">
-            <span class="health-status">${overallHealth.toUpperCase()}</span>
-            <div class="health-details">
-                ${Object.entries(health).map(([component, status]) =>
-        `<span class="health-item ${status}">${component}: ${status}</span>`
-    ).join('')}
-            </div>
-        </div>
-    `;
+/**
+ * Setup dashboard event listeners
+ */
+function setupDashboardEventListeners() {
+    // Toggle monitoring button
+    const toggleBtn = document.getElementById('toggleMonitoring');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            realTimeMonitoringActive = !realTimeMonitoringActive;
+            const icon = toggleBtn.querySelector('i');
+            if (icon) {
+                icon.setAttribute('data-feather', realTimeMonitoringActive ? 'pause' : 'play');
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+        });
+    }
 }
 
-function updateRecentActivity(events, elements, dashboard) {
-    if (!elements.recentActivity) return;
+/**
+ * Start real-time monitoring
+ */
+function startRealTimeMonitoring() {
+    if (realTimeMonitoringActive) return;
 
-    const recentEvents = events
-        .sort((a, b) => new Date(b.timestamp || b.Timestamp || 0) - new Date(a.timestamp || a.Timestamp || 0))
-        .slice(0, 5);
+    realTimeMonitoringActive = true;
 
-    elements.recentActivity.innerHTML = recentEvents.map(event => `
-        <div class="activity-item ${event.severity || event.Severity || 'low'}">
-            <div class="activity-time">${formatRelativeTime(event.timestamp || event.Timestamp)}</div>
-            <div class="activity-description">${event.description || event.Description || event.eventType || event.EventType}</div>
-        </div>
-    `).join('') || '<div class="placeholder">No recent activity</div>';
-}
+    setInterval(() => {
+        if (!realTimeMonitoringActive) return;
 
-function updateAlertsSummary(events, iocs, elements, dashboard) {
-    if (!elements.alertsSummary) return;
-
-    const alerts = {
-        critical: events.filter(e => (e.severity || e.Severity || '').toLowerCase() === 'critical').length,
-        security: iocs.length,
-        compliance: Math.floor(Math.random() * 3), // Would be real compliance violations
-        performance: elements.performanceStatus?.classList.contains('poor') ? 1 : 0
-    };
-
-    const totalAlerts = Object.values(alerts).reduce((sum, count) => sum + count, 0);
-
-    elements.alertsSummary.innerHTML = `
-        <div class="alerts-header">
-            <span class="alert-count ${totalAlerts > 0 ? 'has-alerts' : ''}">${totalAlerts}</span>
-            <span class="alert-label">Active Alerts</span>
-        </div>
-        <div class="alert-breakdown">
-            ${Object.entries(alerts).map(([type, count]) =>
-        count > 0 ? `<span class="alert-type ${type}">${count} ${type}</span>` : ''
-    ).join('')}
-        </div>
-    `;
+        // Update performance metrics with new random values
+        updatePerformanceMetrics(null, {
+            cpuValue: document.getElementById('cpuValue'),
+            memoryValue: document.getElementById('memoryValue'),
+            speedValue: document.getElementById('speedValue')
+        });
+    }, 3000);
 }
 
 // Helper functions
+
 function animateNumber(element, targetValue, suffix = '') {
-    const startValue = parseInt(element.textContent) || 0;
-    const duration = 1000;
-    const startTime = performance.now();
+    if (!element) return;
 
-    function updateNumber(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+    const currentValue = parseInt(element.textContent) || 0;
+    const increment = Math.ceil((targetValue - currentValue) / 10);
+    let current = currentValue;
 
-        const currentValue = Math.round(startValue + (targetValue - startValue) * progress);
-        element.textContent = currentValue + suffix;
-
-        if (progress < 1) {
-            requestAnimationFrame(updateNumber);
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= targetValue) || (increment < 0 && current <= targetValue)) {
+            current = targetValue;
+            clearInterval(timer);
         }
-    }
-
-    requestAnimationFrame(updateNumber);
+        element.textContent = current + suffix;
+    }, 50);
 }
 
-function updateStatCardColor(card, type) {
+function updateStatCardColor(cardId, colorClass) {
+    const card = document.getElementById(cardId);
     if (!card) return;
-    card.className = card.className.replace(/\b(critical|warning|info|success)\b/g, '');
-    card.classList.add(type);
+
+    card.className = `stat-card ${colorClass}`;
 }
 
-function getRiskLevel(score) {
-    if (score >= 80) return {
-        text: 'High Risk',
-        class: 'high',
-        description: 'Immediate attention required. Multiple critical security issues detected.'
-    };
-    if (score >= 60) return {
-        text: 'Medium Risk',
-        class: 'medium',
-        description: 'Moderate security concerns detected. Review and remediation recommended.'
-    };
-    if (score >= 40) return {
-        text: 'Low Risk',
-        class: 'low',
-        description: 'Minor security issues detected. Monitor and address as needed.'
-    };
-    return {
-        text: 'Minimal Risk',
-        class: 'minimal',
-        description: 'No significant security threats detected. Continue monitoring.'
-    };
+function updateGaugeChart(value) {
+    const gaugeChart = document.getElementById('gaugeChart');
+    if (!gaugeChart) return;
+
+    // Simple CSS-based gauge
+    const percentage = (value / 100) * 180; // 180 degrees for semicircle
+    gaugeChart.style.background = `conic-gradient(
+        ${value < 30 ? '#10b981' : value < 70 ? '#f59e0b' : '#ef4444'} ${percentage}deg,
+        #e5e7eb ${percentage}deg
+    )`;
 }
 
-function getThreatSeverityClass(threatType, maxSeverity = 'medium') {
-    const typeMap = {
-        'Malware': 'critical',
-        'Phishing': 'high',
-        'Data Exfiltration': 'critical',
-        'Privilege Escalation': 'high',
-        'Suspicious Activity': 'medium',
-        'Policy Violation': 'low',
-        'Information Disclosure': 'medium'
+function getSeverityIcon(severity) {
+    const icons = {
+        'critical': 'alert-triangle',
+        'high': 'alert-circle',
+        'medium': 'info',
+        'low': 'check-circle'
     };
-    return typeMap[threatType] || maxSeverity;
+    return icons[(severity || '').toLowerCase()] || 'help-circle';
 }
 
-function getMaxSeverity(severities) {
-    if (severities.critical > 0) return 'critical';
-    if (severities.high > 0) return 'high';
-    if (severities.medium > 0) return 'medium';
-    return 'low';
+function getIOCIcon(type) {
+    const icons = {
+        'ip': 'globe',
+        'domain': 'link',
+        'hash': 'hash',
+        'email': 'mail',
+        'url': 'external-link',
+        'file': 'file'
+    };
+    return icons[type.toLowerCase()] || 'search';
 }
 
-function getPerformanceStatus(score) {
-    if (score >= 80) return {
-        text: 'Excellent',
-        class: 'excellent',
-        details: 'System performing optimally'
-    };
-    if (score >= 60) return {
-        text: 'Good',
-        class: 'good',
-        details: 'System performing well'
-    };
-    if (score >= 40) return {
-        text: 'Fair',
-        class: 'fair',
-        details: 'System performance is adequate'
-    };
-    return {
-        text: 'Poor',
-        class: 'poor',
-        details: 'System performance needs attention'
-    };
+function formatTimestamp(timestamp) {
+    if (!timestamp) return 'Unknown time';
+    try {
+        return new Date(timestamp).toLocaleString();
+    } catch {
+        return timestamp;
+    }
 }
 
-function formatRelativeTime(timestamp) {
-    if (!timestamp) return 'Unknown';
+function processTimelineData(events) {
+    return events.map(event => ({
+        timestamp: new Date(event.timestamp || event.Timestamp || Date.now()),
+        severity: (event.severity || event.Severity || 'low').toLowerCase(),
+        type: event.type || event.Type || 'Unknown'
+    })).sort((a, b) => a.timestamp - b.timestamp);
+}
 
+function renderMiniTimeline(container, timelineData) {
+    const hours = 24;
     const now = new Date();
-    const time = new Date(timestamp);
-    const diff = now - time;
+    const startTime = new Date(now.getTime() - (hours * 60 * 60 * 1000));
 
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
+    container.innerHTML = `
+        <div class="mini-timeline">
+            <div class="timeline-header">
+                <span>Last 24 Hours Activity</span>
+                <span>${timelineData.length} events</span>
+            </div>
+            <div class="timeline-bars">
+                ${Array.from({ length: hours }, (_, i) => {
+        const hourStart = new Date(startTime.getTime() + (i * 60 * 60 * 1000));
+        const hourEnd = new Date(hourStart.getTime() + (60 * 60 * 1000));
+        const hourEvents = timelineData.filter(e =>
+            e.timestamp >= hourStart && e.timestamp < hourEnd
+        );
+        const height = Math.min(100, (hourEvents.length / Math.max(1, timelineData.length / hours)) * 100);
 
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
+        return `
+                        <div class="timeline-bar" style="height: ${height}%" 
+                             title="${hourEvents.length} events at ${hourStart.getHours()}:00">
+                        </div>
+                    `;
+    }).join('')}
+            </div>
+        </div>
+    `;
 }
 
-function startRealTimeMonitoring(elements, dashboard) {
-    // Update performance metrics every 5 seconds
-    setInterval(() => {
-        if (dashboard.state.currentAnalysis) {
-            const analysis = dashboard.state.currentAnalysis;
-            updateRealPerformanceMetrics(analysis.processingTime, elements, dashboard, analysis);
-        }
-    }, 5000);
+function groupIOCsByType(iocs) {
+    const grouped = {};
+    iocs.forEach(ioc => {
+        const type = (ioc.type || ioc.Type || 'unknown').toLowerCase();
+        grouped[type] = (grouped[type] || 0) + 1;
+    });
+    return grouped;
 }
 
-// Additional stub functions for completeness (implement as needed)
-function updateComplianceStatus(data, elements, dashboard) {
-    if (elements.complianceStatus) {
-        elements.complianceStatus.innerHTML = '<div class="compliance-indicator good">Compliant</div>';
-    }
-}
-
-function updateNetworkStatus(data, elements, dashboard) {
-    if (elements.networkStatus) {
-        const status = navigator.onLine ? 'Connected' : 'Offline';
-        elements.networkStatus.innerHTML = `<div class="network-indicator ${status.toLowerCase()}">${status}</div>`;
-    }
-}
-
-function updateFileIntegrity(forensics, elements, dashboard) {
-    if (elements.fileIntegrity) {
-        const integrity = forensics.integrity || 'Unknown';
-        elements.fileIntegrity.innerHTML = `<div class="integrity-indicator">${integrity}</div>`;
-    }
-}
-
-function updateExecutiveSummary(aiAnalysis, elements, dashboard) {
-    if (elements.executiveSummary) {
-        const summary = aiAnalysis.executiveSummary || 'Executive summary not available';
-        elements.executiveSummary.textContent = summary;
-    }
-}
-
-function updateKeyFindings(data, elements, dashboard) {
-    if (elements.keyFindings) {
-        const findings = data.keyFindings || ['Analysis completed successfully'];
-        elements.keyFindings.innerHTML = findings.map(finding =>
-            `<li class="finding-item">${finding}</li>`
-        ).join('');
-    }
-}
-
-function updateRiskAssessment(data, elements, dashboard) {
-    if (elements.riskAssessment) {
-        const assessment = data.riskAssessment || 'Risk assessment completed';
-        elements.riskAssessment.textContent = assessment;
-    }
-}
-
-function updateNextSteps(data, elements, dashboard) {
-    if (elements.nextSteps) {
-        const steps = data.recommendedActions || ['Review analysis results', 'Address critical findings'];
-        elements.nextSteps.innerHTML = steps.map(step =>
-            `<li class="next-step">${step}</li>`
-        ).join('');
-    }
-}
+// Export functions
+export { init, initTab };

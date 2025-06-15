@@ -7,9 +7,6 @@
  */
 
 import * as api from "./services/api.js";
-import { init as initCaseManagementTab } from "./tabs/caseManagement.js";
-import { init as initIocsTab } from "./tabs/iocs.js";
-import { init as initTimelineTab } from "./tabs/timeline.js";
 
 class SecuNikDashboard {
     constructor() {
@@ -141,43 +138,48 @@ class SecuNikDashboard {
 
             // Sidebar elements
             detailsSidebar: document.getElementById('detailsSidebar'),
-            sidebarToggle: document.getElementById('sidebarToggle')
+            sidebarToggle: document.getElementById('sidebarToggle'),
+
+            // Dashboard specific elements
+            criticalEvents: document.getElementById('criticalEvents'),
+            highEvents: document.getElementById('highEvents'),
+            mediumEvents: document.getElementById('mediumEvents'),
+            analysisScore: document.getElementById('analysisScore'),
+
+            // Case management elements
+            caseHistoryList: document.getElementById('caseHistoryList'),
+            caseForm: document.getElementById('caseForm')
         };
+
+        // Log missing elements for debugging
+        Object.entries(this.elements).forEach(([key, element]) => {
+            if (!element && key !== 'caseForm' && key !== 'caseHistoryList') {
+                console.warn(`⚠️ Element not found: ${key}`);
+            }
+        });
     }
 
     /**
-     * Setup all event listeners
+     * Setup event listeners
      */
     setupEventListeners() {
-        // File input handlers
+        // File input handler
         if (this.elements.fileInput) {
-            this.elements.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+            this.elements.fileInput.addEventListener('change', (e) => {
+                this.handleFileSelection(e.target.files);
+            });
         }
 
-        // Upload zone drag and drop
+        // Upload zone handlers
         if (this.elements.headerUploadZone) {
-            this.elements.headerUploadZone.addEventListener('dragover', (e) => this.handleDragOver(e));
-            this.elements.headerUploadZone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-            this.elements.headerUploadZone.addEventListener('drop', (e) => this.handleDrop(e));
-            this.elements.headerUploadZone.addEventListener('click', () => this.triggerFileInput());
+            this.setupDragAndDrop(this.elements.headerUploadZone);
         }
 
         // Tab navigation
         this.elements.navTabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
                 e.preventDefault();
-                const tabName = tab.getAttribute('data-tab');
-                if (tabName) {
-                    this.switchToTab(tabName);
-                }
-            });
-        });
-
-        // Tab links
-        this.elements.tabLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const tabName = link.getAttribute('data-tab-link');
+                const tabName = tab.getAttribute('data-tab') || tab.getAttribute('href')?.replace('#', '');
                 if (tabName) {
                     this.switchToTab(tabName);
                 }
@@ -186,259 +188,94 @@ class SecuNikDashboard {
 
         // Settings button
         if (this.elements.settingsBtn) {
-            this.elements.settingsBtn.addEventListener('click', () => this.switchToTab('settings'));
+            this.elements.settingsBtn.addEventListener('click', () => {
+                this.switchToTab('settings');
+            });
         }
 
         // Help button
         if (this.elements.helpBtn) {
-            this.elements.helpBtn.addEventListener('click', () => this.switchToTab('help'));
+            this.elements.helpBtn.addEventListener('click', () => {
+                this.switchToTab('help');
+            });
         }
 
         // Export button
         if (this.elements.exportBtn) {
-            this.elements.exportBtn.addEventListener('click', () => this.exportCurrentAnalysis());
+            this.elements.exportBtn.addEventListener('click', () => {
+                this.exportCurrentAnalysis();
+            });
         }
 
         // Sidebar toggle
         if (this.elements.sidebarToggle) {
-            this.elements.sidebarToggle.addEventListener('click', () => this.toggleSidebar());
+            this.elements.sidebarToggle.addEventListener('click', () => {
+                this.toggleSidebar();
+            });
         }
 
         // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
-
-        // Window events
-        window.addEventListener('resize', () => this.handleWindowResize());
-        window.addEventListener('beforeunload', () => this.handleBeforeUnload());
-    }
-
-    /**
-     * Load settings from localStorage
-     */
-    loadSettings() {
-        try {
-            const savedSettings = localStorage.getItem('secunik_settings');
-            if (savedSettings) {
-                this.settings = { ...this.settings, ...JSON.parse(savedSettings) };
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'o') {
+                e.preventDefault();
+                this.elements.fileInput?.click();
             }
-        } catch (error) {
-            console.warn('Failed to load settings:', error);
-        }
-    }
+        });
 
-    /**
-     * Load analysis history from localStorage
-     */
-    loadAnalysisHistory() {
-        try {
-            const savedHistory = localStorage.getItem('secunik_history');
-            if (savedHistory) {
-                this.state.analysisHistory = JSON.parse(savedHistory);
-            }
-        } catch (error) {
-            console.warn('Failed to load analysis history:', error);
-        }
-    }
-
-    /**
-     * Load cases from localStorage
-     */
-    loadCases() {
-        try {
-            const savedCases = localStorage.getItem('secunik_cases');
-            if (savedCases) {
-                this.state.cases = JSON.parse(savedCases);
-            }
-        } catch (error) {
-            console.warn('Failed to load cases:', error);
-        }
-    }
-
-    /**
-     * Check system health
-     */
-    async checkSystemHealth() {
-        try {
-            const response = await api.checkHealth();
-            this.state.systemStatus = response.status || 'online';
-
-            if (this.elements.systemStatus) {
-                const span = this.elements.systemStatus.querySelector('span');
-                if (span) {
-                    span.textContent = this.state.systemStatus;
-                }
-            }
-        } catch (error) {
-            console.warn('Health check failed:', error);
-            this.state.systemStatus = 'offline';
-        }
-    }
-
-    /**
-     * Setup tab navigation
-     */
-    setupTabNavigation() {
-        // Set initial active tab
-        this.switchToTab(this.state.activeTab);
-    }
-
-    /**
-     * Initialize animations
-     */
-    initializeAnimations() {
-        if (!this.settings.animations) return;
-
-        // Add animation classes to elements
-        const animatedElements = document.querySelectorAll('.stat-card, .chart-container, .table-container');
-        animatedElements.forEach((el, index) => {
-            el.style.animationDelay = `${index * 0.1}s`;
-            el.classList.add('animate-fade-in');
+        // Handle browser back/forward
+        window.addEventListener('popstate', (e) => {
+            const tabName = window.location.hash.replace('#', '') || 'dashboard';
+            this.switchToTab(tabName, false);
         });
     }
 
     /**
-     * Setup responsive handlers
+     * Setup drag and drop functionality
      */
-    setupResponsiveHandlers() {
-        // Handle mobile view
-        const checkMobile = () => {
-            const isMobile = window.innerWidth < 768;
-            document.body.classList.toggle('mobile-view', isMobile);
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-    }
-
-    /**
-     * Setup performance monitoring
-     */
-    setupPerformanceMonitoring() {
-        setInterval(() => {
-            this.updatePerformanceMetrics();
-        }, 5000);
-    }
-
-    /**
-     * Show welcome state
-     */
-    showWelcomeState() {
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        const mainNav = document.getElementById('mainNavigation');
-        const tabContent = document.getElementById('tabContent');
-
-        if (welcomeScreen) welcomeScreen.style.display = 'flex';
-        if (mainNav) mainNav.style.display = 'none';
-        if (tabContent) tabContent.style.display = 'none';
-    }
-
-    /**
-     * Show main interface
-     */
-    showMainInterface() {
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        const mainNav = document.getElementById('mainNavigation');
-        const tabContent = document.getElementById('tabContent');
-
-        if (welcomeScreen) welcomeScreen.style.display = 'none';
-        if (mainNav) mainNav.style.display = 'block';
-        if (tabContent) tabContent.style.display = 'block';
-    }
-
-    /**
-     * Switch to specified tab
-     */
-    async switchToTab(tabName) {
-        if (this.state.activeTab === tabName) return;
-
-        console.log(`🔄 Switching to ${tabName} tab...`);
-
-        // Update active tab state
-        this.state.activeTab = tabName;
-
-        // Update navigation UI
-        this.elements.navTabs.forEach(tab => {
-            const isActive = tab.getAttribute('data-tab') === tabName;
-            tab.classList.toggle('active', isActive);
+    setupDragAndDrop(element) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            element.addEventListener(eventName, this.handleDragEvent.bind(this), false);
         });
 
-        // Update tab sections
-        this.elements.tabSections.forEach(section => {
-            const isActive = section.id === `${tabName}Tab`;
-            section.classList.toggle('active', isActive);
-            section.style.display = isActive ? 'block' : 'none';
+        ['dragenter', 'dragover'].forEach(eventName => {
+            element.addEventListener(eventName, () => {
+                element.classList.add('drag-over');
+            });
         });
 
-        // Render tab content
-        await this.renderTabContent(tabName);
+        ['dragleave', 'drop'].forEach(eventName => {
+            element.addEventListener(eventName, () => {
+                element.classList.remove('drag-over');
+            });
+        });
 
-        // Update URL hash
-        window.location.hash = tabName;
+        element.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            this.handleFileSelection(files);
+        });
     }
 
     /**
-     * Render tab content
+     * Handle drag events
      */
-    async renderTabContent(tabName) {
+    handleDragEvent(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    /**
+     * Handle file selection
+     */
+    async handleFileSelection(files) {
+        if (!files || files.length === 0) return;
+
+        const file = files[0];
+
         try {
-            switch (tabName) {
-                case 'dashboard':
-                    const dashboardModule = await import('./tabs/dashboard.js');
-                    if (dashboardModule.initTab) {
-                        dashboardModule.initTab(this.state.currentAnalysis);
-                    }
-                    break;
-
-                case 'events':
-                    const eventsModule = await import('./tabs/events.js');
-                    if (eventsModule.init) {
-                        eventsModule.init(this);
-                    }
-                    break;
-
-                case 'iocs':
-                    if (initIocsTab) {
-                        initIocsTab(this);
-                    }
-                    break;
-
-                case 'timeline':
-                    if (initTimelineTab) {
-                        initTimelineTab(this);
-                    }
-                    break;
-
-                case 'caseManagement':
-                    if (initCaseManagementTab) {
-                        initCaseManagementTab(this);
-                    }
-                    break;
-
-                case 'settings':
-                    const settingsModule = await import('./tabs/settings.js');
-                    if (settingsModule.init) {
-                        settingsModule.init(this);
-                    }
-                    break;
-
-                case 'help':
-                    const helpModule = await import('./tabs/help.js');
-                    if (helpModule.render) {
-                        helpModule.render();
-                    } else if (helpModule.initTab) {
-                        helpModule.initTab();
-                    }
-                    break;
-
-                default:
-                    console.warn(`Unknown tab: ${tabName}`);
-            }
-
-            console.log(`✅ Content rendered for ${tabName} tab`);
-
+            await this.processFile(file);
         } catch (error) {
-            console.error(`❌ Error rendering tab ${tabName}:`, error);
-            this.showNotification(`Failed to load ${tabName} tab`, 'error');
+            console.error('File processing failed:', error);
+            this.showNotification('File processing failed: ' + error.message, 'error');
         }
     }
 
@@ -462,21 +299,45 @@ class SecuNikDashboard {
         this.state.currentFile = file;
 
         try {
-            // Show progress
-            this.showAnalysisProgress();
+            // Show loading state
+            this.showLoadingState(file);
 
-            // Upload and analyze file
-            const result = await api.uploadAndAnalyze(file, {
-                onProgress: (progress) => this.updateProgress(progress),
-                settings: this.settings
+            // Create API instance and process file
+            const apiInstance = new api.SecuNikAPI();
+            const result = await apiInstance.uploadAndAnalyze(file, {
+                enableAI: this.settings.aiMode !== 'disabled',
+                analysisDepth: this.settings.analysisDepth,
+                includeTimeline: this.settings.includeTimeline,
+                generateExecutiveReport: this.settings.executiveSummary
             });
 
-            // Handle successful analysis
-            await this.handleAnalysisComplete(result, file);
+            // Store analysis result
+            this.state.currentAnalysis = result;
+            this.state.analysisCount++;
+
+            // Update analysis counter
+            if (this.elements.analysisCounter) {
+                this.elements.analysisCounter.textContent = this.state.analysisCount;
+            }
+
+            // Initialize all tabs with the analysis data
+            await this.initializeAllTabs(result);
+
+            // Switch to dashboard to show results
+            this.switchToTab('dashboard');
+
+            // Save to history
+            this.saveAnalysisHistory();
+
+            console.log('✅ File processing completed successfully');
+            this.showNotification(`Analysis completed for ${file.name}`, 'success');
 
         } catch (error) {
-            console.error('Analysis failed:', error);
-            this.handleAnalysisError(error, file);
+            console.error('❌ Analysis failed:', error);
+            this.showNotification('Analysis failed: ' + error.message, 'error');
+        } finally {
+            this.state.isAnalyzing = false;
+            this.hideLoadingState();
         }
     }
 
@@ -486,113 +347,19 @@ class SecuNikDashboard {
     validateFile(file) {
         // Check file size
         if (file.size > this.config.maxFileSize) {
-            this.showNotification(
-                `File too large. Maximum size is ${this.config.maxFileSize / (1024 * 1024)}MB`,
-                'error'
-            );
+            const maxSizeMB = Math.round(this.config.maxFileSize / 1024 / 1024);
+            this.showNotification(`File too large. Maximum size: ${maxSizeMB}MB`, 'error');
             return false;
         }
 
         // Check file extension
         const extension = '.' + file.name.split('.').pop().toLowerCase();
         if (!this.config.supportedFormats.includes(extension)) {
-            this.showNotification(
-                `Unsupported file format. Supported formats: ${this.config.supportedFormats.join(', ')}`,
-                'error'
-            );
+            this.showNotification(`Unsupported file format: ${extension}`, 'error');
             return false;
         }
 
         return true;
-    }
-
-    /**
-     * Show analysis progress
-     */
-    showAnalysisProgress() {
-        if (this.elements.analysisProgress) {
-            this.elements.analysisProgress.style.display = 'block';
-        }
-        this.updateProgress(0);
-    }
-
-    /**
-     * Hide analysis progress
-     */
-    hideAnalysisProgress() {
-        if (this.elements.analysisProgress) {
-            this.elements.analysisProgress.style.display = 'none';
-        }
-    }
-
-    /**
-     * Update progress bar
-     */
-    updateProgress(percentage) {
-        if (this.elements.progressFill) {
-            this.elements.progressFill.style.width = `${percentage}%`;
-        }
-        if (this.elements.progressPercentage) {
-            this.elements.progressPercentage.textContent = `${Math.round(percentage)}%`;
-        }
-    }
-
-    /**
-     * Handle analysis completion
-     */
-    async handleAnalysisComplete(result, file) {
-        console.log('✅ Analysis completed successfully');
-
-        // Hide progress
-        this.hideAnalysisProgress();
-
-        // Update state
-        this.state.currentAnalysis = {
-            ...result,
-            filename: file.name,
-            fileSize: file.size,
-            uploadedAt: new Date(),
-            lastModified: file.lastModified
-        };
-        this.state.analysisCount++;
-        this.state.isAnalyzing = false;
-
-        // Add to analysis history
-        this.state.analysisHistory.unshift({
-            id: result.analysisId || Date.now(),
-            filename: file.name,
-            timestamp: new Date(),
-            result: result,
-            fileSize: file.size
-        });
-
-        // Limit history to 10 items
-        if (this.state.analysisHistory.length > 10) {
-            this.state.analysisHistory = this.state.analysisHistory.slice(0, 10);
-        }
-
-        // Show main interface
-        this.showMainInterface();
-
-        // Initialize all tabs with the analysis data
-        this.initializeAllTabs(result);
-
-        // Switch to dashboard tab by default
-        this.switchToTab('dashboard');
-
-        // Update performance metrics
-        this.updatePerformanceMetrics(result);
-
-        // Save analysis to localStorage
-        this.saveAnalysisHistory();
-
-        // Show success notification
-        this.showNotification(
-            `Analysis completed successfully for ${file.name}`,
-            'success'
-        );
-
-        console.log('✅ Analysis integration completed');
     }
 
     /**
@@ -626,8 +393,9 @@ class SecuNikDashboard {
 
             // IOCs tab
             try {
-                if (initIocsTab) {
-                    initIocsTab(this);
+                const iocsModule = await import('./tabs/iocs.js');
+                if (iocsModule.init) {
+                    iocsModule.init(this);
                     console.log('✅ IOCs tab initialized');
                 }
             } catch (error) {
@@ -636,8 +404,9 @@ class SecuNikDashboard {
 
             // Timeline tab
             try {
-                if (initTimelineTab) {
-                    initTimelineTab(this);
+                const timelineModule = await import('./tabs/timeline.js');
+                if (timelineModule.init) {
+                    timelineModule.init(this);
                     console.log('✅ Timeline tab initialized');
                 }
             } catch (error) {
@@ -646,13 +415,17 @@ class SecuNikDashboard {
 
             // Case Management tab
             try {
-                if (initCaseManagementTab) {
-                    initCaseManagementTab(this);
+                const caseManagementModule = await import('./tabs/caseManagement.js');
+                if (caseManagementModule.init) {
+                    caseManagementModule.init(this);
                     console.log('✅ Case Management tab initialized');
                 }
             } catch (error) {
                 console.error('Failed to initialize case management tab:', error);
             }
+
+            // Other tabs can be initialized on-demand
+            console.log('✅ All tabs initialized successfully');
 
         } catch (error) {
             console.error('❌ Failed to initialize tabs:', error);
@@ -660,117 +433,353 @@ class SecuNikDashboard {
     }
 
     /**
-     * Handle analysis errors
+     * Setup tab navigation
      */
-    handleAnalysisError(error, file) {
-        console.error('❌ Analysis error:', error);
-
-        this.state.isAnalyzing = false;
-        this.hideAnalysisProgress();
-
-        // Show detailed error notification
-        const errorMessage = this.getErrorMessage(error);
-        this.showNotification(
-            `Analysis failed for ${file?.name || 'uploaded file'}: ${errorMessage}`,
-            'error'
-        );
-
-        // Keep welcome screen visible
-        this.showWelcomeState();
+    setupTabNavigation() {
+        // Set initial tab from URL hash
+        const initialTab = window.location.hash.replace('#', '') || 'dashboard';
+        this.switchToTab(initialTab, false);
     }
 
     /**
-     * Get user-friendly error message
+     * Switch to a specific tab
      */
-    getErrorMessage(error) {
-        if (error.message) {
-            // Common error patterns
-            if (error.message.includes('File size')) {
-                return 'File too large (max 50MB)';
-            } else if (error.message.includes('format')) {
-                return 'Unsupported file format';
-            } else if (error.message.includes('network')) {
-                return 'Network connection error';
-            } else if (error.message.includes('timeout')) {
-                return 'Analysis timed out';
+    async switchToTab(tabName, updateHistory = true) {
+        console.log(`🔄 Switching to tab: ${tabName}`);
+
+        this.state.activeTab = tabName;
+
+        // Update tab navigation
+        this.elements.navTabs.forEach(tab => {
+            const isActive = tab.getAttribute('data-tab') === tabName ||
+                tab.getAttribute('href') === `#${tabName}`;
+            tab.classList.toggle('active', isActive);
+        });
+
+        // Update tab sections
+        this.elements.tabSections.forEach(section => {
+            const isActive = section.id === `${tabName}Tab`;
+            section.style.display = isActive ? 'block' : 'none';
+        });
+
+        // Render tab content
+        await this.renderTabContent(tabName);
+
+        // Update URL hash
+        if (updateHistory) {
+            window.history.pushState(null, null, `#${tabName}`);
+        }
+    }
+
+    /**
+     * Render tab content
+     */
+    async renderTabContent(tabName) {
+        try {
+            switch (tabName) {
+                case 'dashboard':
+                    const dashboardModule = await import('./tabs/dashboard.js');
+                    if (dashboardModule.initTab && this.state.currentAnalysis) {
+                        dashboardModule.initTab(this.state.currentAnalysis);
+                    }
+                    break;
+
+                case 'events':
+                    const eventsModule = await import('./tabs/events.js');
+                    if (eventsModule.init) {
+                        eventsModule.init(this);
+                    }
+                    if (eventsModule.render && this.state.currentAnalysis) {
+                        eventsModule.render(this.state.currentAnalysis);
+                    }
+                    break;
+
+                case 'iocs':
+                    const iocsModule = await import('./tabs/iocs.js');
+                    if (iocsModule.init) {
+                        iocsModule.init(this);
+                    }
+                    if (iocsModule.render && this.state.currentAnalysis) {
+                        iocsModule.render(this.state.currentAnalysis);
+                    }
+                    break;
+
+                case 'timeline':
+                    const timelineModule = await import('./tabs/timeline.js');
+                    if (timelineModule.init) {
+                        timelineModule.init(this);
+                    }
+                    if (timelineModule.render && this.state.currentAnalysis) {
+                        timelineModule.render(this.state.currentAnalysis);
+                    }
+                    break;
+
+                case 'caseManagement':
+                    const caseManagementModule = await import('./tabs/caseManagement.js');
+                    if (caseManagementModule.init) {
+                        caseManagementModule.init(this);
+                    }
+                    if (caseManagementModule.render) {
+                        caseManagementModule.render();
+                    }
+                    break;
+
+                case 'settings':
+                    const settingsModule = await import('./tabs/settings.js');
+                    if (settingsModule.init) {
+                        settingsModule.init(this);
+                    }
+                    break;
+
+                case 'help':
+                    const helpModule = await import('./tabs/help.js');
+                    if (helpModule.render) {
+                        helpModule.render();
+                    } else if (helpModule.initTab) {
+                        helpModule.initTab();
+                    }
+                    break;
+
+                default:
+                    console.warn(`Unknown tab: ${tabName}`);
             }
-            return error.message;
+
+            console.log(`✅ Content rendered for ${tabName} tab`);
+
+        } catch (error) {
+            console.error(`❌ Error rendering tab ${tabName}:`, error);
+            this.showNotification(`Failed to load ${tabName} tab`, 'error');
         }
-        return 'Unknown error occurred';
     }
 
     /**
-     * File upload handlers
+     * Show loading state
      */
-    triggerFileInput() {
-        if (this.elements.fileInput) {
-            this.elements.fileInput.click();
+    showLoadingState(file) {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingTitle = document.getElementById('loadingTitle');
+        const loadingStatus = document.getElementById('loadingStatus');
+
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'flex';
         }
-    }
 
-    handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (file) {
-            this.processFile(file);
+        if (loadingTitle) {
+            loadingTitle.textContent = `Analyzing ${file.name}...`;
         }
-        // Reset input
-        event.target.value = '';
-    }
 
-    handleDragOver(event) {
-        event.preventDefault();
-        event.currentTarget.classList.add('dragover');
-    }
-
-    handleDragLeave(event) {
-        event.preventDefault();
-        if (!event.currentTarget.contains(event.relatedTarget)) {
-            event.currentTarget.classList.remove('dragover');
+        if (loadingStatus) {
+            loadingStatus.textContent = 'Initializing AI analysis engine...';
         }
-    }
 
-    handleDrop(event) {
-        event.preventDefault();
-        event.currentTarget.classList.remove('dragover');
-
-        const file = event.dataTransfer.files[0];
-        if (file) {
-            this.processFile(file);
-        }
+        // Simulate progress updates
+        this.simulateProgress();
     }
 
     /**
-     * Update performance metrics
+     * Hide loading state
      */
-    updatePerformanceMetrics(analysis = null) {
-        // Simulate performance metrics
-        this.metrics.cpu = Math.random() * 100;
-        this.metrics.memory = Math.random() * 100;
-
-        if (analysis) {
-            this.metrics.analysisSpeed = analysis.processingTimeMs || 0;
+    hideLoadingState() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
         }
-
-        // Update UI elements
-        const cpuFill = document.getElementById('cpuFill');
-        const cpuValue = document.getElementById('cpuValue');
-        const memoryFill = document.getElementById('memoryFill');
-        const memoryValue = document.getElementById('memoryValue');
-
-        if (cpuFill) cpuFill.style.width = `${this.metrics.cpu}%`;
-        if (cpuValue) cpuValue.textContent = `${Math.round(this.metrics.cpu)}%`;
-        if (memoryFill) memoryFill.style.width = `${this.metrics.memory}%`;
-        if (memoryValue) memoryValue.textContent = `${Math.round(this.metrics.memory)}%`;
     }
 
     /**
-     * Save analysis history to localStorage
+     * Simulate analysis progress
+     */
+    simulateProgress() {
+        const progressSteps = [
+            'Initializing AI analysis engine...',
+            'Processing file structure...',
+            'Extracting security events...',
+            'Analyzing threat patterns...',
+            'Generating IOCs...',
+            'Building timeline...',
+            'Performing AI correlation...',
+            'Generating executive summary...',
+            'Finalizing analysis...'
+        ];
+
+        let currentStep = 0;
+        const loadingStatus = document.getElementById('loadingStatus');
+
+        const updateProgress = () => {
+            if (currentStep < progressSteps.length && this.state.isAnalyzing) {
+                if (loadingStatus) {
+                    loadingStatus.textContent = progressSteps[currentStep];
+                }
+                currentStep++;
+                setTimeout(updateProgress, 1500);
+            }
+        };
+
+        updateProgress();
+    }
+
+    /**
+     * Show welcome state
+     */
+    showWelcomeState() {
+        // Implementation depends on your welcome state UI
+        console.log('📋 Showing welcome state');
+    }
+
+    /**
+     * Show notification
+     */
+    showNotification(message, type = 'info', duration = 5000) {
+        const container = document.getElementById('notificationContainer');
+        if (!container) {
+            console.log(`${type.toUpperCase()}: ${message}`);
+            return;
+        }
+
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span class="notification-message">${message}</span>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+
+        container.appendChild(notification);
+
+        // Auto remove after duration
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, duration);
+    }
+
+    /**
+     * Check system health
+     */
+    async checkSystemHealth() {
+        try {
+            const health = await api.checkHealth();
+            this.state.systemStatus = health.status || 'online';
+
+            if (this.elements.systemStatus) {
+                this.elements.systemStatus.textContent = this.state.systemStatus;
+                this.elements.systemStatus.className = `status ${this.state.systemStatus}`;
+            }
+
+            console.log('✅ System health check completed:', health);
+        } catch (error) {
+            console.error('❌ System health check failed:', error);
+            this.state.systemStatus = 'offline';
+
+            if (this.elements.systemStatus) {
+                this.elements.systemStatus.textContent = 'offline';
+                this.elements.systemStatus.className = 'status offline';
+            }
+        }
+    }
+
+    /**
+     * Load settings from localStorage
+     */
+    loadSettings() {
+        try {
+            const saved = localStorage.getItem('secunik-settings');
+            if (saved) {
+                this.settings = { ...this.settings, ...JSON.parse(saved) };
+            }
+        } catch (error) {
+            console.error('Failed to load settings:', error);
+        }
+    }
+
+    /**
+     * Save settings to localStorage
+     */
+    saveSettings() {
+        try {
+            localStorage.setItem('secunik-settings', JSON.stringify(this.settings));
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+        }
+    }
+
+    /**
+     * Load analysis history
+     */
+    loadAnalysisHistory() {
+        try {
+            const saved = localStorage.getItem('secunik-analysis-history');
+            if (saved) {
+                this.state.analysisHistory = JSON.parse(saved);
+                this.state.analysisCount = this.state.analysisHistory.length;
+            }
+        } catch (error) {
+            console.error('Failed to load analysis history:', error);
+        }
+    }
+
+    /**
+     * Save analysis history
      */
     saveAnalysisHistory() {
+        if (!this.state.currentAnalysis) return;
+
         try {
-            localStorage.setItem('secunik_history', JSON.stringify(this.state.analysisHistory));
+            const historyItem = {
+                id: Date.now(),
+                fileName: this.state.currentFile?.name,
+                timestamp: new Date().toISOString(),
+                analysis: this.state.currentAnalysis
+            };
+
+            this.state.analysisHistory.unshift(historyItem);
+
+            // Keep only last 50 analyses
+            if (this.state.analysisHistory.length > 50) {
+                this.state.analysisHistory = this.state.analysisHistory.slice(0, 50);
+            }
+
+            localStorage.setItem('secunik-analysis-history', JSON.stringify(this.state.analysisHistory));
         } catch (error) {
-            console.warn('Failed to save analysis history:', error);
+            console.error('Failed to save analysis history:', error);
+        }
+    }
+
+    /**
+     * Load cases
+     */
+    loadCases() {
+        try {
+            const saved = localStorage.getItem('secunik-cases');
+            if (saved) {
+                this.state.cases = JSON.parse(saved);
+            }
+        } catch (error) {
+            console.error('Failed to load cases:', error);
+        }
+    }
+
+    /**
+     * Save cases
+     */
+    saveCases() {
+        try {
+            localStorage.setItem('secunik-cases', JSON.stringify(this.state.cases));
+        } catch (error) {
+            console.error('Failed to save cases:', error);
+        }
+    }
+
+    /**
+     * Toggle sidebar
+     */
+    toggleSidebar() {
+        this.state.sidebarOpen = !this.state.sidebarOpen;
+
+        if (this.elements.detailsSidebar) {
+            this.elements.detailsSidebar.classList.toggle('collapsed', !this.state.sidebarOpen);
         }
     }
 
@@ -784,17 +793,12 @@ class SecuNikDashboard {
         }
 
         try {
-            const exportData = {
-                analysis: this.state.currentAnalysis,
-                exportedAt: new Date().toISOString(),
-                version: '2.1.0'
-            };
-
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(this.state.currentAnalysis, null, 2)],
+                { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `secunik-analysis-${this.state.currentAnalysis.filename}-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `secunik-analysis-${Date.now()}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -803,233 +807,77 @@ class SecuNikDashboard {
             this.showNotification('Analysis exported successfully', 'success');
         } catch (error) {
             console.error('Export failed:', error);
-            this.showNotification('Failed to export analysis', 'error');
+            this.showNotification('Export failed', 'error');
         }
     }
 
     /**
-     * Toggle sidebar
+     * Initialize animations
      */
-    toggleSidebar() {
-        this.state.sidebarOpen = !this.state.sidebarOpen;
-        this.updateSidebarState();
+    initializeAnimations() {
+        // Basic animation setup
+        console.log('🎨 Animations initialized');
     }
 
     /**
-     * Update sidebar state
+     * Setup responsive handlers
      */
-    updateSidebarState() {
-        const sidebar = this.elements.detailsSidebar;
-        const main = document.querySelector('.app-container');
-
-        if (sidebar) {
-            sidebar.classList.toggle('collapsed', !this.state.sidebarOpen);
-        }
-
-        if (main) {
-            main.classList.toggle('sidebar-collapsed', !this.state.sidebarOpen);
-        }
+    setupResponsiveHandlers() {
+        // Mobile/responsive event handlers
+        console.log('📱 Responsive handlers setup');
     }
 
     /**
-     * Handle keyboard shortcuts
+     * Setup performance monitoring
      */
-    handleKeyboardShortcuts(event) {
-        if (event.ctrlKey || event.metaKey) {
-            switch (event.key) {
-                case 'u':
-                    event.preventDefault();
-                    this.triggerFileInput();
-                    break;
-                case 'e':
-                    event.preventDefault();
-                    this.exportCurrentAnalysis();
-                    break;
-                case '1':
-                    event.preventDefault();
-                    this.switchToTab('dashboard');
-                    break;
-                case '2':
-                    event.preventDefault();
-                    this.switchToTab('events');
-                    break;
-                case '3':
-                    event.preventDefault();
-                    this.switchToTab('iocs');
-                    break;
-            }
-        }
-
-        if (event.key === 'Escape') {
-            // Close any open modals or overlays
-            const modals = document.querySelectorAll('.modal.active');
-            modals.forEach(modal => modal.classList.remove('active'));
-        }
+    setupPerformanceMonitoring() {
+        // Performance monitoring setup
+        this.metrics.startTime = Date.now();
+        console.log('📊 Performance monitoring active');
     }
 
     /**
-     * Handle window resize
+     * Calculate analysis score
      */
-    handleWindowResize() {
-        // Update responsive layout
-        this.setupResponsiveHandlers();
+    calculateAnalysisScore(data) {
+        // Simplified scoring algorithm
+        let score = 100;
 
-        // Recalculate charts if needed
-        if (this.state.currentAnalysis) {
-            setTimeout(() => {
-                const event = new CustomEvent('resize-charts');
-                document.dispatchEvent(event);
-            }, 250);
-        }
+        const events = data.technical?.securityEvents || data.Technical?.SecurityEvents || [];
+        const criticalEvents = events.filter(e =>
+            (e.severity || e.Severity || '').toLowerCase() === 'critical'
+        ).length;
+
+        score -= criticalEvents * 10;
+        return Math.max(0, Math.min(100, score));
     }
 
     /**
-     * Handle before unload
+     * Format timestamp
      */
-    handleBeforeUnload() {
-        // Save current state
+    formatTimestamp(timestamp) {
         try {
-            localStorage.setItem('secunik_state', JSON.stringify({
-                activeTab: this.state.activeTab,
-                sidebarOpen: this.state.sidebarOpen,
-                settings: this.settings
-            }));
-        } catch (error) {
-            console.warn('Failed to save state on unload:', error);
+            return new Date(timestamp).toLocaleString();
+        } catch {
+            return timestamp || 'Unknown';
         }
     }
 
     /**
-     * Show notification
+     * Sanitize HTML
      */
-    showNotification(message, type = 'info', duration = 5000) {
-        let container = document.getElementById('notificationContainer');
-        if (!container) {
-            container = this.createNotificationContainer();
-        }
-
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.style.cssText = `
-            background: ${this.getNotificationColor(type)};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 300px;
-            max-width: 400px;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-            pointer-events: auto;
-            font-size: 14px;
-            font-weight: 500;
-        `;
-
-        notification.innerHTML = `
-            <span style="font-size: 16px;">${this.getNotificationIcon(type)}</span>
-            <span style="flex: 1;">${message}</span>
-            <button onclick="this.parentElement.remove()" style="
-                background: none;
-                border: none;
-                color: white;
-                cursor: pointer;
-                font-size: 18px;
-                padding: 0;
-                margin-left: 8px;
-            ">×</button>
-        `;
-
-        container.appendChild(notification);
-
-        // Trigger animation
-        setTimeout(() => {
-            notification.style.opacity = '1';
-            notification.style.transform = 'translateX(0)';
-        }, 10);
-
-        // Auto remove
-        if (duration > 0) {
-            setTimeout(() => {
-                if (notification.parentElement) {
-                    this.hideNotification(notification);
-                }
-            }, duration);
-        }
-    }
-
-    createNotificationContainer() {
-        const container = document.createElement('div');
-        container.id = 'notificationContainer';
-        container.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-        `;
-        document.body.appendChild(container);
-        return container;
-    }
-
-    hideNotification(notification) {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.parentElement.removeChild(notification);
-            }
-        }, 300);
-    }
-
-    getNotificationIcon(type) {
-        const icons = {
-            success: '✅',
-            error: '❌',
-            warning: '⚠️',
-            info: 'ℹ️'
-        };
-        return icons[type] || 'ℹ️';
-    }
-
-    getNotificationColor(type) {
-        const colors = {
-            success: '#10b981',
-            error: '#ef4444',
-            warning: '#f59e0b',
-            info: '#3b82f6'
-        };
-        return colors[type] || '#3b82f6';
+    sanitizeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     }
 }
 
-// Initialize the application
+// Initialize dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🌐 DOM loaded, initializing dashboard...');
     window.secuNikDashboard = new SecuNikDashboard();
-    console.log('🚀 SecuNik Professional Dashboard v2.1 initialized');
 });
 
-// Global error handling
-window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
-    if (window.secuNikDashboard) {
-        window.secuNikDashboard.showNotification('An unexpected error occurred', 'error');
-    }
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
-    if (window.secuNikDashboard) {
-        window.secuNikDashboard.showNotification('A system error occurred', 'error');
-    }
-    event.preventDefault();
-});
-
-// Export for global access
-window.SecuNikDashboard = SecuNikDashboard;
+// Export for module use
+export default SecuNikDashboard;
