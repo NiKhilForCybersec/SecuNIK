@@ -13,13 +13,14 @@ namespace SecuNik.AI.Services
     /// <summary>
     /// OpenAI-powered cybersecurity analysis service
     /// </summary>
-    public class OpenAIIntelligenceService : IAIAnalysisService
+    public class OpenAIIntelligenceService : IAIAnalysisService, IDisposable
     {
         private readonly HttpClient _httpClient;
         private readonly string _model;
         private readonly int _maxTokens;
         private readonly float _temperature;
         private readonly string _apiKey;
+        private bool _disposed;
 
         public OpenAIIntelligenceService(
             string apiKey,
@@ -368,9 +369,23 @@ Requirements:
             return null;
         }
 
-        public void Dispose()
+        protected virtual void Dispose(bool disposing)
         {
-            _httpClient?.Dispose();
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _httpClient?.Dispose();
+                }
+
+                _disposed = true;
+            }
+        }
+
+        void IDisposable.Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }
